@@ -59,12 +59,13 @@ import shutil
 outputdir = os.path.join(os.path.dirname(__file__), "output")
 controlfile = os.path.join(outputdir, "control")
 params = {
-    "FILBAS": "/lcmodel/7T_SIM_STEAM_TE4p5_TM25_mod.BASIS",
-    # "FILCSV": "/output/result.csv",
-    # "FILCOO": "/output/result.coord",
-    # "FILPS": "/output/result.ps",
-    # "LCSV": 0,
-    # "LCOORD": 0
+    "FILBAS": "../lcmodel/7T_SIM_STEAM_TE4p5_TM25_mod.BASIS",
+    "FILCSV": "./result.csv",
+    "FILCOO": "./result.coord",
+    "FILPS": "./result.ps",
+    "LCSV": 11,
+    "LCOORD": 9,
+    "LPS": 8
 }
 
 shutil.rmtree(outputdir) # delete output folder
