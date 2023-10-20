@@ -1,53 +1,58 @@
 import wx
-import wxglade_out
 import os
-import glob
-import inspect
-import importlib.util
-import matplotlib_canvas
-
+import zipfile
+import shutil
+import wxglade_out
 import suspect
+import matplotlib.pyplot as plt
+import numpy as np
 
-
-
-
-    
 class MyFrame(wxglade_out.MyFrame):
 
-
-    def on_button_processing(self, event):
-        
-        
-        dicom_files=self.dt.dropped_file_paths
-        print(dicom_files)
-
-        dicoms = []
+    def on_button_processing(self, event):       
+        filepaths = self.dt.dropped_file_paths
+        print(filepaths)
+        datas = []
         wref = None
-        for file in dicom_files:
+        for file in filepaths:
             if file.find("0037.0001") != -1: # unsuppressed water reference
                 wref = suspect.io.load_siemens_dicom(file)
                 continue
-            try: dicoms.append(suspect.io.load_siemens_dicom(file))
+            try: datas.append(suspect.io.load_siemens_dicom(file))
             except: print("Error loading dicom file: " + file)
-
-
+    	
+        # cols = 8
+        # fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
+        # fig.suptitle('Dicoms')
+        # for i, d in enumerate(dicoms):
+        #     axs[i//cols, i%cols].plot(d.time_axis(), np.absolute(d))
+        #     axs[i//cols, i%cols].set_title(f"Dicom {i+1}")
+        #     axs[i//cols, i%cols].set_xlabel('Time (s)')
+        #     axs[i//cols, i%cols].set_ylabel('Signal Intensity')
+        # plt.show()
 
         ##### PROCESSING #####
-            #pipeline = ["yeet", "Average"]
-        result = dicoms
+        steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
         for step in self.pipeline:
             if step not in self.processing_steps.keys():
                 print(f"Processing step {step} not found")
                 continue
-            result = self.processing_steps[step]().process(result)
-
-
+            steps.append(self.processing_steps[step]())
+        
+        for step in steps:
+            datas = step.process(datas)
+            self.matplotlib_canvas.clear()
+            step.plot(self.matplotlib_canvas)
+            # input("Press enter to continue") # pause after each step?
+        
+        if len(datas) == 1: # we want a single MRSData object for analysis
+            result = datas[0]
+        else:
+            temp = datas[0]
+            result = np.mean(datas, axis=0)
+            result = temp.inherit(result)
 
         ##### ANALYSIS #####
-        import os
-        import zipfile
-        import shutil
-
         outputdir = os.path.join(os.path.dirname(__file__), "output")
         controlfile = os.path.join(outputdir, "control")
         params = {
@@ -80,8 +85,8 @@ class MyFrame(wxglade_out.MyFrame):
             "NCALIB": 0,
             "PGNORM": "US"
         }
-
-        shutil.rmtree(outputdir) # delete output folder
+        if os.path.exists(outputdir):
+            shutil.rmtree(outputdir) # delete output folder
         suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wref, params=params) # write raw, h2o, control files to output folder
 
         lcmodelfile = os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel") # linux exe
@@ -97,38 +102,21 @@ class MyFrame(wxglade_out.MyFrame):
             with zipfile.ZipFile(zippath, "r") as zip_ref:
                 zip_ref.extractall(os.path.join(os.path.dirname(__file__), "lcmodel"))
 
-        if os.name == 'nt': command = f"""copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
-        else: command = f"""cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
+        if os.name == 'nt': command = f"""mkdir {outputdir} & copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
+        else: command = f"""mkdir {outputdir} && cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
         print(command)
         os.system(command)
 
-
-
         ##### PLOTTING #####
-        import matplotlib.pyplot as plt
-        import numpy as np
-
-        cols = 8
-        fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
-        fig.suptitle('Dicoms')
-
-        for i, d in enumerate(dicoms):
-            axs[i//cols, i%cols].plot(d.time_axis(), np.absolute(d))
-            axs[i//cols, i%cols].set_title(f"Dicom {i+1}")
-            axs[i//cols, i%cols].set_xlabel('Time (s)')
-            axs[i//cols, i%cols].set_ylabel('Signal Intensity')
-        plt.show()
-        plt.figure()
-        plt.title("result")
-        plt.plot(result.time_axis(), np.absolute(result))
-        plt.xlabel('Time (s)')
-        plt.ylabel('Signal Intensity')
-        # plt.show() # ideally the plots appear in the GUI
-        self.matplotlib_canvas.axes.plot(result.time_axis(),np.absolute(result))
+        self.matplotlib_canvas.clear()
+        ax = self.matplotlib_canvas.figure.add_subplot(1, 1, 1)
+        ax.plot(result.time_axis(), np.absolute(result))
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Signal Intensity')
+        ax.set_title("Result")
         self.matplotlib_canvas.draw()
         
         event.Skip()
-
 
 
 class MyApp(wx.App):
