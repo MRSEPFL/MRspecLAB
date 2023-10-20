@@ -87,6 +87,10 @@ class MyFrame(wx.Frame):
                     if inspect.isclass(obj) and obj.__module__ == module_name:
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
+        
+        self.pipeline = ["yeet", "Average"]
+        self.CreateStatusBar(1)
+        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
 
     def on_button_processing(self, event):  # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")

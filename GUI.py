@@ -33,9 +33,9 @@ class MyFrame(wxglade_out.MyFrame):
 
 
         ##### PROCESSING #####
-        pipeline = ["yeet", "Average"]
+            #pipeline = ["yeet", "Average"]
         result = dicoms
-        for step in pipeline:
+        for step in self.pipeline:
             if step not in self.processing_steps.keys():
                 print(f"Processing step {step} not found")
                 continue
@@ -97,15 +97,15 @@ class MyFrame(wxglade_out.MyFrame):
             axs[i//cols, i%cols].set_title(f"Dicom {i+1}")
             axs[i//cols, i%cols].set_xlabel('Time (s)')
             axs[i//cols, i%cols].set_ylabel('Signal Intensity')
-
-        # plt.figure()
-        # plt.title("result")
-        # plt.plot(result.time_axis(), np.absolute(result))
-        # plt.xlabel('Time (s)')
-        # plt.ylabel('Signal Intensity')
+        plt.show()
+        plt.figure()
+        plt.title("result")
+        plt.plot(result.time_axis(), np.absolute(result))
+        plt.xlabel('Time (s)')
+        plt.ylabel('Signal Intensity')
         # plt.show() # ideally the plots appear in the GUI
-        # self.matplotlib_canvas.axes.plot(result.time_axis(),np.absolute(result))
-        # self.matplotlib_canvas.draw()
+        self.matplotlib_canvas.axes.plot(result.time_axis(),np.absolute(result))
+        self.matplotlib_canvas.draw()
         
         event.Skip()
 
