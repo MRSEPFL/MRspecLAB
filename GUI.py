@@ -57,25 +57,28 @@ class MyFrame(wxglade_out.MyFrame):
             "FILPS": "./result.ps",
             "LCSV": 11,
             "LCOORD": 9,
-            "LPS": 8
+            "LPS": 8,
+            "DOECC": False
         }
 
         shutil.rmtree(outputdir) # delete output folder
         suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wref, params=params) # write raw, h2o, control files to output folder
 
-        lcmodelfile = "lcmodel" # linux exe
+        lcmodelfile = os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel") # linux exe
         if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
-        if not os.path.exists("lcmodel/" + lcmodelfile): # lcmodel executables are zipped in the repo because of size
-            if not os.path.exists("lcmodel/lcmodel.zip"):
+        print(lcmodelfile)
+        if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
+            if not os.path.exists(os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel.zip")):
                 print("lcmodel executable or zip not found")
                 pass
             print("lcmodel executable not found, extracting from zip")
             with zipfile.ZipFile("lcmodel/lcmodel.zip", "r") as zip_ref:
                 zip_ref.extractall("lcmodel")
 
-        if os.name == 'nt': command = r"""copy lcmodel\\lcmodel.exe output & cd output & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
-        else: command = r"cp lcmodel/lcmodel output && cd output && ./lcmodel < control_sl0.CONTROL && rm lcmodel"
+        if os.name == 'nt': command = f"""copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
+        else: command = f"""cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
+        print(command)
         os.system(command)
 
 
