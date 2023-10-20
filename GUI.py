@@ -67,14 +67,15 @@ class MyFrame(wxglade_out.MyFrame):
         lcmodelfile = os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel") # linux exe
         if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
-        print(lcmodelfile)
+        print("Looking for executable here: ", lcmodelfile)
         if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
-            if not os.path.exists(os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel.zip")):
+            zippath = os.path.join(os.path.dirname(__file__), "lcmodel", "lcmodel.zip")
+            if not os.path.exists(zippath):
                 print("lcmodel executable or zip not found")
                 pass
-            print("lcmodel executable not found, extracting from zip")
-            with zipfile.ZipFile("lcmodel/lcmodel.zip", "r") as zip_ref:
-                zip_ref.extractall("lcmodel")
+            print("lcmodel executable not found, extracting from zip here: ", zippath)
+            with zipfile.ZipFile(zippath, "r") as zip_ref:
+                zip_ref.extractall(os.path.join(os.path.dirname(__file__), "lcmodel"))
 
         if os.name == 'nt': command = f"""copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
         else: command = f"""cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
@@ -97,14 +98,14 @@ class MyFrame(wxglade_out.MyFrame):
             axs[i//cols, i%cols].set_xlabel('Time (s)')
             axs[i//cols, i%cols].set_ylabel('Signal Intensity')
 
-        plt.figure()
-        plt.title("result")
-        plt.plot(result.time_axis(), np.absolute(result))
-        plt.xlabel('Time (s)')
-        plt.ylabel('Signal Intensity')
-        plt.show() # ideally the plots appear in the GUI
-        self.matplotlib_canvas.axes.plot(result.time_axis(),np.absolute(result))
-        self.matplotlib_canvas.draw()
+        # plt.figure()
+        # plt.title("result")
+        # plt.plot(result.time_axis(), np.absolute(result))
+        # plt.xlabel('Time (s)')
+        # plt.ylabel('Signal Intensity')
+        # plt.show() # ideally the plots appear in the GUI
+        # self.matplotlib_canvas.axes.plot(result.time_axis(),np.absolute(result))
+        # self.matplotlib_canvas.draw()
         
         event.Skip()
 
@@ -116,5 +117,3 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
         return True
-
-
