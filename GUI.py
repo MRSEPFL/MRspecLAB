@@ -58,7 +58,27 @@ class MyFrame(wxglade_out.MyFrame):
             "LCSV": 11,
             "LCOORD": 9,
             "LPS": 8,
-            "DOECC": False
+            "DOECC": False,
+            "DOWS": True,
+            "DOREFS": True,
+            "VITRO": False,
+            "PPMST": 4.2,
+            "PPMEND": 0.2,
+            "RFWHM": 1.8,
+            "ECHOT": 16.0,
+            "ATTH2O": 0.8187,
+            "ATTMET": 0.8521,
+            "NCOMBI": 5,
+            "DELTAT": 2.5e-04,
+            "CONREL": 8.0,
+            "DKNTMN": 0.25,
+            "HZPPPM": 2.9721e+02,
+            "WCONC": 44444,
+            "NEACH": 999,
+            "NUNFIL": 2048,
+            "NSIMUL": 0,
+            "NCALIB": 0,
+            "PGNORM": "US"
         }
 
         shutil.rmtree(outputdir) # delete output folder
