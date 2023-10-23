@@ -40,17 +40,15 @@ class MyFrame(wxglade_out.MyFrame):
             steps.append(self.processing_steps[step]())
         
         for step in steps:
-            datas = step.process(datas)
-            self.matplotlib_canvas.clear()
-            step.plot(self.matplotlib_canvas)
+            datas = step._process(datas) # process and save output in step if saveOutput is True
+            # self.matplotlib_canvas.clear()
+            # step.plot(self.matplotlib_canvas)
             # input("Press enter to continue") # pause after each step?
         
         if len(datas) == 1: # we want a single MRSData object for analysis
             result = datas[0]
         else:
-            temp = datas[0]
-            result = np.mean(datas, axis=0)
-            result = temp.inherit(result)
+            result = datas[0].inherit(np.mean(datas, axis=0))
 
         ##### ANALYSIS #####
         outputdir = os.path.join(os.path.dirname(__file__), "output")
@@ -109,13 +107,17 @@ class MyFrame(wxglade_out.MyFrame):
 
         ##### PLOTTING #####
         self.matplotlib_canvas.clear()
-        ax = self.matplotlib_canvas.figure.add_subplot(1, 1, 1)
+        ax = self.matplotlib_canvas.figure.add_subplot(2, 1, 1)
         ax.plot(result.time_axis(), np.absolute(result))
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Signal Intensity')
-        ax.set_title("Result")
+        ax = self.matplotlib_canvas.figure.add_subplot(2, 1, 2)
+        ax.plot(result.frequency_axis_ppm(), result.spectrum())
+        ax.set_xlabel('Frequency (ppm)')
+        ax.set_ylabel('Amplitude')
+        self.matplotlib_canvas.figure.suptitle("Result")
+        self.matplotlib_canvas.figure.tight_layout()
         self.matplotlib_canvas.draw()
-        
         event.Skip()
 
 
