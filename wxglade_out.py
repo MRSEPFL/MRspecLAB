@@ -62,6 +62,7 @@ class MyFrame(wx.Frame):
 
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.panel_1, wx.ID_ANY)
         sizer_2.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 3)
+        sizer_2.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
 
         self.panel_1.SetSizer(sizer_1)
 
