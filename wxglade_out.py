@@ -89,7 +89,7 @@ class MyFrame(wx.Frame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        self.pipeline = ["yeet", "Average"]
+        self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
 

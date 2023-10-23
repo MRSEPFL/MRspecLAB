@@ -4,14 +4,16 @@ import numpy as np
 
 class FreqPhaseAlignment(ps.ProcessingStep):
     def __init__(self):
-        super().__init__({"freqRange": None, "median": False})
+        super().__init__({"freqRange": None, "median": True})
+        self.saveInput = True # necessary for plotting
+        self.saveOutput = True
     
     def process(self, data):
-        if (type(self.parameters["freqRange"]) is not tuple) or len(self.parameters["freqRange"]) != 2: freqRange = None
+        if (type(self.parameters["freqRange"]) is not tuple): freqRange = None
+        elif len(self.parameters["freqRange"]) != 2: freqRange = None
         else: freqRange = self.parameters["freqRange"]
         if self.parameters["median"]:
-            target = np.median(data, axis=0)
-            target = data[0].inherit(target)
+            target = data[0].inherit(np.median(data, axis=0))
         else:
             target = data[0]
         freqShifts = []
@@ -25,9 +27,7 @@ class FreqPhaseAlignment(ps.ProcessingStep):
             output.append(d.adjust_frequency(-freqShift).adjust_phase(-phaseShift))
         self.freqShifts = freqShifts
         self.phaseShifts = phaseShifts
-        self.inputData = data
-        self.processedData = output
-        return self.processedData
+        return output
 
     def plot(self, canvas):
         canvas.figure.suptitle(self.__class__.__name__)
@@ -38,7 +38,7 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
         ax = canvas.figure.add_subplot(2, 2, 2)
-        for d in self.processedData:
+        for d in self.outputData:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Frequency (ppm)')
         ax.set_ylabel('Amplitude')
