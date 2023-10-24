@@ -1,5 +1,8 @@
 import wx
 import os
+import glob
+import inspect
+import importlib.util
 import zipfile
 import shutil
 import wxglade_out
@@ -9,6 +12,25 @@ import numpy as np
 import threading
 
 class MyFrame(wxglade_out.MyFrame):
+
+    def __init__(self, *args, **kwds):
+        wxglade_out.MyFrame.__init__(self, *args, **kwds)
+        processing_files = glob.glob(os.path.join(os.path.dirname(__file__), "processing", "*.py"))
+        self.processing_steps = {}
+        for file in processing_files:
+            module_name = os.path.basename(file)[:-3]
+            if module_name != "__init__":
+                spec = importlib.util.spec_from_file_location(module_name, file)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                for name, obj in inspect.getmembers(module):
+                    if inspect.isclass(obj) and obj.__module__ == module_name:
+                        obj = getattr(module, name)
+                        self.processing_steps[name] = obj
+        
+        self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        self.CreateStatusBar(1)
+        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
 
     def on_button_processing(self, event):
         thread = threading.Thread(target=self.processPipeline, args=())

@@ -11,12 +11,6 @@ import wx
 
 # begin wxGlade: extracode
 import matplotlib_canvas
-
-import os
-import glob
-import inspect
-import importlib.util
-import matplotlib_canvas
 # end wxGlade
 
 class FileDrop(wx.FileDropTarget):
@@ -70,28 +64,8 @@ class MyFrame(wx.Frame):
         
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
         
-        
-
         self.dt = FileDrop(self.label_drag_and_drop)
         self.label_drag_and_drop.SetDropTarget(self.dt)
-        
-        
-        processing_files = glob.glob(os.path.join(os.path.dirname(__file__), "processing", "*.py"))
-        self.processing_steps = {}
-        for file in processing_files:
-            module_name = os.path.basename(file)[:-3]
-            if module_name != "__init__":
-                spec = importlib.util.spec_from_file_location(module_name, file)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                for name, obj in inspect.getmembers(module):
-                    if inspect.isclass(obj) and obj.__module__ == module_name:
-                        obj = getattr(module, name)
-                        self.processing_steps[name] = obj
-        
-        self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
-        self.CreateStatusBar(1)
-        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
 
     def on_button_processing(self, event):  # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
