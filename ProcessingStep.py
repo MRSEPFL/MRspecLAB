@@ -7,8 +7,8 @@ class ProcessingStep:
         self.defaultParameters = parameters
         self.inputData: list[MRSData] = [] # might use a lot of memory
         self.outputData: list[MRSData] = []
-        self.saveInput = False # set these according to plotting needs
-        self.saveOutput = False
+        self.saveInput = True # set these according to plotting needs
+        self.saveOutput = True
         self.plotSpectrum = False # set these if you don't override plot()
         self.plotPPM = False
         # self.exportNifti = False

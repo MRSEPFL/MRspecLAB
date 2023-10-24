@@ -6,12 +6,21 @@ import wxglade_out
 import suspect
 import matplotlib.pyplot as plt
 import numpy as np
+import threading
 
 class MyFrame(wxglade_out.MyFrame):
 
-    def on_button_processing(self, event):       
+    def on_button_processing(self, event):
+        thread = threading.Thread(target=self.processPipeline, args=())
+        thread.start()
+        event.Skip()
+
+    def processPipeline(self):
         filepaths = self.dt.dropped_file_paths
-        print(filepaths)
+        if len(filepaths) == 0:
+            print("No files dropped")
+            return
+        print("\n".join(filepaths))
         datas = []
         wref = None
         for file in filepaths:
@@ -39,16 +48,21 @@ class MyFrame(wxglade_out.MyFrame):
                 continue
             steps.append(self.processing_steps[step]())
         
+        def plotWorker(step):
+            self.matplotlib_canvas.clear()
+            step.plot(self.matplotlib_canvas)
+            input("Press enter to continue")
+        
+        plotThread = None
         for step in steps:
             datas = step._process(datas) # process and save output in step if saveOutput is True
-            # self.matplotlib_canvas.clear()
-            # step.plot(self.matplotlib_canvas)
-            # input("Press enter to continue") # pause after each step?
-        
-        if len(datas) == 1: # we want a single MRSData object for analysis
-            result = datas[0]
-        else:
-            result = datas[0].inherit(np.mean(datas, axis=0))
+            if plotThread is not None: plotThread.join() # wait for previous plot to finish
+            plotThread = threading.Thread(target=plotWorker, args=(step,)) # plot in a separate thread so we can continue processing
+            plotThread.start() # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
+        plotThread.join() # wait for last plot to finish
+
+        if len(datas) == 1: result = datas[0] # we want a single MRSData object for analysis
+        else: result = datas[0].inherit(np.mean(datas, axis=0))
 
         ##### ANALYSIS #####
         outputdir = os.path.join(os.path.dirname(__file__), "output")
@@ -118,8 +132,6 @@ class MyFrame(wxglade_out.MyFrame):
         self.matplotlib_canvas.figure.suptitle("Result")
         self.matplotlib_canvas.figure.tight_layout()
         self.matplotlib_canvas.draw()
-        event.Skip()
-
 
 class MyApp(wx.App):
     def OnInit(self):
