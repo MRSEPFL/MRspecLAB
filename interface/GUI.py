@@ -5,7 +5,9 @@ import inspect
 import importlib.util
 import zipfile
 import shutil
-import wxglade_out
+# import wxglade_out
+from . import wxglade_out  # Use a relative import to import wxglade_out
+
 import suspect
 import matplotlib.pyplot as plt
 import numpy as np

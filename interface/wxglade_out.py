@@ -1,5 +1,7 @@
 import wx
-import matplotlib_canvas
+# import matplotlib_canvas
+from . import matplotlib_canvas  # Use a relative import to import wxglade_out
+
 
 class FileDrop(wx.FileDropTarget):
 
