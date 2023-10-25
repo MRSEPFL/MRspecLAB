@@ -37,6 +37,22 @@ class MyFrame(wxglade_out.MyFrame):
         thread.start()
         event.Skip()
 
+    def on_read_coord(self, event):
+        from readcoord import ReadlcmCoord
+        lcmdata = ReadlcmCoord(os.path.join(os.path.dirname(__file__), "output", "result.coord"))
+        self.matplotlib_canvas.clear()
+        ax = self.matplotlib_canvas.figure.add_subplot(1, 1, 1)
+        ax.plot(lcmdata['ppm'], lcmdata['spec'], label="Spectrum")
+        ax.plot(lcmdata['ppm'], lcmdata['fit'], label="Fit")
+        ax.set_xlabel('Frequency (ppm)')
+        ax.set_ylabel('Amplitude')
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, labels)
+        self.matplotlib_canvas.figure.suptitle("Result")
+        self.matplotlib_canvas.figure.tight_layout()
+        self.matplotlib_canvas.draw()
+        event.Skip()
+
     def processPipeline(self):
         filepaths = self.dt.dropped_file_paths
         if len(filepaths) == 0:
@@ -154,6 +170,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.matplotlib_canvas.figure.suptitle("Result")
         self.matplotlib_canvas.figure.tight_layout()
         self.matplotlib_canvas.draw()
+        
+        input("Press enter to continue")
+        self.on_read_coord(None)
 
 class MyApp(wx.App):
     def OnInit(self):
