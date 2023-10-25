@@ -38,40 +38,40 @@ class MyFrame(wx.Frame):
         self.splitter.SetMinimumPaneSize(100)
 
 
-        leftPanel = wx.Panel(self.splitter, wx.ID_ANY)
-        leftSizer = wx.BoxSizer(wx.VERTICAL)
-        leftPanel.SetSizer(leftSizer)
-        rightPanel = wx.Panel(self.splitter, wx.ID_ANY)
-        rightSizer = wx.BoxSizer(wx.VERTICAL)
-        rightPanel.SetSizer(rightSizer)
-        self.splitter.SplitVertically(leftPanel, rightPanel)
+        self.leftPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.leftSizer = wx.BoxSizer(wx.VERTICAL)
+        self.leftPanel.SetSizer(self.leftSizer)
+        self.rightPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.rightSizer = wx.BoxSizer(wx.VERTICAL)
+        self.rightPanel.SetSizer(self.rightSizer)
+        self.splitter.SplitVertically(self.leftPanel, self.rightPanel)
 
         ### LEFT PANEL ###
-        self.drag_n_drop_button = wx.Button(leftPanel, wx.ID_ANY, "Clear Inputs")
-        leftSizer.Add(self.drag_n_drop_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.drag_n_drop_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
+        self.leftSizer.Add(self.drag_n_drop_button, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.scrolled = wx.ScrolledWindow(leftPanel, wx.ID_ANY, style=wx.VSCROLL)
+        self.scrolled = wx.ScrolledWindow(self.leftPanel, wx.ID_ANY, style=wx.VSCROLL)
         self.label_drag_and_drop = wx.StaticText(self.scrolled, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL)
         self.label_drag_and_drop.CenterOnParent()
         self.scrolled_window_sizer = wx.BoxSizer(wx.VERTICAL)
         self.scrolled.SetSizer(self.scrolled_window_sizer)
         self.scrolled_window_sizer.Add(self.label_drag_and_drop, 0, wx.ALL | wx.EXPAND, 5)
 
-        leftSizer.Add(self.scrolled, 1, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.scrolled, 1, wx.ALL | wx.EXPAND, 5)
 
         ### RIGHT PANEL ###
-        self.button_processing = wx.Button(rightPanel, wx.ID_ANY, "Start Processing")
-        rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing")
+        self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(rightPanel, wx.ID_ANY)
-        rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 3)
-        rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
+        self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
+        self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 3)
+        self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
         
 
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
         self.dt = FileDrop(self.label_drag_and_drop, self.drag_n_drop_button)
-        leftPanel.SetDropTarget(self.dt)
+        self.leftPanel.SetDropTarget(self.dt)
         self.Bind(wx.EVT_BUTTON, self.dt.clear, self.drag_n_drop_button)
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
