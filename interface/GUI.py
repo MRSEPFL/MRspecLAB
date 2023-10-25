@@ -5,13 +5,12 @@ import inspect
 import importlib.util
 import zipfile
 import shutil
-# import wxglade_out
-from . import wxglade_out  # Use a relative import to import wxglade_out
-
-import suspect
-import matplotlib.pyplot as plt
-import numpy as np
 import threading
+import numpy as np
+import suspect
+
+from . import wxglade_out
+from readcoord import ReadlcmCoord
 
 class MyFrame(wxglade_out.MyFrame):
 
@@ -40,17 +39,38 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def on_read_coord(self, event):
-        from readcoord import ReadlcmCoord
-        lcmdata = ReadlcmCoord(os.path.join(os.path.dirname(__file__), "output", "result.coord"))
+        filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output", "result.coord")
+        lcmdata = ReadlcmCoord(filepath)
         self.matplotlib_canvas.clear()
         ax = self.matplotlib_canvas.figure.add_subplot(1, 1, 1)
-        ax.plot(lcmdata['ppm'], lcmdata['spec'], label="Spectrum")
-        ax.plot(lcmdata['ppm'], lcmdata['fit'], label="Fit")
-        ax.set_xlabel('Frequency (ppm)')
-        ax.set_ylabel('Amplitude')
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles, labels)
-        self.matplotlib_canvas.figure.suptitle("Result")
+        
+        def getOffset(data):
+            return 1.1 * max(data) - min(data)
+        
+        ax.plot(lcmdata['ppm'], lcmdata['residue'], 'b-')
+        ax.text(4.25, np.mean(lcmdata["residue"]), "Residue", rotation=0, va='center', ha='right', color='b')
+        
+        specHeight = max(getOffset(lcmdata['spec']), getOffset(lcmdata['fit']))
+        offset = specHeight
+        ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['spec']], 'k-', label="Spectrum")
+        ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['fit']], 'r-', label="Fit")
+        ax.text(4.25, np.mean(lcmdata["fit"]) - offset, "Fit", rotation=0, va='center', ha='right', color='r')
+
+        offset += getOffset(lcmdata['baseline'])
+        ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['baseline']], 'b-', label="Baseline")
+        ax.text(4.25, np.mean(lcmdata["baseline"]) - offset, "Baseline", rotation=0, va='center', ha='right', color='b')
+
+        offset += getOffset(lcmdata['subspec'][0])
+        for i, (metab, subspec) in enumerate(zip(lcmdata['metab'], lcmdata['subspec'])):
+            ax.plot(lcmdata['ppm'], [x - offset for x in subspec], 'k-', label=metab)
+            ax.text(4.25, -offset, metab, rotation=0, va='center', ha='right', color='k')
+            offset += 0.1 * specHeight
+
+        ax.set_xlabel('ppm')
+        ax.set_xlim((4.2, 1))
+        ax.get_yaxis().set_visible(False)
+        
+        self.matplotlib_canvas.figure.suptitle(filepath)
         self.matplotlib_canvas.figure.tight_layout()
         self.matplotlib_canvas.draw()
         event.Skip()
