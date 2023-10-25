@@ -36,6 +36,13 @@ class MyFrame(wx.Frame):
         self.SetSize((1200, 800))
         self.SetTitle("MRSprocessing")
 
+        fileMenu = wx.Menu()
+        menuBar = wx.MenuBar()
+        menuBar.Append(fileMenu, "&File")
+        self.SetMenuBar(menuBar)
+        fileMenu.Append(wx.ID_ANY, "&Open .coord", "Open .coord file")
+        wx.EVT_MENU(self, wx.ID_ANY, self.on_read_coord)
+
         self.splitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.splitter.SetMinimumPaneSize(100)
 
