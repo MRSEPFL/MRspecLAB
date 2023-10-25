@@ -1,4 +1,4 @@
-def ReadlcmCoord(filename, displayinfo=True):
+def ReadlcmCoord(filename, displayinfo=False):
 
     lcmdata = {
         'ppm': 0,
