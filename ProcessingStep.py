@@ -1,5 +1,5 @@
 from suspect import MRSData
-from matplotlib_canvas import MatplotlibCanvas
+from interface.matplotlib_canvas import MatplotlibCanvas
 
 class ProcessingStep:
     def __init__(self, parameters = {}):
