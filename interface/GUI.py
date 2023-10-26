@@ -12,6 +12,7 @@ import suspect
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
+from readcoord import ReadlcmCoord
 
 class MyFrame(wxglade_out.MyFrame):
 
@@ -67,14 +68,30 @@ class MyFrame(wxglade_out.MyFrame):
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
-        plot_coord(filepath, self.matplotlib_canvas)
+        f = ReadlcmCoord(filepath)
+        plot_coord(f, self.matplotlib_canvas, title=filepath)
+        dtab = '\n\t\t'
+        self.infotext.SetValue("")
+        self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
+                                + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
+                                + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
         event.Skip()
 
     def on_select(self, event):
         index = self.drag_and_drop_list.GetSelection()
         if index == wx.NOT_FOUND:
             return
-        plot_ima(self.dt.dropped_file_paths[index], self.matplotlib_canvas)
+        filepath = self.dt.dropped_file_paths[index]
+        if filepath == "" or not os.path.exists(filepath):
+            print("File not found")
+            return
+        f = suspect.io.load_siemens_dicom(filepath)
+        plot_ima(f, self.matplotlib_canvas, title=filepath)
+        self.infotext.SetValue("")
+        self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {f.np}\n\tScanner frequency (Hz): {f.f0}\n\tDwell time (s): {f.dt}\n\tFrequency delta (Hz): {f.df}\n"
+                               + f"\tSpectral Width (Hz): {f.sw}\n\tEcho time (ms): {f.te}\n\tRepetition time (ms): {f.tr}\n"
+                               + f"\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}\n\tCentre: {f.centre}\n"
+                               + "\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()]))
         event.Skip()
 
     def processPipeline(self):

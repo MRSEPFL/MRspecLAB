@@ -70,16 +70,17 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
 
-        self.splitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.splitter.SetMinimumPaneSize(100)
+        self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        self.mainSplitter.SetMinimumPaneSize(100)
+        self.rightSplitter.SetMinimumPaneSize(100)
 
-        self.leftPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.leftPanel = wx.Panel(self.mainSplitter, wx.ID_ANY)
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftPanel.SetSizer(self.leftSizer)
-        self.rightPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.rightPanel = wx.Panel(self.rightSplitter, wx.ID_ANY)
         self.rightSizer = wx.BoxSizer(wx.VERTICAL)
         self.rightPanel.SetSizer(self.rightSizer)
-        self.splitter.SplitVertically(self.leftPanel, self.rightPanel, 300)
 
         ### LEFT PANEL ###
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
@@ -99,13 +100,16 @@ class MyFrame(wx.Frame):
         ### RIGHT PANEL ###
         self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
         self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
-
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
-        self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 3)
-        self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
-        
+        self.infotext = wx.TextCtrl(self.rightSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
 
+        self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
+        self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
+        self.rightSplitter.SplitHorizontally(self.rightPanel, self.infotext, -150)
+
+
+        self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
         self.dt = FileDrop(self.drag_and_drop_list, self.drag_and_drop_label)
