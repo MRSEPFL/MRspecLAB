@@ -37,11 +37,11 @@ def ReadlcmCoord(filename, displayinfo=False):
     words = generator(filename)
 
     def skipto(string):
+        if isinstance(string, str):
+            string = [string]
         word = ''
-        while word != string:
+        while word not in string:
             word = next(words)
-        # if word == string:
-        # print("Found " + string)
 
     # Discard text until beginning of concentrations table (preceded by word 'Metab.')
     skipto("Metabolite")
@@ -58,12 +58,9 @@ def ReadlcmCoord(filename, displayinfo=False):
         conc['name'] = next(words).strip()
         lcmdata['conc'].append(conc.copy())
         index += 1
-    
-    # lcmdata['conc'].pop()  # Discard last line of table
-    
+
     # Discard text until linewidth (preceded by word 'FWHM')
     skipto("FWHM")
-    
     # Read linewidth
     next(words) # Read and discard '='
     lcmdata['linewidth'] = float(next(words))
@@ -81,18 +78,15 @@ def ReadlcmCoord(filename, displayinfo=False):
     
     # Discard text until Ph: (preceded by word 'Ph:')
     skipto("Ph:")
-    
     # Read zero-order phase, in deg
     lcmdata['ph0'] = float(next(words))
     
     skipto("deg")
-    
     # Read first-order phase, in deg/ppm
     lcmdata['ph1'] = float(next(words))
     
     # Discard text until number of data points (preceded by word 'extrema')
-    skipto("extrs.")
-    
+    skipto(["extrs.", "extrema"])
     # Read number of points
     nbpoints = int(next(words))
     
