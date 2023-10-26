@@ -96,6 +96,8 @@ class MyFrame(wxglade_out.MyFrame):
     def processPipeline(self):
         if not self.dt.dropped_file_paths or len(self.dt.dropped_file_paths) == 0:
             print("No files found")
+            self.button_processing.SetLabel("Start Processing")
+            self.processing = False
             return
         else:
             filepaths = self.dt.dropped_file_paths
