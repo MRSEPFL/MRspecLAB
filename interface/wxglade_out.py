@@ -14,18 +14,25 @@ class FileDrop(wx.FileDropTarget):
         self.wrefindex = None
 
     def OnDropFiles(self, x, y, filenames):
-        if len(filenames) > 0:
-            self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0])
-            self.list.Set([f.rsplit(os.path.sep, 1)[1] for f in filenames])
-            self.clear_button.Enable()
-            self.water_ref_button.Enable()
-            for i in range(self.list.GetCount()):
-                self.list.SetItemBackgroundColour(i, wx.Colour(255, 255, 255))
-            self.dropped_file_paths = filenames
-            self.dropped_file_paths.sort() # get correct sorting for wrefindex
-        else:
+        if len(filenames) == 0:
             self.clear_button.Disable()
             self.water_ref_button.Disable()
+            return False
+        ext = filenames[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
+        if not all([f.endswith(ext) for f in filenames]):
+            print("Inconsistent file types")
+            return False
+        if ext.lower() != "coord" and ext.lower().strip() != "ima":
+            print("Invalid file type")
+            return False
+        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0])
+        self.list.Set([f.rsplit(os.path.sep, 1)[1] for f in filenames])
+        self.clear_button.Enable()
+        if filenames[0].lower().endswith(".coord"):
+            self.water_ref_button.Disable() # no processing for .coords
+        else: self.water_ref_button.Enable()
+        self.dropped_file_paths = filenames
+        self.dropped_file_paths.sort() # get correct sorting for wrefindex
         return True
     
     def on_clear(self, event):
@@ -44,7 +51,7 @@ class FileDrop(wx.FileDropTarget):
             return
         self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
         if self.wrefindex is not None:
-            self.list.SetItemBackgroundColour(self.wrefindex, wx.Colour(255, 255, 255))
+            self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
         self.wrefindex = newindex
         print("water reference set to " + self.list.GetStrings()[self.wrefindex])
         event.Skip()
@@ -91,7 +98,7 @@ class MyFrame(wx.Frame):
         self.water_ref_button.Disable()
 
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL)
+        self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_select, self.drag_and_drop_list)
 
         self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
@@ -107,6 +114,7 @@ class MyFrame(wx.Frame):
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
         self.rightSplitter.SplitHorizontally(self.rightPanel, self.infotext, -150)
+        self.rightSplitter.SetSashGravity(1.)
 
 
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
