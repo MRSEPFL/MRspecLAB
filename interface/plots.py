@@ -2,6 +2,7 @@ import os
 import numpy as np
 import suspect
 from suspect import MRSData
+from readcoord import ReadlcmCoord
 
 def plot_ima(data, canvas, title=None):
     if isinstance(data, str):
@@ -22,7 +23,7 @@ def plot_ima(data, canvas, title=None):
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Signal Intensity')
     ax = canvas.figure.add_subplot(2, 1, 2)
-    ax.plot(data.frequency_axis_ppm(), data.spectrum())
+    ax.plot(data.frequency_axis_ppm(), np.real(data.spectrum()))
     ax.set_xlabel('Frequency (ppm)')
     ax.set_ylabel('Amplitude')
     canvas.figure.suptitle(title)
@@ -35,7 +36,6 @@ def plot_coord(lcmdata, canvas, title=None):
         if filepath == "" or not os.path.exists(filepath):
             print(f"File not found:\n\t{filepath}")
             return
-        from readcoord import ReadlcmCoord
         lcmdata = ReadlcmCoord(filepath)
         if title is None: title = filepath
     elif not isinstance(lcmdata, dict):
