@@ -1,5 +1,6 @@
 import wx
 import os
+import time
 import glob
 import inspect
 import importlib.util
@@ -32,6 +33,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
+        self.processing = False
+        self.next = False
 
     def on_read_ima(self, event):
         wildcard = "IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm"
@@ -47,8 +50,14 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def on_button_processing(self, event):
-        thread = threading.Thread(target=self.processPipeline, args=())
-        thread.start()
+        if not self.processing:
+            self.processing = True
+            self.next = False
+            self.button_processing.SetLabel("Next")
+            thread = threading.Thread(target=self.processPipeline, args=())
+            thread.start()
+        else:
+            self.next = True
         event.Skip()
 
     def on_read_coord(self, event, filepath=None):
@@ -59,6 +68,13 @@ class MyFrame(wxglade_out.MyFrame):
             print("File not found")
             return
         plot_coord(filepath, self.matplotlib_canvas)
+        event.Skip()
+
+    def on_select(self, event):
+        index = self.drag_and_drop_list.GetSelection()
+        if index == wx.NOT_FOUND:
+            return
+        plot_ima(self.dt.dropped_file_paths[index], self.matplotlib_canvas)
         event.Skip()
 
     def processPipeline(self):
@@ -88,6 +104,7 @@ class MyFrame(wxglade_out.MyFrame):
             except: print("Error loading dicom file: " + filepaths[i])
     	
         print(len(datas), "dicoms loaded")
+
         # cols = 8
         # fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
         # fig.suptitle('Dicoms')
@@ -109,7 +126,8 @@ class MyFrame(wxglade_out.MyFrame):
         def plotWorker(step):
             self.matplotlib_canvas.clear()
             step.plot(self.matplotlib_canvas)
-            input("Press enter to continue")
+            while not self.next: time.sleep(0.1)
+            self.next = False
         
         plotThread = None
         for step in steps:
@@ -121,9 +139,11 @@ class MyFrame(wxglade_out.MyFrame):
 
         if len(datas) == 1: result = datas[0] # we want a single MRSData object for analysis
         else: result = datas[0].inherit(np.mean(datas, axis=0))
+        plot_ima(result, self.matplotlib_canvas)
 
         ##### ANALYSIS #####
-        if wref:
+        if wref is not None:
+            self.button_processing.Disable()
             mainpath = os.path.dirname(os.path.dirname(__file__))
             outputdir = os.path.join(mainpath, "output")
             controlfile = os.path.join(outputdir, "control")
@@ -179,12 +199,11 @@ class MyFrame(wxglade_out.MyFrame):
             print(command)
             os.system(command)
 
-        ##### PLOTTING #####
-        plot_ima(result, self.matplotlib_canvas)
-        if wref:
-            input("Press enter to continue")
-            coordpath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output", "result.coord")
-            plot_coord(coordpath, self.matplotlib_canvas)
+            self.button_processing.Enable()
+            while not self.next: time.sleep(0.1)
+            self.next = False
+            self.button_processing.SetLabel("Start Processing")
+            plot_coord(os.path.join(outputdir, "result.coord"), self.matplotlib_canvas)
 
 class MyApp(wx.App):
     def OnInit(self):

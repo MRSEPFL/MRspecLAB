@@ -89,21 +89,16 @@ class MyFrame(wx.Frame):
         self.clear_button.Disable()
         self.water_ref_button.Disable()
 
-        # self.scrolled = wx.ScrolledWindow(self.leftPanel, wx.ID_ANY, style=wx.VSCROLL)
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.drag_and_drop_list.CenterOnParent()
         self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL)
-        # self.scrolled_window_sizer = wx.BoxSizer(wx.VERTICAL)
-        # self.scrolled.SetSizer(self.scrolled_window_sizer)
-        # self.scrolled_window_sizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
-        # self.scrolled_window_sizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_select, self.drag_and_drop_list)
 
         self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
-        # self.leftSizer.Add(self.scrolled, 1, wx.ALL | wx.EXPAND, 5)
 
         ### RIGHT PANEL ###
-        self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing")
+        self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
+        self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
 
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
