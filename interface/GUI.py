@@ -67,11 +67,12 @@ class MyFrame(wxglade_out.MyFrame):
             self.next = True
         event.Skip()
 
-    def on_select(self, event): # file double-clicked in list
-        index = self.drag_and_drop_list.GetSelection()
-        if index == wx.NOT_FOUND:
-            return
-        filepath = self.dt.dropped_file_paths[index]
+    def read_file(self, event, filepath=None): # file double-clicked in list
+        if filepath is None:
+            index = self.drag_and_drop_list.GetSelection()
+            if index == wx.NOT_FOUND:
+                return
+            filepath = self.dt.dropped_file_paths[index]
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
@@ -91,16 +92,18 @@ class MyFrame(wxglade_out.MyFrame):
             self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
-        event.Skip()
+        if event is not None: event.Skip()
 
     def processPipeline(self):
-        if not self.dt.dropped_file_paths or len(self.dt.dropped_file_paths) == 0:
+        filepaths = []
+        for f in self.dt.dropped_file_paths:
+            if f.lower().endswith(".ima") or f.lower().endswith(".dcm"):
+                filepaths.append(f)
+        if len(filepaths) == 0:
             print("No files found")
             self.button_processing.SetLabel("Start Processing")
             self.processing = False
             return
-        else:
-            filepaths = self.dt.dropped_file_paths
             # print("Files found: " + ", ".join(filepaths))
 
         if not self.dt.wrefindex:
@@ -219,9 +222,11 @@ class MyFrame(wxglade_out.MyFrame):
 
             self.button_processing.Enable()
             while not self.next: time.sleep(0.1)
+            self.processing = False
             self.next = False
             self.button_processing.SetLabel("Start Processing")
-            plot_coord(os.path.join(outputdir, "result.coord"), self.matplotlib_canvas)
+            self.read_file(None, os.path.join(outputdir, "result.coord"))
+            return
 
 class MyApp(wx.App):
     def OnInit(self):

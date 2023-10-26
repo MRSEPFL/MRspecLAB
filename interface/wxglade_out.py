@@ -99,7 +99,7 @@ class MyFrame(wx.Frame):
 
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
         self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.on_select, self.drag_and_drop_list)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.drag_and_drop_list)
 
         self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
