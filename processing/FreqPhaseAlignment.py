@@ -1,32 +1,55 @@
 import ProcessingStep as ps
 import suspect
 import numpy as np
+import scipy
 
 class FreqPhaseAlignment(ps.ProcessingStep):
     def __init__(self):
-        super().__init__({"freqRange": None, "median": True})
+        super().__init__({"freqRange": (3., 3.2), "median": True, "target": 0})
         self.saveInput = True # necessary for plotting
         self.saveOutput = True
+        self.alignFreq = False
+        self.alignPhase = True
     
     def process(self, data):
-        if (type(self.parameters["freqRange"]) is not tuple): freqRange = None
-        elif len(self.parameters["freqRange"]) != 2: freqRange = None
-        else: freqRange = self.parameters["freqRange"]
-        if self.parameters["median"]:
-            target = data[0].inherit(np.median(data, axis=0))
+        if not self.alignFreq and not self.alignPhase: return data
+        if not isinstance(self.parameters["freqRange"], tuple) or len(self.parameters["freqRange"]) != 2: freqRange = None
         else:
-            target = data[0]
-        freqShifts = []
-        phaseShifts = []
+            freqRange = [data[0].ppm_to_hertz(f) for f in self.parameters["freqRange"]]
+            freqRange.sort()
+            freqRange = tuple(freqRange)
+        if self.parameters["median"]: target = data[0].inherit(np.median(data, axis=0))
+        elif self.parameters["target"] in range(len(data)): target = data[self.parameters["target"]]
+        else: target = data[0]
+        self.freqShifts = []
+        self.phaseShifts = []
         output = []
         for d in data:
-            # output.append(suspect.processing.frequency_correction.correct_frequency_and_phase(d, data[0]))
-            freqShift, phaseShift = suspect.processing.frequency_correction.spectral_registration(d, target, frequency_range=freqRange)
-            freqShifts.append(freqShift)
-            phaseShifts.append(phaseShift)
+            # adapted from suspect.processing.frequency_correction.spectral_registration
+            if type(freqRange) is not None: spectral_weights = np.logical_and(freqRange[0] < d.frequency_axis(), freqRange[1] > d.frequency_axis())
+            else: spectral_weights = freqRange
+
+            def residual(input_vector):
+                transformed_data = d
+                if self.alignFreq: transformed_data = transformed_data.adjust_frequency(-input_vector[0])
+                if self.alignPhase: transformed_data = transformed_data.adjust_phase(-input_vector[1])
+                residual_data = transformed_data - target
+                if freqRange is not None:
+                    spectrum = residual_data.spectrum()
+                    weighted_spectrum = spectrum * spectral_weights
+                    weighted_spectrum = weighted_spectrum[weighted_spectrum != 0]
+                    residual_data = np.fft.ifft(np.fft.ifftshift(weighted_spectrum))
+                return_vector = np.zeros(len(residual_data) * 2)
+                return_vector[:len(residual_data)] = residual_data.real
+                return_vector[len(residual_data):] = residual_data.imag
+                return return_vector
+            
+            out = scipy.optimize.leastsq(residual, (0, 0))
+            [freqShift, phaseShift] = out[0][:2]
+
+            self.freqShifts.append(freqShift)
+            self.phaseShifts.append(phaseShift)
             output.append(d.adjust_frequency(-freqShift).adjust_phase(-phaseShift))
-        self.freqShifts = freqShifts
-        self.phaseShifts = phaseShifts
         return output
 
     def plot(self, canvas):
