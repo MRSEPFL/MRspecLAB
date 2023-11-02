@@ -7,7 +7,5 @@ class Average(ps.ProcessingStep):
         self.plotSpectrum = False # use plot() from ProcessingStep.py
 
     def process(self, data):
-        if len(data) == 1: return data
-        output = np.mean(data, axis=0)
-        output = data[0].inherit(output) # retrieve suspect metadata
-        return [output] # return a list of MRSData objects
+        if len(data["input"]) == 1: return data["input"]
+        return [data["input"][0].inherit(np.mean(data["input"], axis=0))] # retrieve metadata; we want a list of MRSData objects

@@ -9,6 +9,6 @@ class LineBroadening(ps.ProcessingStep):
     def process(self, data):
         if self.parameters["factor"] <= 0: return data
         output = []
-        for d in data:
+        for d in data["input"]:
             output.append(d.inherit(d * np.exp(-d.time_axis() * np.pi * self.parameters["factor"])))
         return output

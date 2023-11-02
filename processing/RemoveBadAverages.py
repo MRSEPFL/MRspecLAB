@@ -7,19 +7,19 @@ class RemoveBadAverages(ps.ProcessingStep):
         self.plotSpectrum = False
 
     def process(self, data):
-        if len(data) <= 2: return data
+        if len(data["input"]) <= 2: return data["input"]
         output = []
         metric = []
         if self.parameters["domain"].lower() == "time":
-            ref = np.mean(data, axis=0)
-            trange = data[0].time_axis() <= self.parameters["tmax"]
-            for d in data: metric.append(np.sum((d[trange] - ref[trange])**2))
+            ref = np.mean(data["input"], axis=0)
+            trange = data["input"][0].time_axis() <= self.parameters["tmax"]
+            for d in data["input"]: metric.append(np.sum((d[trange] - ref[trange])**2))
         elif self.parameters["domain"].lower().startswith("freq"):
-            specs = [d.spectrum() for d in data]
+            specs = [d.spectrum() for d in data["input"]]
             ref = np.mean(specs, axis=0)
-            for d in data: metric = np.sum((s - ref)**2 for s in specs)
+            for d in data["input"]: metric = np.sum((s - ref)**2 for s in specs)
         self.zscores = (metric - np.mean(metric)) / np.std(metric)
         mask = np.abs(self.zscores) < self.parameters["stdDevThreshold"]
-        for i, d in enumerate(data):
+        for i, d in enumerate(data["input"]):
             if mask[i]: output.append(d)
         return output

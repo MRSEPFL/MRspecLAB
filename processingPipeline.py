@@ -1,15 +1,13 @@
 import os
-import glob
 import suspect
-import numpy as np
-import scipy
-import matplotlib.pyplot as plt
 import threading
 import time
 import shutil
 import zipfile
+import numpy as np
 
-from interface import plots
+from interface.plots import plot_ima
+from suspect import MRSData
 
 def processPipeline(self):
         filepaths = []
@@ -29,7 +27,7 @@ def processPipeline(self):
         else:
             wrefindex = self.dt.wrefindex
 
-        datas = []
+        originalData = []
         wref = None
         for i in range(len(filepaths)):
             try:
@@ -38,10 +36,10 @@ def processPipeline(self):
                     wref = data
                     print("Water reference loaded:" + filepaths[i])
                 else:
-                    datas.append(data)
+                    originalData.append(data)
             except: print("Error loading dicom file: " + filepaths[i])
     	
-        print(len(datas), "dicoms loaded")
+        print(len(originalData), "dicoms loaded")
 
         # cols = 8
         # fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
@@ -61,28 +59,38 @@ def processPipeline(self):
                 continue
             steps.append(self.processing_steps[step]())
         
-        def plotWorker(step):
+        def plotWorker(step, dataDict): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
             self.matplotlib_canvas.clear()
-            step.plot(self.matplotlib_canvas)
+            step.plot(self.matplotlib_canvas, dataDict)
             while not self.next: time.sleep(0.1)
             self.next = False
-        
         plotThread = None
-        for step in steps:
-            datas = step._process(datas) # process and save output in step if saveOutput is True
-            if plotThread is not None: plotThread.join() # wait for previous plot to finish
-            plotThread = threading.Thread(target=plotWorker, args=(step,)) # plot in a separate thread so we can continue processing
-            plotThread.start() # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
-        if plotThread is not None: plotThread.join() # wait for last plot to finish
 
-        if len(datas) == 1: result = datas[0] # we want a single MRSData object for analysis
-        else: result = datas[0].inherit(np.mean(datas, axis=0))
-        plots.plot_ima(result, self.matplotlib_canvas)
+        self.dataSteps: list[MRSData] = [originalData]
+        for step in steps:
+            dataDict = {
+                "input": self.dataSteps[-1],
+                "original": self.dataSteps[0],
+                "wref": wref,
+                "output": None
+            }
+            dataDict["output"] = step.process(dataDict)
+            self.dataSteps.append(dataDict["output"])
+            if plotThread is not None: plotThread.join() # wait for previous plot to finish
+            plotThread = threading.Thread(target=plotWorker, args=(step, dataDict,)) # plot in a separate thread so we can continue processing
+            plotThread.start()
+        if plotThread is not None: plotThread.join() # wait for last plot to finish
+        
+        result = self.dataSteps[-1]
+        if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
+        else: result = result[0].inherit(np.mean(result, axis=0))
+        plot_ima(result, self.matplotlib_canvas)
 
         ##### ANALYSIS #####
         if wref is not None:
             self.button_processing.Disable()
             mainpath = os.path.dirname(__file__)
+            while not os.path.exists(os.path.join(mainpath, "lcmodel")): mainpath = os.path.dirname(mainpath)
             outputdir = os.path.join(mainpath, "output")
             controlfile = os.path.join(outputdir, "control")
             params = {

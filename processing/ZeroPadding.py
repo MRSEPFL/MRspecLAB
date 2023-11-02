@@ -9,7 +9,7 @@ class ZeroPadding(ps.ProcessingStep):
     def process(self, data):
         if self.parameters["factor"] <= 0: return data
         output = []
-        for d in data:
+        for d in data["input"]:
             padding = np.zeros(int((np.floor(len(d) * self.parameters["factor"]))))
             output.append(d.inherit(np.concatenate((d, padding), axis=None)))
         return output
