@@ -8,7 +8,7 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         super().__init__({"freqRange": (3., 3.2), "median": True, "target": 0})
         self.saveInput = True # necessary for plotting
         self.saveOutput = True
-        self.alignFreq = False
+        self.alignFreq = True
         self.alignPhase = True
     
     def process(self, data):
