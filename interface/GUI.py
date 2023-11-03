@@ -39,6 +39,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
         self.next = False
+        self.steps = []
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
@@ -65,23 +66,25 @@ class MyFrame(wxglade_out.MyFrame):
             self.list_ctrl.DeleteItem(selected_item)
             
     def OnPlotClick(self, event):
-        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if not self.steps:
+            self.consoltext.AppendText("Need to process the data before plotting the results\n")
 
-        self.matplotlib_canvas.clear()
-        self.steps[selected_item_index].plot(self.matplotlib_canvas)
-        # while not self.next: time.sleep(0.1)
-        # self.next = False
+        else:
+            selected_item_index = self.list_ctrl.GetFirstSelected()
+            if not self.steps[selected_item_index].outputData:
+                self.consoltext.AppendText("The step has not been performed yet\n")
+                
+            else:
+                self.matplotlib_canvas.clear()
+                self.steps[selected_item_index].plot(self.matplotlib_canvas)
+                
+                # while not self.next: time.sleep(0.1)
+                # self.next = False
 
 
         print("not implemented")
     
-    def plot_in_thread(self,event):
-        selected_item_index = self.list_ctrl.GetFirstSelected()
-        self.matplotlib_canvas.clear()
-        self.steps[selected_item_index].plot(self.matplotlib_canvas)
-        while not self.next:
-            time.sleep(0.1)
-        self.next = False
+
         
     def OnRightClickList(self, event):
         pos = event.GetPosition()
@@ -99,6 +102,7 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item_index = self.list_ctrl.GetFirstSelected()
         if selected_item_index >= 0:
             self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+            
         
 
     def on_button_processing(self, event):
