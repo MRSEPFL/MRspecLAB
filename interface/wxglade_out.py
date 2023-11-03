@@ -162,7 +162,7 @@ class MyFrame(wx.Frame):
         self.pipelinePanel.SetSizer(self.pipelineSizer)
         
         self.list_ctrl = wx.ListCtrl(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
-        self.list_ctrl.InsertColumn(0, "Item", width = 100)
+        self.list_ctrl.InsertColumn(0, "Pipeline Steps", width = 100)
 
         # Add items to the list control with associated icons
         self.list_ctrl.InsertItem(0, "ZeroPadding")
@@ -216,33 +216,12 @@ class MyFrame(wx.Frame):
         self.dt.water_ref_button = self.water_ref_button
         self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
-        
-    def OnDeleteClick(self, event):
-        selected_item = self.list_ctrl.GetFirstSelected()
-        if selected_item >= 0:
-            self.list_ctrl.DeleteItem(selected_item)
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
         event.Skip()
-    
-    def OnRightClickList(self, event):
-        pos = event.GetPosition()
-        pos = self.list_ctrl.ScreenToClient(pos)
-        item, flags = self.list_ctrl.HitTest(pos)
         
-        if item != -1:
-            self.list_ctrl.Select(item)  # Select the item that was right-clicked
-            self.PopupMenu(self.context_menu_pipeline)
-            
-    def OnAddStep(self, event):
-        # Get the label text to add it to the list
-        label = event.GetEventObject()
-        new_item_text = label.GetLabel()
-        selected_item_index = self.list_ctrl.GetFirstSelected()
-        if selected_item_index >= 0:
-            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-        
+
 
 
 
