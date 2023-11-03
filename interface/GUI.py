@@ -41,6 +41,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
         self.next = False
+        self.show_editor = True
         self.steps = []
         sys.stdout = self.consoltext
 
@@ -52,6 +53,19 @@ class MyFrame(wxglade_out.MyFrame):
         self.import_to_list("coord files (*.coord)|*.coord")
         event.Skip()
     
+    def on_toggle_editor(self, event):
+        self.show_editor = not self.show_editor
+        if self.show_editor:
+            self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
+            self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
+            self.toggle_editor.SetItemLabel("Hide Editor")
+        else:
+            self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
+            self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
+            self.toggle_editor.SetItemLabel("Show Editor")
+        self.Layout()
+        event.Skip()
+
     def import_to_list(self, wildcard):
         fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=os.path.dirname(os.path.dirname(__file__)), style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return

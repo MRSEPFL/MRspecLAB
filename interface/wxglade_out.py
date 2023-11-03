@@ -79,6 +79,9 @@ class MyFrame(wx.Frame):
         fileMenu.Append(open_coord)
         self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
+        self.toggle_editor = wx.MenuItem(viewMenu, wx.ID_ANY, "&Hide Editor", "Toggle Editor")
+        viewMenu.Append(self.toggle_editor)
+        self.Bind(wx.EVT_MENU, self.on_toggle_editor, self.toggle_editor)
         
         
 
