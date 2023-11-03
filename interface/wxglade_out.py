@@ -156,7 +156,7 @@ class MyFrame(wx.Frame):
 
 
 
-        ## PIPELINE PART ##
+        ## pipelinepart ##
         self.pipelinePanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
         self.pipelineSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.pipelinePanel.SetSizer(self.pipelineSizer)
@@ -164,7 +164,6 @@ class MyFrame(wx.Frame):
         self.list_ctrl = wx.ListCtrl(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
         self.list_ctrl.InsertColumn(0, "Pipeline Steps", width = 100)
 
-        # Add items to the list control with associated icons
         self.list_ctrl.InsertItem(0, "ZeroPadding")
         self.list_ctrl.InsertItem(1, "LineBroadening")
         self.list_ctrl.InsertItem(2, "FreqPhaseAlignement")
@@ -177,8 +176,12 @@ class MyFrame(wx.Frame):
         
         self.context_menu_pipeline = wx.Menu()
         self.context_menu_pipeline.Append(1, "Delete step")
+        self.context_menu_pipeline.Append(2, "Plot step Results")
+
         
         self.Bind(wx.EVT_MENU, self.OnDeleteClick, id=1)
+        self.Bind(wx.EVT_MENU, self.OnPlotClick, id=2)
+
         self.list_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.OnRightClickList)
 
         

@@ -63,7 +63,26 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item = self.list_ctrl.GetFirstSelected()
         if selected_item >= 0:
             self.list_ctrl.DeleteItem(selected_item)
+            
+    def OnPlotClick(self, event):
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+
+        self.matplotlib_canvas.clear()
+        self.steps[selected_item_index].plot(self.matplotlib_canvas)
+        # while not self.next: time.sleep(0.1)
+        # self.next = False
+
+
+        print("not implemented")
     
+    def plot_in_thread(self,event):
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        self.matplotlib_canvas.clear()
+        self.steps[selected_item_index].plot(self.matplotlib_canvas)
+        while not self.next:
+            time.sleep(0.1)
+        self.next = False
+        
     def OnRightClickList(self, event):
         pos = event.GetPosition()
         pos = self.list_ctrl.ScreenToClient(pos)
@@ -84,6 +103,14 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_button_processing(self, event):
         if not self.processing:
+    
+            self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+            self.steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
+            for step in self.pipeline:
+                if step not in self.processing_steps.keys():
+                    print(f"Processing step {step} not found")
+                    continue
+                self.steps.append(self.processing_steps[step]())
             self.processing = True
             self.next = False
             self.button_processing.SetLabel("Next")

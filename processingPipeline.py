@@ -54,12 +54,7 @@ def processPipeline(self):
         # plt.show()
 
         ##### PROCESSING #####
-        steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
-        for step in self.pipeline:
-            if step not in self.processing_steps.keys():
-                print(f"Processing step {step} not found")
-                continue
-            steps.append(self.processing_steps[step]())
+
         
         def plotWorker(step):
             self.matplotlib_canvas.clear()
@@ -68,7 +63,7 @@ def processPipeline(self):
             self.next = False
         
         plotThread = None
-        for step in steps:
+        for step in self.steps:
             datas = step._process(datas) # process and save output in step if saveOutput is True
             if plotThread is not None: plotThread.join() # wait for previous plot to finish
             plotThread = threading.Thread(target=plotWorker, args=(step,)) # plot in a separate thread so we can continue processing
