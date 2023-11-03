@@ -78,18 +78,50 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
 
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.mainSplitter.SetMinimumPaneSize(100)
-        self.rightSplitter.SetMinimumPaneSize(100)
+        self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)       
+        self.leftSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        self.pipelineplotSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        self.consoleinfoSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
 
-        self.leftPanel = wx.Panel(self.mainSplitter, wx.ID_ANY)
+        self.mainSplitter.SetMinimumPaneSize(100)
+        self.rightSplitter.SetMinimumPaneSize(100)  
+        self.leftSplitter.SetMinimumPaneSize(100)
+
+
+        self.leftPanel = wx.Panel(self.leftSplitter, wx.ID_ANY)
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftPanel.SetSizer(self.leftSizer)
-        self.rightPanel = wx.Panel(self.rightSplitter, wx.ID_ANY)
+        self.rightPanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
         self.rightSizer = wx.BoxSizer(wx.VERTICAL)
         self.rightPanel.SetSizer(self.rightSizer)
+        
+        
+
 
         ### LEFT PANEL ###
+        ## notebook of available steps
+        self.notebook_1 = wx.Notebook(self.leftSplitter, wx.ID_ANY, style=wx.NB_BOTTOM)
+        self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
+        self.notebook_1.AddPage(self.notebook_1_pane_1, "Import Data Steps")
+        self.notebook_1_pane_2 = wx.Panel(self.notebook_1, wx.ID_ANY)
+        self.notebook_1.AddPage(self.notebook_1_pane_2, "Quality Control Steps")
+        
+
+        available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
+        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignement", "RemoveBadAverages","Average"]
+        
+        for label in available_icon_labels:
+            icon_label = wx.StaticText(self.notebook_1_pane_2 , label=label, style=wx.ALIGN_CENTER)
+            icon_label.SetBackgroundColour(wx.Colour(100, 100, 100))
+            icon_label.SetForegroundColour(wx.Colour(250, 250, 250))
+
+            icon_label.Bind(wx.EVT_LEFT_DOWN, self.OnAddStep)
+            available_icons_sizer.Add(icon_label, 1, wx.ALL | wx.EXPAND, 5)
+        
+        self.notebook_1_pane_2 .SetSizer(available_icons_sizer)
+        
+        
+        
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
         self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Set Selection as Water Reference")
         self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
@@ -104,20 +136,78 @@ class MyFrame(wx.Frame):
         self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
 
+        self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
+
         ### RIGHT PANEL ###
         self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
         self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
-        self.infotext = wx.TextCtrl(self.rightSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        
+        self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.consoltext.SetBackgroundColour(wx.Colour(0, 0, 0))  # Set the background color to black
+        self.consoltext.SetForegroundColour(wx.Colour(255, 255, 255))
 
         self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
-        self.rightSplitter.SplitHorizontally(self.rightPanel, self.infotext, -150)
+        
+
+
+
+
+        ## PIPELINE PART ##
+        self.pipelinePanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
+        self.pipelineSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.pipelinePanel.SetSizer(self.pipelineSizer)
+        
+        self.list_ctrl = wx.ListCtrl(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
+        self.list_ctrl.InsertColumn(0, "Item", width = 100)
+
+        # Add items to the list control with associated icons
+        self.list_ctrl.InsertItem(0, "ZeroPadding")
+        self.list_ctrl.InsertItem(1, "LineBroadening")
+        self.list_ctrl.InsertItem(2, "FreqPhaseAlignement")
+        self.list_ctrl.InsertItem(3, "RemoveBadAverages")
+        self.list_ctrl.InsertItem(4, "Average")
+
+        
+        self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.pipelineparameters.SetBackgroundColour(wx.Colour(200, 200, 200))  # Set the background color to black
+        
+        self.context_menu_pipeline = wx.Menu()
+        self.context_menu_pipeline.Append(1, "Delete step")
+        
+        self.Bind(wx.EVT_MENU, self.OnDeleteClick, id=1)
+        self.list_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.OnRightClickList)
+
+        
+        # self.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+
+
+        
+        self.pipelineSizer.Add(self.list_ctrl, 0, wx.EXPAND, 0)
+        self.pipelineSizer.Add(self.pipelineparameters, 1, wx.EXPAND, 0)
+
+        
+        
+        self.rightSplitter.SplitHorizontally(self.pipelineplotSplitter, self.consoleinfoSplitter, -150)
+        self.rightSplitter.SetSashGravity(1.)
+        
+        self.consoleinfoSplitter.SplitVertically(self.infotext, self.consoltext, -150)
+        self.consoleinfoSplitter.SetSashGravity(1.)
+
+        
+        self.pipelineplotSplitter.SplitVertically(self.pipelinePanel,self.rightPanel , -150)
+        self.pipelineplotSplitter.SetSashGravity(1.)
+        
+        
+        self.rightSplitter.SplitVertically(self.pipelineplotSplitter, self.consoleinfoSplitter, -150)
         self.rightSplitter.SetSashGravity(1.)
 
 
-        self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
+
+        self.mainSplitter.SplitVertically(self.leftSplitter, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
         self.dt = FileDrop(self.drag_and_drop_list, self.drag_and_drop_label)
@@ -126,7 +216,35 @@ class MyFrame(wx.Frame):
         self.dt.water_ref_button = self.water_ref_button
         self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
+        
+    def OnDeleteClick(self, event):
+        selected_item = self.list_ctrl.GetFirstSelected()
+        if selected_item >= 0:
+            self.list_ctrl.DeleteItem(selected_item)
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
         event.Skip()
+    
+    def OnRightClickList(self, event):
+        pos = event.GetPosition()
+        pos = self.list_ctrl.ScreenToClient(pos)
+        item, flags = self.list_ctrl.HitTest(pos)
+        
+        if item != -1:
+            self.list_ctrl.Select(item)  # Select the item that was right-clicked
+            self.PopupMenu(self.context_menu_pipeline)
+            
+    def OnAddStep(self, event):
+        # Get the label text to add it to the list
+        label = event.GetEventObject()
+        new_item_text = label.GetLabel()
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if selected_item_index >= 0:
+            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+        
+
+
+
+    
+    
