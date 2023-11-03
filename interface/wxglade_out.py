@@ -67,8 +67,11 @@ class MyFrame(wx.Frame):
         self.SetTitle("MRSprocessing")
 
         fileMenu = wx.Menu()
+        viewMenu = wx.Menu()
         menuBar = wx.MenuBar()
         menuBar.Append(fileMenu, "&File")
+        menuBar.Append(viewMenu, "&View")
+
         self.SetMenuBar(menuBar)
         open_ima = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .IMA", "Open .IMA files")
         open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .coord", "Open .coord file")
@@ -76,6 +79,8 @@ class MyFrame(wx.Frame):
         fileMenu.Append(open_coord)
         self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
+        
+        
 
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)       
@@ -108,7 +113,7 @@ class MyFrame(wx.Frame):
         
 
         available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
-        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignement", "RemoveBadAverages","Average"]
+        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages","Average"]
         
         for label in available_icon_labels:
             icon_label = wx.StaticText(self.notebook_1_pane_2 , label=label, style=wx.ALIGN_CENTER)
@@ -166,7 +171,7 @@ class MyFrame(wx.Frame):
 
         self.list_ctrl.InsertItem(0, "ZeroPadding")
         self.list_ctrl.InsertItem(1, "LineBroadening")
-        self.list_ctrl.InsertItem(2, "FreqPhaseAlignement")
+        self.list_ctrl.InsertItem(2, "FreqPhaseAlignment")
         self.list_ctrl.InsertItem(3, "RemoveBadAverages")
         self.list_ctrl.InsertItem(4, "Average")
 
@@ -197,16 +202,17 @@ class MyFrame(wx.Frame):
         self.rightSplitter.SplitHorizontally(self.pipelineplotSplitter, self.consoleinfoSplitter, -150)
         self.rightSplitter.SetSashGravity(1.)
         
-        self.consoleinfoSplitter.SplitVertically(self.infotext, self.consoltext, -150)
+        self.consoleinfoSplitter.SplitVertically(self.consoltext, self.infotext, -150)
         self.consoleinfoSplitter.SetSashGravity(1.)
+        
+        
 
         
         self.pipelineplotSplitter.SplitVertically(self.pipelinePanel,self.rightPanel , -150)
         self.pipelineplotSplitter.SetSashGravity(1.)
         
         
-        self.rightSplitter.SplitVertically(self.pipelineplotSplitter, self.consoleinfoSplitter, -150)
-        self.rightSplitter.SetSashGravity(1.)
+
 
 
 

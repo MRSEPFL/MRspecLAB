@@ -9,6 +9,8 @@ import shutil
 import threading
 import numpy as np
 import suspect
+import sys
+
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
@@ -40,6 +42,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.processing = False
         self.next = False
         self.steps = []
+        sys.stdout = self.consoltext
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
