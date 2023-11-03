@@ -32,7 +32,9 @@ class MyFrame(wxglade_out.MyFrame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
@@ -56,6 +58,29 @@ class MyFrame(wxglade_out.MyFrame):
                 print(f"File not found:\n\t{filepath}")
             else: files.append(filepath)
         self.dt.OnDropFiles(None, None, files)
+        
+    def OnDeleteClick(self, event):
+        selected_item = self.list_ctrl.GetFirstSelected()
+        if selected_item >= 0:
+            self.list_ctrl.DeleteItem(selected_item)
+    
+    def OnRightClickList(self, event):
+        pos = event.GetPosition()
+        pos = self.list_ctrl.ScreenToClient(pos)
+        item, flags = self.list_ctrl.HitTest(pos)
+        
+        if item != -1:
+            self.list_ctrl.Select(item)  # Select the item that was right-clicked
+            self.PopupMenu(self.context_menu_pipeline)
+            
+    def OnAddStep(self, event):
+        # Get the label text to add it to the list
+        label = event.GetEventObject()
+        new_item_text = label.GetLabel()
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if selected_item_index >= 0:
+            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+        
 
     def on_button_processing(self, event):
         if not self.processing:
