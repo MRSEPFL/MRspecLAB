@@ -9,6 +9,8 @@ import shutil
 import threading
 import numpy as np
 import suspect
+import sys
+
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
@@ -39,6 +41,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
         self.next = False
+        self.steps = []
+        sys.stdout = self.consoltext
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
@@ -63,7 +67,28 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item = self.list_ctrl.GetFirstSelected()
         if selected_item >= 0:
             self.list_ctrl.DeleteItem(selected_item)
+            
+    def OnPlotClick(self, event):
+        if not self.steps:
+            self.consoltext.AppendText("Need to process the data before plotting the results\n")
+
+        else:
+            selected_item_index = self.list_ctrl.GetFirstSelected()
+            if not self.steps[selected_item_index].outputData:
+                self.consoltext.AppendText("The step has not been performed yet\n")
+                
+            else:
+                self.matplotlib_canvas.clear()
+                self.steps[selected_item_index].plot(self.matplotlib_canvas)
+                
+                # while not self.next: time.sleep(0.1)
+                # self.next = False
+
+
+        print("not implemented")
     
+
+        
     def OnRightClickList(self, event):
         pos = event.GetPosition()
         pos = self.list_ctrl.ScreenToClient(pos)
@@ -80,10 +105,19 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item_index = self.list_ctrl.GetFirstSelected()
         if selected_item_index >= 0:
             self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+            
         
 
     def on_button_processing(self, event):
         if not self.processing:
+    
+            self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+            self.steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
+            for step in self.pipeline:
+                if step not in self.processing_steps.keys():
+                    print(f"Processing step {step} not found")
+                    continue
+                self.steps.append(self.processing_steps[step]())
             self.processing = True
             self.next = False
             self.button_processing.SetLabel("Next")

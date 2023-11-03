@@ -67,7 +67,7 @@ def processPipeline(self):
         plotThread = None
 
         self.dataSteps: list[MRSData] = [originalData]
-        for step in steps:
+        for step in self.steps:
             dataDict = {
                 "input": self.dataSteps[-1],
                 "original": self.dataSteps[0],
