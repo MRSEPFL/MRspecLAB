@@ -11,7 +11,7 @@ def plot_ima(data, canvas, title=None):
             print(f"File not found:\n\t{filepath}")
             return
         data = suspect.io.load_siemens_dicom(filepath)
-        title = filepath
+        if title is None: title = filepath
     elif not isinstance(data, MRSData):
         print("Invalid data type")
         return
