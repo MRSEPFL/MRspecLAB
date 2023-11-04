@@ -16,7 +16,8 @@ class ProcessingStep:
         return output
     
     def process(self, data: dict) -> None: # to override
-        return data["input"]
+        data["output"] = data["input"]
+        data["wref"] = None # already was None
     
     def resetParameters(self):
         self.parameters = self.defaultParameters

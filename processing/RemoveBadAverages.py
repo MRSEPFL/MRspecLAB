@@ -22,4 +22,4 @@ class RemoveBadAverages(ps.ProcessingStep):
         mask = np.abs(self.zscores) < self.parameters["stdDevThreshold"]
         for i, d in enumerate(data["input"]):
             if mask[i]: output.append(d)
-        return output
+        data["output"] = output

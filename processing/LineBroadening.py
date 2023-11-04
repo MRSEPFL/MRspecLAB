@@ -11,4 +11,4 @@ class LineBroadening(ps.ProcessingStep):
         output = []
         for d in data["input"]:
             output.append(d.inherit(d * np.exp(-d.time_axis() * np.pi * self.parameters["factor"])))
-        return output
+        data["output"] = output

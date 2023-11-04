@@ -19,7 +19,6 @@ def processPipeline(self):
             self.button_processing.SetLabel("Start Processing")
             self.processing = False
             return
-            # print("Files found: " + ", ".join(filepaths))
 
         if not self.dt.wrefindex:
             wrefindex = None
@@ -28,37 +27,19 @@ def processPipeline(self):
             wrefindex = self.dt.wrefindex
 
         originalData = []
-        wref = None
+        originalWref = None
         for i in range(len(filepaths)):
             try:
                 data = suspect.io.load_siemens_dicom(filepaths[i])
                 if i == wrefindex:
-                    wref = data
+                    originalWref = data
                     print("Water reference loaded:" + filepaths[i])
                 else:
                     originalData.append(data)
             except: print("Error loading dicom file: " + filepaths[i])
-    	
         print(len(originalData), "dicoms loaded")
 
-        # cols = 8
-        # fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
-        # fig.suptitle('Dicoms')
-        # for i, d in enumerate(dicoms):
-        #     axs[i//cols, i%cols].plot(d.time_axis(), np.absolute(d))
-        #     axs[i//cols, i%cols].set_title(f"Dicom {i+1}")
-        #     axs[i//cols, i%cols].set_xlabel('Time (s)')
-        #     axs[i//cols, i%cols].set_ylabel('Signal Intensity')
-        # plt.show()
-
         ##### PROCESSING #####
-        steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
-        for step in self.pipeline:
-            if step not in self.processing_steps.keys():
-                print(f"Processing step {step} not found")
-                continue
-            steps.append(self.processing_steps[step]())
-        
         def plotWorker(step, dataDict): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
             self.matplotlib_canvas.clear()
             step.plot(self.matplotlib_canvas, dataDict)
@@ -67,27 +48,44 @@ def processPipeline(self):
         plotThread = None
 
         self.dataSteps: list[MRSData] = [originalData]
+        self.wrefSteps: list[MRSData] = [originalWref]
         for step in self.steps:
+            for w in reversed(self.wrefSteps): # find the first non-None wref
+                if w is not None:
+                    last_wref = w
+                    break
             dataDict = {
                 "input": self.dataSteps[-1],
+                "wref": last_wref,
                 "original": self.dataSteps[0],
-                "wref": wref,
-                "output": None
+                "wref_original": self.wrefSteps[0],
+                "output": None,
+                "wref_output": None
             }
-            dataDict["output"] = step.process(dataDict)
+            self.button_processing.Disable()
+            step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
+            self.wrefSteps.append(dataDict["wref_output"]) # might append None; we need this to keep a history of steps while saving memory
+            self.button_processing.Enable()
             if plotThread is not None: plotThread.join() # wait for previous plot to finish
-            plotThread = threading.Thread(target=plotWorker, args=(step, dataDict,)) # plot in a separate thread so we can continue processing
+            plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict),)) # copy dataDict since it will be immediately modified by the next step
             plotThread.start()
         if plotThread is not None: plotThread.join() # wait for last plot to finish
         
         result = self.dataSteps[-1]
+        wresult = None
+        for w in reversed(self.wrefSteps): # find the first non-None wref
+                if w is not None:
+                    wresult = w
+                    break
         if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
         else: result = result[0].inherit(np.mean(result, axis=0))
         plot_ima(result, self.matplotlib_canvas)
 
         ##### ANALYSIS #####
-        if wref is not None:
+        if wresult is not None:
+            print("Water reference found, running LCModel")
+            print(wresult)
             self.button_processing.Disable()
             mainpath = os.path.dirname(__file__)
             while not os.path.exists(os.path.join(mainpath, "lcmodel")): mainpath = os.path.dirname(mainpath)
@@ -125,7 +123,7 @@ def processPipeline(self):
             }
             if os.path.exists(outputdir):
                 shutil.rmtree(outputdir) # delete output folder
-            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wref, params=params) # write raw, h2o, control files to output folder
+            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to output folder
 
             lcmodelfile = os.path.join(mainpath, "lcmodel", "lcmodel") # linux exe
             if os.name == 'nt': lcmodelfile += ".exe" # windows exe

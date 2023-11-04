@@ -49,7 +49,7 @@ class FreqPhaseAlignment(ps.ProcessingStep):
             self.freqShifts.append(freqShift)
             self.phaseShifts.append(phaseShift)
             output.append(data["original"][i].adjust_frequency(-freqShift).adjust_phase(-phaseShift))
-        return output
+        data["output"] = output
 
     def plot(self, canvas, data):
         canvas.figure.suptitle(self.__class__.__name__)
