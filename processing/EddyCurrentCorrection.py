@@ -11,7 +11,9 @@ class EddyCurrentCorrection(ps.ProcessingStep):
 
     # https://suspect.readthedocs.io/en/latest/notebooks/consensus_playground.html#Eddy-Current-Correction
     def process(self, data):
-        if data["wref"] is None: return data["input"]
+        if data["wref"] is None:
+            data["output"] = data["input"]
+            return
         # adapted from suspect.processing.denoising.sliding_gaussian
         w = self.parameters["gaussian_width"]
         window = np.linspace(-3, 3, w)
@@ -30,6 +32,14 @@ class EddyCurrentCorrection(ps.ProcessingStep):
     
     def plot(self, canvas, data):
         canvas.figure.suptitle(self.__class__.__name__)
+        if data["wref"] is None:
+            ax = canvas.figure.add_subplot(1, 1, 1)
+            for d in data["output"]:
+                ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.set_xlabel('Frequency (ppm)')
+            ax.set_ylabel('Amplitude')
+            ax.set_title("Output (no water reference given)")
+            return
         # input
         ax = canvas.figure.add_subplot(2, 2, 1)
         for d in data["input"]:
