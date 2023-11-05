@@ -49,11 +49,14 @@ def processPipeline(self):
 
         self.dataSteps: list[MRSData] = [originalData]
         self.wrefSteps: list[MRSData] = [originalWref]
+        last_wref = None
+
         for step in self.steps:
-            for w in reversed(self.wrefSteps): # find the first non-None wref
-                if w is not None:
-                    last_wref = w
-                    break
+            if originalWref is not None:
+                for w in reversed(self.wrefSteps): # find the first non-None wref
+                    if w is not None:
+                        last_wref = w
+                        break
             dataDict = {
                 "input": self.dataSteps[-1],
                 "wref": last_wref,
@@ -63,18 +66,24 @@ def processPipeline(self):
                 "wref_output": None
             }
             self.button_processing.Disable()
+            self.button_processing.SetLabel("Running " + step.__class__.__name__ + "...")
+            print("Processing step: ", step.__class__.__name__)
             step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
             self.wrefSteps.append(dataDict["wref_output"]) # might append None; we need this to keep a history of steps while saving memory
-            self.button_processing.Enable()
-            if plotThread is not None: plotThread.join() # wait for previous plot to finish
-            plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict),)) # copy dataDict since it will be immediately modified by the next step
-            plotThread.start()
+            if not self.fast_processing: # wait for button press, show plot
+                self.button_processing.Enable()
+                self.button_processing.SetLabel("Next")
+                if plotThread is not None: plotThread.join() # wait for previous plot to finish
+                plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict),)) # copy dataDict since it will be immediately modified by the next step
+                plotThread.start()
+
         if plotThread is not None: plotThread.join() # wait for last plot to finish
-        
+        self.button_processing.Enable()
         result = self.dataSteps[-1]
         wresult = None
-        for w in reversed(self.wrefSteps): # find the first non-None wref
+        if originalWref is not None:
+            for w in reversed(self.wrefSteps): # find the first non-None wref
                 if w is not None:
                     wresult = w
                     break
@@ -84,12 +93,9 @@ def processPipeline(self):
 
         ##### ANALYSIS #####
         if wresult is not None:
-            print("Water reference found, running LCModel")
-            print(wresult)
             self.button_processing.Disable()
-            mainpath = os.path.dirname(__file__)
-            while not os.path.exists(os.path.join(mainpath, "lcmodel")): mainpath = os.path.dirname(mainpath)
-            outputdir = os.path.join(mainpath, "output")
+            self.button_processing.SetLabel("Running LCModel...")
+            outputdir = os.path.join(self.rootPath, "output")
             controlfile = os.path.join(outputdir, "control")
             params = {
                 "FILBAS": "../lcmodel/7T_SIM_STEAM_TE4p5_TM25_mod.BASIS",
@@ -122,21 +128,21 @@ def processPipeline(self):
                 "PGNORM": "US"
             }
             if os.path.exists(outputdir):
-                shutil.rmtree(outputdir) # delete output folder
+                shutil.rmtree(outputdir) # delete output folder content
             suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to output folder
 
-            lcmodelfile = os.path.join(mainpath, "lcmodel", "lcmodel") # linux exe
+            lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
             if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
             print("Looking for executable here: ", lcmodelfile)
             if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
-                zippath = os.path.join(mainpath, "lcmodel", "lcmodel.zip")
+                zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
                 if not os.path.exists(zippath):
                     print("lcmodel executable or zip not found")
                     pass
                 print("lcmodel executable not found, extracting from zip here: ", zippath)
                 with zipfile.ZipFile(zippath, "r") as zip_ref:
-                    zip_ref.extractall(os.path.join(mainpath, "lcmodel"))
+                    zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
             if os.name == 'nt': command = f"""mkdir {outputdir} & copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
             else: command = f"""mkdir {outputdir} && cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
@@ -144,9 +150,11 @@ def processPipeline(self):
             os.system(command)
 
             self.button_processing.Enable()
+            self.button_processing.SetLabel("Next")
             while not self.next: time.sleep(0.1)
-            self.processing = False
-            self.next = False
-            self.button_processing.SetLabel("Start Processing")
             self.read_file(None, os.path.join(outputdir, "result.coord"))
-            return
+
+        self.processing = False
+        self.next = False
+        self.button_processing.SetLabel("Start Processing")
+        return

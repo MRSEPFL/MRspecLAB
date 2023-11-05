@@ -21,7 +21,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def __init__(self, *args, **kwds):
         wxglade_out.MyFrame.__init__(self, *args, **kwds)
-        processing_files = glob.glob(os.path.join(os.path.dirname(__file__), os.pardir, "processing", "*.py"))
+
+        self.rootPath = os.path.dirname(__file__)
+        while not os.path.exists(os.path.join(self.rootPath, "lcmodel")): self.rootPath = os.path.dirname(self.rootPath)
+        processing_files = glob.glob(os.path.join(self.rootPath, "processing", "*.py"))
         self.processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
@@ -34,16 +37,18 @@ class MyFrame(wxglade_out.MyFrame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
         self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
 
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
+        self.fast_processing = False
         self.next = False
         self.show_editor = True
         self.steps = []
         sys.stdout = self.consoltext
+        self.on_toggle_editor(None)
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
@@ -64,7 +69,7 @@ class MyFrame(wxglade_out.MyFrame):
             self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
             self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
-        event.Skip()
+        if event is not None: event.Skip()
 
     def import_to_list(self, wildcard):
         fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=os.path.dirname(os.path.dirname(__file__)), style=wx.FD_OPEN | wx.FD_MULTIPLE)
@@ -134,7 +139,6 @@ class MyFrame(wxglade_out.MyFrame):
                 self.steps.append(self.processing_steps[step]())
             self.processing = True
             self.next = False
-            self.button_processing.SetLabel("Next")
             thread = threading.Thread(target=self.processPipeline, args=())
             thread.start()
         else:
