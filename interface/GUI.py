@@ -125,23 +125,16 @@ class MyFrame(wxglade_out.MyFrame):
             self.steps.pop(selected_item)
             
     def OnPlotClick(self, event):
-        if not self.steps:
+        if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
             self.consoltext.AppendText("Need to process the data before plotting the results\n")
-
-        else:
-            selected_item_index = self.list_ctrl.GetFirstSelected()
-            if not self.steps[selected_item_index].outputData:
-                self.consoltext.AppendText("The step has not been performed yet\n")
-                
-            else:
-                self.matplotlib_canvas.clear()
-                self.steps[selected_item_index].plot(self.matplotlib_canvas)
-                
-                # while not self.next: time.sleep(0.1)
-                # self.next = False
-
-
-        print("not implemented")
+            return
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if len(self.dataSteps) < selected_item_index + 2: # for step 1 (index 0), we should have a length of 2 (original and result of step 1)
+            self.consoltext.AppendText("The step has not been performed yet\n")
+            return
+        self.matplotlib_canvas.clear()
+        plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
+        event.Skip()
     
 
         
