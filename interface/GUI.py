@@ -1,15 +1,12 @@
 import wx
 import os
-import time
 import glob
 import inspect
 import importlib.util
-import zipfile
-import shutil
 import threading
-import numpy as np
 import suspect
 import sys
+import pickle
 
 
 from . import wxglade_out
@@ -39,6 +36,10 @@ class MyFrame(wxglade_out.MyFrame):
         
         # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
         self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+        self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        # self.processing_steps = dict of the definitions of all processing steps
+        # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
+        # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
 
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
@@ -46,7 +47,6 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = False
         self.next = False
         self.show_editor = True
-        self.steps = []
         sys.stdout = self.consoltext
         self.on_toggle_editor(None)
 
@@ -58,6 +58,41 @@ class MyFrame(wxglade_out.MyFrame):
         self.import_to_list("coord files (*.coord)|*.coord")
         event.Skip()
     
+    def on_save_pipeline(self, event):
+        if self.steps == []:
+            print("No pipeline to save")
+            return
+        fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPath()
+        if filepath == "":
+            print(f"File not found")
+            return
+        tosave = [(step.__class__.__name__, step.parameters) for step in self.steps]
+        with open(filepath, 'wb') as f:
+            pickle.dump(tosave, f)
+        event.Skip()
+
+    def on_load_pipeline(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_OPEN)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPath()
+        if filepath == "" or not os.path.exists(filepath):
+            print("File not found")
+            return
+        with open(filepath, 'rb') as f:
+            toload = pickle.load(f)
+        self.list_ctrl.DeleteAllItems()
+        self.pipeline = []
+        self.steps = []
+        for data in toload:
+            self.list_ctrl.Append([data[0]])
+            self.pipeline = [data[0]]
+            self.steps.append(self.processing_steps[data[0]]())
+            self.steps[-1].parameters = data[1]
+        self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
+        event.Skip()
+
     def on_toggle_editor(self, event):
         self.show_editor = not self.show_editor
         if self.show_editor:
@@ -72,7 +107,7 @@ class MyFrame(wxglade_out.MyFrame):
         if event is not None: event.Skip()
 
     def import_to_list(self, wildcard):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=os.path.dirname(os.path.dirname(__file__)), style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepaths = fileDialog.GetPaths()
         files = []
@@ -86,6 +121,8 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item = self.list_ctrl.GetFirstSelected()
         if selected_item >= 0:
             self.list_ctrl.DeleteItem(selected_item)
+            self.pipeline.pop(selected_item)
+            self.steps.pop(selected_item)
             
     def OnPlotClick(self, event):
         if not self.steps:
@@ -124,19 +161,13 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item_index = self.list_ctrl.GetFirstSelected()
         if selected_item_index >= 0:
             self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+            self.pipeline.insert(selected_item_index+1, new_item_text)
+            self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
         
 
     def on_button_processing(self, event):
         if not self.processing:
-    
-            self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-            self.steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
-            for step in self.pipeline:
-                if step not in self.processing_steps.keys():
-                    print(f"Processing step {step} not found")
-                    continue
-                self.steps.append(self.processing_steps[step]())
             self.processing = True
             self.next = False
             thread = threading.Thread(target=self.processPipeline, args=())

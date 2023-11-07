@@ -2,3 +2,4 @@ __pycache__/
 output/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
+*.pipe

@@ -71,14 +71,22 @@ class MyFrame(wx.Frame):
         menuBar = wx.MenuBar()
         menuBar.Append(fileMenu, "&File")
         menuBar.Append(viewMenu, "&View")
-
         self.SetMenuBar(menuBar)
+
         open_ima = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .IMA", "Open .IMA files")
         open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .coord", "Open .coord file")
+        load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
+        save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
         fileMenu.Append(open_ima)
         fileMenu.Append(open_coord)
+        fileMenu.AppendSeparator()
+        fileMenu.Append(load_pipeline)
+        fileMenu.Append(save_pipeline)
         self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
+        self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
+        self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
+        
         self.toggle_editor = wx.MenuItem(viewMenu, wx.ID_ANY, "&Hide Editor", "Toggle Editor")
         viewMenu.Append(self.toggle_editor)
         self.Bind(wx.EVT_MENU, self.on_toggle_editor, self.toggle_editor)
@@ -175,8 +183,9 @@ class MyFrame(wx.Frame):
         self.list_ctrl.InsertItem(0, "ZeroPadding")
         self.list_ctrl.InsertItem(1, "LineBroadening")
         self.list_ctrl.InsertItem(2, "FreqPhaseAlignment")
-        self.list_ctrl.InsertItem(3, "RemoveBadAverages")
-        self.list_ctrl.InsertItem(4, "Average")
+        self.list_ctrl.InsertItem(3, "EddyCurrentCorrection")
+        self.list_ctrl.InsertItem(4, "RemoveBadAverages")
+        self.list_ctrl.InsertItem(5, "Average")
 
         
         self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
