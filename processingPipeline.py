@@ -12,7 +12,7 @@ from suspect import MRSData
 def processPipeline(self):
         filepaths = []
         for f in self.dt.dropped_file_paths:
-            if f.lower().endswith(".ima") or f.lower().endswith(".dcm"):
+            if not f.lower().endswith(".coord"):
                 filepaths.append(f)
         if len(filepaths) == 0:
             print("No files found")
@@ -30,14 +30,32 @@ def processPipeline(self):
         originalWref = None
         for i in range(len(filepaths)):
             try:
-                data = suspect.io.load_siemens_dicom(filepaths[i])
+                if filepaths[i].lower().endswith((".ima", ".dcm")):
+                    data = suspect.io.load_siemens_dicom(filepaths[i])
+                elif filepaths[i].lower().endswith(".dat"):
+                    data = suspect.io.load_twix(filepaths[i])
+                    print(data.shape)
+                    data = suspect.processing.channel_combination.combine_channels(data) # very temporary
+                    print(data.shape)
+                else:
+                    print("Unsupported file format: " + filepaths[i])
+                    continue
+
                 if i == wrefindex:
                     originalWref = data
                     print("Water reference loaded:" + filepaths[i])
+                elif len(data.shape) > 1:
+                    for d in data:
+                        originalData.append(data.inherit(d))
                 else:
                     originalData.append(data)
-            except: print("Error loading dicom file: " + filepaths[i])
-        print(len(originalData), "dicoms loaded")
+            except: print("Error loading file: " + filepaths[i])
+        if len(originalData) == 0:
+            print("No files loaded")
+            self.button_processing.SetLabel("Start Processing")
+            self.processing = False
+            return
+        print(len(originalData), " files loaded")
 
         ##### PROCESSING #####
         def plotWorker(step, dataDict): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel

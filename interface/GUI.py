@@ -40,7 +40,7 @@ class MyFrame(wxglade_out.MyFrame):
         # self.processing_steps = dict of the definitions of all processing steps
         # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
         # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
-
+        self.supported_files = ["ima", "dcm", "dat", "coord"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
@@ -52,6 +52,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
+        event.Skip()
+
+    def on_read_twix(self, event):
+        self.import_to_list("TWIX files (*.dat)|*.dat")
         event.Skip()
 
     def on_read_coord(self, event):
@@ -115,6 +119,13 @@ class MyFrame(wxglade_out.MyFrame):
             if filepath == "" or not os.path.exists(filepath):
                 print(f"File not found:\n\t{filepath}")
             else: files.append(filepath)
+        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
+        if not all([f.endswith(ext) for f in filepaths]):
+            print("Inconsistent file types")
+            return False
+        if ext.lower().strip() not in self.supported_files:
+            print("Invalid file type")
+            return False
         self.dt.OnDropFiles(None, None, files)
         
     def OnDeleteClick(self, event):
