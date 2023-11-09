@@ -3,3 +3,4 @@ output/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
+*.png
