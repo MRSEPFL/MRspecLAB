@@ -198,8 +198,8 @@ class MyFrame(wx.Frame):
         self.list_ctrl.InsertItem(5, "Average")
 
         
-        self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
-        self.pipelineparameters.SetBackgroundColour(wx.Colour(200, 200, 200))  # Set the background color to black
+        # self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        # self.pipelineparameters.SetBackgroundColour(wx.Colour(200, 200, 200))  
         
         self.context_menu_pipeline = wx.Menu()
         self.context_menu_pipeline.Append(1, "Delete step")
@@ -211,13 +211,14 @@ class MyFrame(wx.Frame):
 
         self.list_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.OnRightClickList)
 
-        
+        self.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnListItemSelected)
+
         # self.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
 
         
         self.pipelineSizer.Add(self.list_ctrl, 0, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.pipelineparameters, 1, wx.EXPAND, 0)
+        # self.pipelineSizer.Add(self.pipelineparameters, 1, wx.EXPAND, 0)
 
         
         

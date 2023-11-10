@@ -1,9 +1,28 @@
 import ProcessingStep as ps
 import numpy as np
+import parameter_changes_GUI
 
 class LineBroadening(ps.ProcessingStep):
-    def __init__(self):
+    def __init__(self,parentpanel):
         super().__init__({"factor": 5})
+        self.panelparameters = parameter_changes_GUI.CustomPanel(
+            parentpanel,
+            "Frequency Phase Alignement",
+            [
+                (
+                    parameter_changes_GUI.NumericalParameterPanel,
+                    self.parameters,
+                    "factor",
+                    "",
+                    5,
+                    1,
+                    10,
+                    1,
+                    "",
+                )
+                
+            ],
+        )
         self.plotSpectrum = False
 
     def process(self, data):

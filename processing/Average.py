@@ -1,9 +1,11 @@
 import ProcessingStep as ps
 import numpy as np
-
+import parameter_changes_GUI
+import wx
 class Average(ps.ProcessingStep):
-    def __init__(self):
+    def __init__(self,parentpanel):
         super().__init__()
+        self.panelparameters=wx.Panel()
         self.plotSpectrum = False # use plot() from ProcessingStep.py
 
     def process(self, data):
