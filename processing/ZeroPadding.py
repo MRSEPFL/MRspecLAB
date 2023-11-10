@@ -12,4 +12,4 @@ class ZeroPadding(ps.ProcessingStep):
         for d in data["input"]:
             padding = np.zeros(int((np.floor(len(d) * self.parameters["factor"]))))
             output.append(d.inherit(np.concatenate((d, padding), axis=None)))
-        return output
+        data["output"] = output

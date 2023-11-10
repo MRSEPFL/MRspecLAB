@@ -49,28 +49,35 @@ class FreqPhaseAlignment(ps.ProcessingStep):
             self.freqShifts.append(freqShift)
             self.phaseShifts.append(phaseShift)
             output.append(data["original"][i].adjust_frequency(-freqShift).adjust_phase(-phaseShift))
-        return output
+        data["output"] = output
 
     def plot(self, canvas, data):
         canvas.figure.suptitle(self.__class__.__name__)
-        ax = canvas.figure.add_subplot(2, 2, 1)
+        ax = canvas.figure.add_subplot(2, 6, (1, 3))
         for d in data["input"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Frequency (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
-        ax = canvas.figure.add_subplot(2, 2, 2)
+        ax = canvas.figure.add_subplot(2, 6, (4, 6))
         for d in data["output"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Frequency (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
-        ax = canvas.figure.add_subplot(2, 2, 3)
+        ax = canvas.figure.add_subplot(2, 6, (7, 8))
+        for i, d in enumerate(data["input"]):
+            d = d.adjust_frequency(-self.freqShifts[i]).adjust_phase(-self.phaseShifts[i])
+            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+        ax.set_xlabel('Frequency (ppm)')
+        ax.set_ylabel('Amplitude')
+        ax.set_title("Aligned Input")
+        ax = canvas.figure.add_subplot(2, 6, (9, 10))
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Frequency shift (Hz)')
         ax.set_title("Frequency shifts")
-        ax = canvas.figure.add_subplot(2, 2, 4)
+        ax = canvas.figure.add_subplot(2, 6, (11, 12))
         ax.plot(self.phaseShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Phase shift (rad)')

@@ -12,14 +12,13 @@ from suspect import MRSData
 def processPipeline(self):
         filepaths = []
         for f in self.dt.dropped_file_paths:
-            if f.lower().endswith(".ima") or f.lower().endswith(".dcm"):
+            if not f.lower().endswith(".coord"):
                 filepaths.append(f)
         if len(filepaths) == 0:
             print("No files found")
             self.button_processing.SetLabel("Start Processing")
             self.processing = False
             return
-            # print("Files found: " + ", ".join(filepaths))
 
         if not self.dt.wrefindex:
             wrefindex = None
@@ -28,37 +27,37 @@ def processPipeline(self):
             wrefindex = self.dt.wrefindex
 
         originalData = []
-        wref = None
+        originalWref = None
         for i in range(len(filepaths)):
             try:
-                data = suspect.io.load_siemens_dicom(filepaths[i])
+                if filepaths[i].lower().endswith((".ima", ".dcm")):
+                    data = suspect.io.load_siemens_dicom(filepaths[i])
+                elif filepaths[i].lower().endswith(".dat"):
+                    data = suspect.io.load_twix(filepaths[i])
+                    print(data.shape)
+                    data = suspect.processing.channel_combination.combine_channels(data) # very temporary
+                    print(data.shape)
+                else:
+                    print("Unsupported file format: " + filepaths[i])
+                    continue
+
                 if i == wrefindex:
-                    wref = data
+                    originalWref = data
                     print("Water reference loaded:" + filepaths[i])
+                elif len(data.shape) > 1:
+                    for d in data:
+                        originalData.append(data.inherit(d))
                 else:
                     originalData.append(data)
-            except: print("Error loading dicom file: " + filepaths[i])
-    	
-        print(len(originalData), "dicoms loaded")
-
-        # cols = 8
-        # fig, axs = plt.subplots(int(np.ceil(len(dicoms)/cols)), cols, figsize=(8, 8))
-        # fig.suptitle('Dicoms')
-        # for i, d in enumerate(dicoms):
-        #     axs[i//cols, i%cols].plot(d.time_axis(), np.absolute(d))
-        #     axs[i//cols, i%cols].set_title(f"Dicom {i+1}")
-        #     axs[i//cols, i%cols].set_xlabel('Time (s)')
-        #     axs[i//cols, i%cols].set_ylabel('Signal Intensity')
-        # plt.show()
+            except: print("Error loading file: " + filepaths[i])
+        if len(originalData) == 0:
+            print("No files loaded")
+            self.button_processing.SetLabel("Start Processing")
+            self.processing = False
+            return
+        print(len(originalData), " files loaded")
 
         ##### PROCESSING #####
-        steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
-        for step in self.pipeline:
-            if step not in self.processing_steps.keys():
-                print(f"Processing step {step} not found")
-                continue
-            steps.append(self.processing_steps[step]())
-        
         def plotWorker(step, dataDict): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
             self.matplotlib_canvas.clear()
             step.plot(self.matplotlib_canvas, dataDict)
@@ -67,31 +66,54 @@ def processPipeline(self):
         plotThread = None
 
         self.dataSteps: list[MRSData] = [originalData]
+        self.wrefSteps: list[MRSData] = [originalWref]
+        last_wref = None
+
         for step in self.steps:
+            if originalWref is not None:
+                for w in reversed(self.wrefSteps): # find the first non-None wref
+                    if w is not None:
+                        last_wref = w
+                        break
             dataDict = {
                 "input": self.dataSteps[-1],
+                "wref": last_wref,
                 "original": self.dataSteps[0],
-                "wref": wref,
-                "output": None
+                "wref_original": self.wrefSteps[0],
+                "output": None,
+                "wref_output": None
             }
-            dataDict["output"] = step.process(dataDict)
+            self.button_processing.Disable()
+            self.button_processing.SetLabel("Running " + step.__class__.__name__ + "...")
+            print("Processing step: ", step.__class__.__name__)
+            step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
-            if plotThread is not None: plotThread.join() # wait for previous plot to finish
-            plotThread = threading.Thread(target=plotWorker, args=(step, dataDict,)) # plot in a separate thread so we can continue processing
-            plotThread.start()
+            self.wrefSteps.append(dataDict["wref_output"]) # might append None; we need this to keep a history of steps while saving memory
+            if not self.fast_processing: # wait for button press, show plot
+                self.button_processing.Enable()
+                self.button_processing.SetLabel("Next")
+                if plotThread is not None: plotThread.join() # wait for previous plot to finish
+                plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict),)) # copy dataDict since it will be immediately modified by the next step
+                plotThread.start()
+
         if plotThread is not None: plotThread.join() # wait for last plot to finish
-        
+        self.button_processing.Enable()
         result = self.dataSteps[-1]
+        wresult = None
+        if originalWref is not None:
+            for w in reversed(self.wrefSteps): # find the first non-None wref
+                if w is not None:
+                    wresult = w
+                    break
         if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
         else: result = result[0].inherit(np.mean(result, axis=0))
         plot_ima(result, self.matplotlib_canvas)
 
         ##### ANALYSIS #####
-        if wref is not None:
+        if wresult is not None:
             self.button_processing.Disable()
-            mainpath = os.path.dirname(__file__)
-            while not os.path.exists(os.path.join(mainpath, "lcmodel")): mainpath = os.path.dirname(mainpath)
-            outputdir = os.path.join(mainpath, "output")
+            self.button_processing.SetLabel("Running LCModel...")
+            outputdir = os.path.join(self.rootPath, "output")
             controlfile = os.path.join(outputdir, "control")
             params = {
                 "FILBAS": "../lcmodel/7T_SIM_STEAM_TE4p5_TM25_mod.BASIS",
@@ -124,21 +146,21 @@ def processPipeline(self):
                 "PGNORM": "US"
             }
             if os.path.exists(outputdir):
-                shutil.rmtree(outputdir) # delete output folder
-            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wref, params=params) # write raw, h2o, control files to output folder
+                shutil.rmtree(outputdir) # delete output folder content
+            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to output folder
 
-            lcmodelfile = os.path.join(mainpath, "lcmodel", "lcmodel") # linux exe
+            lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
             if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
             print("Looking for executable here: ", lcmodelfile)
             if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
-                zippath = os.path.join(mainpath, "lcmodel", "lcmodel.zip")
+                zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
                 if not os.path.exists(zippath):
                     print("lcmodel executable or zip not found")
                     pass
                 print("lcmodel executable not found, extracting from zip here: ", zippath)
                 with zipfile.ZipFile(zippath, "r") as zip_ref:
-                    zip_ref.extractall(os.path.join(mainpath, "lcmodel"))
+                    zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
             if os.name == 'nt': command = f"""mkdir {outputdir} & copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
             else: command = f"""mkdir {outputdir} && cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
@@ -146,9 +168,11 @@ def processPipeline(self):
             os.system(command)
 
             self.button_processing.Enable()
+            self.button_processing.SetLabel("Next")
             while not self.next: time.sleep(0.1)
-            self.processing = False
-            self.next = False
-            self.button_processing.SetLabel("Start Processing")
             self.read_file(None, os.path.join(outputdir, "result.coord"))
-            return
+
+        self.processing = False
+        self.next = False
+        self.button_processing.SetLabel("Start Processing")
+        return

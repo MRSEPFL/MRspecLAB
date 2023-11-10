@@ -8,4 +8,4 @@ class Average(ps.ProcessingStep):
 
     def process(self, data):
         if len(data["input"]) == 1: return data["input"]
-        return [data["input"][0].inherit(np.mean(data["input"], axis=0))] # retrieve metadata; we want a list of MRSData objects
+        data["output"] = [ data["input"][0].inherit(np.mean(data["input"], axis=0)) ] # retrieve metadata; we want a list of MRSData objects

@@ -1,15 +1,12 @@
 import wx
 import os
-import time
 import glob
 import inspect
 import importlib.util
-import zipfile
-import shutil
 import threading
-import numpy as np
 import suspect
 import sys
+import pickle
 
 
 from . import wxglade_out
@@ -21,7 +18,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def __init__(self, *args, **kwds):
         wxglade_out.MyFrame.__init__(self, *args, **kwds)
-        processing_files = glob.glob(os.path.join(os.path.dirname(__file__), os.pardir, "processing", "*.py"))
+
+        self.rootPath = os.path.dirname(__file__)
+        while not os.path.exists(os.path.join(self.rootPath, "lcmodel")): self.rootPath = os.path.dirname(self.rootPath)
+        processing_files = glob.glob(os.path.join(self.rootPath, "processing", "*.py"))
         self.processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
@@ -34,26 +34,84 @@ class MyFrame(wxglade_out.MyFrame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
         self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-
+        self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        # self.processing_steps = dict of the definitions of all processing steps
+        # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
+        # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
+        self.supported_files = ["ima", "dcm", "dat", "coord"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.processing = False
+        self.fast_processing = False
         self.next = False
-        self.steps = []
+        self.show_editor = True
         sys.stdout = self.consoltext
+        self.on_toggle_editor(None)
 
     def on_read_ima(self, event):
         self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
+        event.Skip()
+
+    def on_read_twix(self, event):
+        self.import_to_list("TWIX files (*.dat)|*.dat")
         event.Skip()
 
     def on_read_coord(self, event):
         self.import_to_list("coord files (*.coord)|*.coord")
         event.Skip()
     
+    def on_save_pipeline(self, event):
+        if self.steps == []:
+            print("No pipeline to save")
+            return
+        fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPath()
+        if filepath == "":
+            print(f"File not found")
+            return
+        tosave = [(step.__class__.__name__, step.parameters) for step in self.steps]
+        with open(filepath, 'wb') as f:
+            pickle.dump(tosave, f)
+        event.Skip()
+
+    def on_load_pipeline(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_OPEN)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPath()
+        if filepath == "" or not os.path.exists(filepath):
+            print("File not found")
+            return
+        with open(filepath, 'rb') as f:
+            toload = pickle.load(f)
+        self.list_ctrl.DeleteAllItems()
+        self.pipeline = []
+        self.steps = []
+        for data in toload:
+            self.list_ctrl.Append([data[0]])
+            self.pipeline = [data[0]]
+            self.steps.append(self.processing_steps[data[0]]())
+            self.steps[-1].parameters = data[1]
+        self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
+        event.Skip()
+
+    def on_toggle_editor(self, event):
+        self.show_editor = not self.show_editor
+        if self.show_editor:
+            self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
+            self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
+            self.toggle_editor.SetItemLabel("Hide Editor")
+        else:
+            self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
+            self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
+            self.toggle_editor.SetItemLabel("Show Editor")
+        self.Layout()
+        if event is not None: event.Skip()
+
     def import_to_list(self, wildcard):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=os.path.dirname(os.path.dirname(__file__)), style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepaths = fileDialog.GetPaths()
         files = []
@@ -61,31 +119,33 @@ class MyFrame(wxglade_out.MyFrame):
             if filepath == "" or not os.path.exists(filepath):
                 print(f"File not found:\n\t{filepath}")
             else: files.append(filepath)
+        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
+        if not all([f.endswith(ext) for f in filepaths]):
+            print("Inconsistent file types")
+            return False
+        if ext.lower().strip() not in self.supported_files:
+            print("Invalid file type")
+            return False
         self.dt.OnDropFiles(None, None, files)
         
     def OnDeleteClick(self, event):
         selected_item = self.list_ctrl.GetFirstSelected()
         if selected_item >= 0:
             self.list_ctrl.DeleteItem(selected_item)
+            self.pipeline.pop(selected_item)
+            self.steps.pop(selected_item)
             
     def OnPlotClick(self, event):
-        if not self.steps:
+        if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
             self.consoltext.AppendText("Need to process the data before plotting the results\n")
-
-        else:
-            selected_item_index = self.list_ctrl.GetFirstSelected()
-            if not self.steps[selected_item_index].outputData:
-                self.consoltext.AppendText("The step has not been performed yet\n")
-                
-            else:
-                self.matplotlib_canvas.clear()
-                self.steps[selected_item_index].plot(self.matplotlib_canvas)
-                
-                # while not self.next: time.sleep(0.1)
-                # self.next = False
-
-
-        print("not implemented")
+            return
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if len(self.dataSteps) < selected_item_index + 2: # for step 1 (index 0), we should have a length of 2 (original and result of step 1)
+            self.consoltext.AppendText("The step has not been performed yet\n")
+            return
+        self.matplotlib_canvas.clear()
+        plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
+        event.Skip()
     
 
         
@@ -105,22 +165,15 @@ class MyFrame(wxglade_out.MyFrame):
         selected_item_index = self.list_ctrl.GetFirstSelected()
         if selected_item_index >= 0:
             self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+            self.pipeline.insert(selected_item_index+1, new_item_text)
+            self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
         
 
     def on_button_processing(self, event):
         if not self.processing:
-    
-            self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-            self.steps = [] # instantiate the processing steps to keep their parameters, processedData etc.
-            for step in self.pipeline:
-                if step not in self.processing_steps.keys():
-                    print(f"Processing step {step} not found")
-                    continue
-                self.steps.append(self.processing_steps[step]())
             self.processing = True
             self.next = False
-            self.button_processing.SetLabel("Next")
             thread = threading.Thread(target=self.processPipeline, args=())
             thread.start()
         else:

@@ -2,6 +2,7 @@ import wx
 import os
 # import matplotlib_canvas
 from . import matplotlib_canvas  # Use a relative import to import wxglade_out
+from . import DragList
 
 
 class FileDrop(wx.FileDropTarget):
@@ -17,13 +18,6 @@ class FileDrop(wx.FileDropTarget):
         if len(filenames) == 0:
             self.clear_button.Disable()
             self.water_ref_button.Disable()
-            return False
-        ext = filenames[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
-        if not all([f.endswith(ext) for f in filenames]):
-            print("Inconsistent file types")
-            return False
-        if ext.lower() != "coord" and ext.lower().strip() != "ima":
-            print("Invalid file type")
             return False
         self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0])
         self.list.Set([f.rsplit(os.path.sep, 1)[1] for f in filenames])
@@ -71,14 +65,28 @@ class MyFrame(wx.Frame):
         menuBar = wx.MenuBar()
         menuBar.Append(fileMenu, "&File")
         menuBar.Append(viewMenu, "&View")
-
         self.SetMenuBar(menuBar)
-        open_ima = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .IMA", "Open .IMA files")
-        open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open .coord", "Open .coord file")
+
+        open_ima = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open DICOM files (.ima, .dcm)", "Open .ima or .dcm files")
+        open_twix = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open Twix files (.dat)", "Open .dat files")
+        open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open COORD file", "Open .coord file")
+        load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
+        save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
         fileMenu.Append(open_ima)
+        fileMenu.Append(open_twix)
         fileMenu.Append(open_coord)
+        fileMenu.AppendSeparator()
+        fileMenu.Append(load_pipeline)
+        fileMenu.Append(save_pipeline)
         self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
+        self.Bind(wx.EVT_MENU, self.on_read_twix, open_twix)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
+        self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
+        self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
+
+        self.toggle_editor = wx.MenuItem(viewMenu, wx.ID_ANY, "&Hide Editor", "Toggle Editor")
+        viewMenu.Append(self.toggle_editor)
+        self.Bind(wx.EVT_MENU, self.on_toggle_editor, self.toggle_editor)
         
         
 
@@ -108,23 +116,36 @@ class MyFrame(wx.Frame):
         self.notebook_1 = wx.Notebook(self.leftSplitter, wx.ID_ANY, style=wx.NB_BOTTOM)
         self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
         self.notebook_1.AddPage(self.notebook_1_pane_1, "Import Data Steps")
-        self.notebook_1_pane_2 = wx.Panel(self.notebook_1, wx.ID_ANY)
+        self.notebook_1_pane_2 = wx.ScrolledWindow(self.notebook_1, wx.ID_ANY)
+
         self.notebook_1.AddPage(self.notebook_1_pane_2, "Quality Control Steps")
         
 
+        self.notebook_1_pane_2.SetScrollRate(10, 10)  # Set scroll rate (adjust as needed)
+        
         available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
-        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages","Average"]
-        
-        for label in available_icon_labels:
-            icon_label = wx.StaticText(self.notebook_1_pane_2 , label=label, style=wx.ALIGN_CENTER)
-            icon_label.SetBackgroundColour(wx.Colour(100, 100, 100))
-            icon_label.SetForegroundColour(wx.Colour(250, 250, 250))
+        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
 
-            icon_label.Bind(wx.EVT_LEFT_DOWN, self.OnAddStep)
-            available_icons_sizer.Add(icon_label, 1, wx.ALL | wx.EXPAND, 5)
-        
-        self.notebook_1_pane_2 .SetSizer(available_icons_sizer)
-        
+        for label in available_icon_labels:
+            # Create a button with the specified label
+            icon_button = wx.Button(self.notebook_1_pane_2, label=label)
+            
+            # Set the fixed size for the button (e.g., 100x100 pixels)
+            icon_button.SetMinSize((120, 100))
+
+            # Set the background and foreground colors for the button
+            # icon_button.SetBackgroundColour(wx.Colour(100, 100, 100))
+            # icon_button.SetForegroundColour(wx.Colour(250, 250, 250))
+            icon_button.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
+            # Bind the event for the button (if needed)
+            icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
+
+            # Add the button to the sizer with wx.ALIGN_CENTER_HORIZONTAL flag
+            available_icons_sizer.Add(icon_button, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+
+        self.notebook_1_pane_2.SetSizer(available_icons_sizer)
+
         
         
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
@@ -166,14 +187,15 @@ class MyFrame(wx.Frame):
         self.pipelineSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.pipelinePanel.SetSizer(self.pipelineSizer)
         
-        self.list_ctrl = wx.ListCtrl(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
+        self.list_ctrl = DragList.MyDragList(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
         self.list_ctrl.InsertColumn(0, "Pipeline Steps", width = 100)
 
         self.list_ctrl.InsertItem(0, "ZeroPadding")
         self.list_ctrl.InsertItem(1, "LineBroadening")
         self.list_ctrl.InsertItem(2, "FreqPhaseAlignment")
-        self.list_ctrl.InsertItem(3, "RemoveBadAverages")
-        self.list_ctrl.InsertItem(4, "Average")
+        self.list_ctrl.InsertItem(3, "EddyCurrentCorrection")
+        self.list_ctrl.InsertItem(4, "RemoveBadAverages")
+        self.list_ctrl.InsertItem(5, "Average")
 
         
         self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)

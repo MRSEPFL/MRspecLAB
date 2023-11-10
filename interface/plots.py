@@ -11,19 +11,22 @@ def plot_ima(data, canvas, title=None):
             print(f"File not found:\n\t{filepath}")
             return
         data = suspect.io.load_siemens_dicom(filepath)
-        title = filepath
-    elif not isinstance(data, MRSData):
+        if title is None: title = filepath
+    elif isinstance(data, MRSData):
+        data = [data]
+    elif not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):
         print("Invalid data type")
         return
-    
     if title is None: title = "Result"
     canvas.clear()
     ax = canvas.figure.add_subplot(2, 1, 1)
-    ax.plot(data.time_axis(), np.absolute(data))
+    for d in data:
+        ax.plot(d.time_axis(), np.absolute(d))
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Signal Intensity')
     ax = canvas.figure.add_subplot(2, 1, 2)
-    ax.plot(data.frequency_axis_ppm(), np.real(data.spectrum()))
+    for d in data:
+        ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
     ax.set_xlabel('Frequency (ppm)')
     ax.set_ylabel('Amplitude')
     canvas.figure.suptitle(title)
