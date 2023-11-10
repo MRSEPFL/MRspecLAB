@@ -1,9 +1,30 @@
 import ProcessingStep as ps
 import numpy as np
+import parameter_changes_GUI
 
 class ZeroPadding(ps.ProcessingStep):
-    def __init__(self):
+    def __init__(self,parentpanel):
         super().__init__({"factor": 3})
+        self.panelparameters = parameter_changes_GUI.CustomPanel(
+            parentpanel,
+            "Frequency Phase Alignement",
+            [
+                (
+                    parameter_changes_GUI.NumericalParameterPanel,
+                    self.parameters,
+                    "factor",
+                    "",
+                    3,
+                    1,
+                    10,
+                    1,
+                    "",
+                )
+                
+            ],
+        )
+        
+        
         self.plotSpectrum = False
 
     def process(self, data):

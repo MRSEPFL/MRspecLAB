@@ -88,7 +88,7 @@ class RangeSlider(wx.Panel):
 
 
 class NumericalParameterPanel(wx.Panel):
-    def __init__(self, parent, name, value_name, initial_value,min_value,max_value,step_value=1.0,unit_name=""):
+    def __init__(self, parent,parameters_dict, name, value_name, initial_value,min_value,max_value,step_value=1.0,unit_name=""):
         #name: name of the parameter that will be displayed
         #value_name: name of the parameter in the backend
         #initial_value: default value of the parameter
