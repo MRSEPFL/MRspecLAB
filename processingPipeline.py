@@ -1,7 +1,6 @@
 import os
 import suspect
 import threading
-import time
 import shutil
 import zipfile
 import numpy as np
@@ -34,9 +33,7 @@ def processPipeline(self):
                     data = suspect.io.load_siemens_dicom(filepaths[i])
                 elif filepaths[i].lower().endswith(".dat"):
                     data = suspect.io.load_twix(filepaths[i])
-                    print(data.shape)
-                    data = suspect.processing.channel_combination.combine_channels(data) # very temporary
-                    print(data.shape)
+                    data = suspect.processing.channel_combination.combine_channels(data) # temporary?
                 else:
                     print("Unsupported file format: " + filepaths[i])
                     continue
@@ -56,20 +53,27 @@ def processPipeline(self):
             self.processing = False
             return
         print(len(originalData), " files loaded")
+        
+        plotPath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
+        if plotPath == "": plotPath = "plots"
+        plotPath = os.path.join(self.rootPath, plotPath)
+        if not os.path.exists(plotPath): os.makedirs(plotPath)
 
         ##### PROCESSING #####
-        def plotWorker(step, dataDict): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
+        def plotWorker(step, dataDict, nstep): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
             self.matplotlib_canvas.clear()
             step.plot(self.matplotlib_canvas, dataDict)
-            while not self.next: time.sleep(0.1)
-            self.next = False
+            filepath = os.path.join(plotPath, str(nstep) + step.__class__.__name__ + ".png")
+            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(12, 9), dpi=600)
         plotThread = None
 
         self.dataSteps: list[MRSData] = [originalData]
         self.wrefSteps: list[MRSData] = [originalWref]
         last_wref = None
 
+        nstep = 0
         for step in self.steps:
+            nstep += 1
             if originalWref is not None:
                 for w in reversed(self.wrefSteps): # find the first non-None wref
                     if w is not None:
@@ -89,15 +93,31 @@ def processPipeline(self):
             step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
             self.wrefSteps.append(dataDict["wref_output"]) # might append None; we need this to keep a history of steps while saving memory
-            if not self.fast_processing: # wait for button press, show plot
-                self.button_processing.Enable()
-                self.button_processing.SetLabel("Next")
-                if plotThread is not None: plotThread.join() # wait for previous plot to finish
-                plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict),)) # copy dataDict since it will be immediately modified by the next step
-                plotThread.start()
 
-        if plotThread is not None: plotThread.join() # wait for last plot to finish
-        self.button_processing.Enable()
+            if plotThread is not None and plotThread.is_alive(): # wait for previous plotting/saving to finish
+                self.button_processing.SetLabel("Waiting for plot of previous step...")
+                plotThread.join()
+            plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict), nstep)) # copy dataDict since it will be immediately modified by the next step
+            plotThread.start()
+            
+            if not self.fast_processing: self.waitforprocessingbutton("Next")
+
+        if plotThread is not None: plotThread.join() # wait for last step plot to finish
+
+        ##### SAVING PLOTS #####
+        self.button_processing.Disable()
+        self.button_processing.SetLabel("Saving plots...")
+        dataplotpath = os.path.join(plotPath, "dataplots")
+        if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
+        index = 0
+        for d in self.dataSteps: # save plots
+            plot_ima(d, self.matplotlib_canvas)
+            if index == 0: filepath = os.path.join(dataplotpath, "Original.png")
+            elif index-1 < len(self.steps): filepath = os.path.join(dataplotpath, str(index) + self.steps[index-1].__class__.__name__ + ".png")
+            else: filepath = os.path.join(dataplotpath, "Result.png")
+            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(10, 10), dpi=600)
+            index += 1
+
         result = self.dataSteps[-1]
         wresult = None
         if originalWref is not None:
@@ -107,7 +127,8 @@ def processPipeline(self):
                     break
         if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
         else: result = result[0].inherit(np.mean(result, axis=0))
-        plot_ima(result, self.matplotlib_canvas)
+
+        self.waitforprocessingbutton("Next")
 
         ##### ANALYSIS #####
         if wresult is not None:
@@ -167,12 +188,12 @@ def processPipeline(self):
             print(command)
             os.system(command)
 
-            self.button_processing.Enable()
-            self.button_processing.SetLabel("Next")
-            while not self.next: time.sleep(0.1)
             self.read_file(None, os.path.join(outputdir, "result.coord"))
+            filepath = os.path.join(plotPath, "lcmodel.png")
+            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(8, 8), dpi=600)
 
         self.processing = False
         self.next = False
         self.button_processing.SetLabel("Start Processing")
+        self.button_processing.Enable()
         return

@@ -7,7 +7,8 @@ import threading
 import suspect
 import sys
 import pickle
-
+import io
+import time
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
@@ -207,6 +208,22 @@ class MyFrame(wxglade_out.MyFrame):
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
         if event is not None: event.Skip()
 
+    def savefigure(self, figure, filepath, size=(10, 6), dpi=600):
+        # behold, the only way to copy a matplotlib figure (╯°□°）╯︵ ┻━┻
+        buf = io.BytesIO()
+        pickle.dump(figure, buf)
+        buf.seek(0)
+        figure = pickle.load(buf)
+        figure.set_size_inches(size[0], size[1])
+        figure.savefig(filepath, dpi=dpi)
+        figure.savefig(filepath)
+        print("Saved plot: ", filepath)
+
+    def waitforprocessingbutton(self, label):
+        self.button_processing.Enable()
+        self.button_processing.SetLabel(label)
+        while not self.next: time.sleep(0.1)
+        self.next = False
 
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
