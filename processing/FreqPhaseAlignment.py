@@ -5,13 +5,14 @@ import scipy
 
 class FreqPhaseAlignment(ps.ProcessingStep):
     def __init__(self):
-        super().__init__({"freqRange": (3., 3.2), "median": True, "target": 0})
-        self.alignFreq = True
-        self.alignPhase = True
+        super().__init__({"alignFreq": True, "alignPhase": False, "freqRange": (3., 3.2), "median": True, "target": 0})
     
     def process(self, data):
-        if not self.alignFreq and not self.alignPhase: return data["input"]
-        if not isinstance(self.parameters["freqRange"], tuple) or len(self.parameters["freqRange"]) != 2: freqRange = None
+        if not self.parameters["alignFreq"] and not self.parameters["alignPhase"]:
+            data["output"] = data["input"]
+            return
+        if not isinstance(self.parameters["freqRange"], tuple) or len(self.parameters["freqRange"]) != 2:
+            freqRange = None
         else:
             freqRange = [data["input"][0].ppm_to_hertz(f) for f in self.parameters["freqRange"]]
             freqRange.sort()
@@ -30,8 +31,8 @@ class FreqPhaseAlignment(ps.ProcessingStep):
 
             def residual(input_vector):
                 transformed_data = data["input"][i]
-                if self.alignFreq: transformed_data = transformed_data.adjust_frequency(-input_vector[0])
-                if self.alignPhase: transformed_data = transformed_data.adjust_phase(-input_vector[1])
+                if self.parameters["alignFreq"]: transformed_data = transformed_data.adjust_frequency(-input_vector[0])
+                if self.parameters["alignPhase"]: transformed_data = transformed_data.adjust_phase(-input_vector[1])
                 residual_data = transformed_data - target
                 if freqRange is not None:
                     spectrum = residual_data.spectrum()
@@ -55,23 +56,26 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         canvas.figure.suptitle(self.__class__.__name__)
         ax = canvas.figure.add_subplot(2, 6, (1, 3))
         for d in data["input"]:
-            ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
+        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         ax = canvas.figure.add_subplot(2, 6, (4, 6))
         for d in data["output"]:
-            ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
+        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         ax = canvas.figure.add_subplot(2, 6, (7, 8))
         for i, d in enumerate(data["input"]):
             d = d.adjust_frequency(-self.freqShifts[i]).adjust_phase(-self.phaseShifts[i])
-            ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Aligned Input")
+        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         ax = canvas.figure.add_subplot(2, 6, (9, 10))
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')
