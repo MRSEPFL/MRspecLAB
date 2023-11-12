@@ -26,8 +26,8 @@ def plot_ima(data, canvas, title=None):
     ax.set_ylabel('Signal Intensity')
     ax = canvas.figure.add_subplot(2, 1, 2)
     for d in data:
-        ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
-    ax.set_xlabel('Frequency (ppm)')
+        ax.plot(d.frequency_axis_ppm()[::-1], np.real(d.spectrum()))
+    ax.set_xlabel('Chemical shift (ppm)')
     ax.set_ylabel('Amplitude')
     canvas.figure.suptitle(title)
     canvas.figure.tight_layout()

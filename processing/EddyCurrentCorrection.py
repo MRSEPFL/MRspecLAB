@@ -35,23 +35,23 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         if data["wref"] is None:
             ax = canvas.figure.add_subplot(1, 1, 1)
             for d in data["output"]:
-                ax.plot(d.frequency_axis_ppm(), d.spectrum())
-            ax.set_xlabel('Frequency (ppm)')
+                ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+            ax.set_xlabel('Chemical shift (ppm)')
             ax.set_ylabel('Amplitude')
             ax.set_title("Output (no water reference given)")
             return
         # input
         ax = canvas.figure.add_subplot(2, 2, 1)
         for d in data["input"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
-        ax.set_xlabel('Frequency (ppm)')
+            ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+        ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
         # output
         ax = canvas.figure.add_subplot(2, 2, 2)
         for d in data["output"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
-        ax.set_xlabel('Frequency (ppm)')
+            ax.plot(d.frequency_axis_ppm()[::-1], d.spectrum())
+        ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
         # water reference phase
@@ -68,11 +68,11 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         fwhm = np.abs(2 * np.sqrt(2 * np.log(2)) * self.gaussparams[2])
         fwhmhz = data["wref_output"].ppm_to_hertz(fwhm)
         gauss = gaussian(data["wref_output"].frequency_axis_ppm(), *self.gaussparams)
-        ax.plot(data["wref"].frequency_axis_ppm(), data["wref"].spectrum(), "-k", label="original")
-        ax.plot(data["wref"].frequency_axis_ppm(), data["wref_output"].spectrum(), "-b", label="corrected")
-        ax.plot(data["wref"].frequency_axis_ppm(), gauss, ":r", label="gaussian fit")
+        ax.plot(data["wref"].frequency_axis_ppm()[::-1], data["wref"].spectrum(), "-k", label="original")
+        ax.plot(data["wref"].frequency_axis_ppm()[::-1], data["wref_output"].spectrum(), "-b", label="corrected")
+        ax.plot(data["wref"].frequency_axis_ppm()[::-1], gauss, ":r", label="gaussian fit")
         ax.text(self.gaussparams[1], self.gaussparams[0] / 2, f"FWHM = {fwhm:.2f} ppm / {fwhmhz:.2f} Hz", ha="center", va="center")
-        ax.set_xlabel('Frequency (ppm)')
+        ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.legend()
         ax.set_xlim(self.gaussparams[1] - 5 * self.gaussparams[2], self.gaussparams[1] + 5 * self.gaussparams[2])
