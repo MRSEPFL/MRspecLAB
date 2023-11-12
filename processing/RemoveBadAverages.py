@@ -1,42 +1,9 @@
 import ProcessingStep as ps
 import numpy as np
-import parameter_changes_GUI
 
 class RemoveBadAverages(ps.ProcessingStep):
-    def __init__(self,parentpanel):
+    def __init__(self):
         super().__init__({"stdDevThreshold": 3, "domain": "time", "tmax": 0.4})
-        self.panelparameters = parameter_changes_GUI.CustomPanel(
-            parentpanel,
-            "Frequency Phase Alignement",
-            [
-                (
-                    parameter_changes_GUI.NumericalParameterPanel,
-                    self.parameters,
-                    "stdDevThreshold",
-                    "",
-                    3,
-                    1,
-                    10,
-                    1,
-                    "",
-                ),
-                (
-                    parameter_changes_GUI.ChoiceParameterPanel,
-                    "domain",
-                    [("time"), ("frequency")],
-                    0,
-                ),
-                (
-                    parameter_changes_GUI.SpinDoubleValueParameterPanel, 
-                    "tmax", 
-                    0.4, 
-                    0,2
-                ),
-               
-                
-            ],
-        )   
-        
         self.plotSpectrum = False
 
     def process(self, data):

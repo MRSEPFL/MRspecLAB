@@ -3,39 +3,9 @@ import suspect
 import numpy as np
 import scipy
 
-import parameter_changes_GUI
-
 class FreqPhaseAlignment(ps.ProcessingStep):
-    def __init__(self,parentpanel):
+    def __init__(self):
         super().__init__({"freqRange": (3., 3.2), "median": True, "target": 0})
-        self.panelparameters = parameter_changes_GUI.CustomPanel(
-            parentpanel,
-            "Frequency Phase Alignement",
-            [
-                (
-                    parameter_changes_GUI.RangeParameterPanel,
-                    "Frequency range Alignement",
-                ),
-                (
-                    parameter_changes_GUI.BoolParameterPanel, 
-                    "Median", 
-                    "Median Active", 
-                    False
-                ),
-                (
-                    parameter_changes_GUI.NumericalParameterPanel,
-                    self.parameters,
-                    "target",
-                    "",
-                    1,
-                    1,
-                    64,
-                    1,
-                    "",
-                )
-                
-            ],
-        )
         self.alignFreq = True
         self.alignPhase = True
     

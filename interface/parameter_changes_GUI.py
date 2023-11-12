@@ -88,42 +88,52 @@ class RangeSlider(wx.Panel):
 
 
 class NumericalParameterPanel(wx.Panel):
-    def __init__(self, parent,parameters_dict, name, value_name, initial_value,min_value,max_value,step_value=1.0,unit_name=""):
+    def __init__(self, parent, name, value_name, initial_value,min_value,max_value,step_value=1.0,unit_name=""):
         #name: name of the parameter that will be displayed
         #value_name: name of the parameter in the backend
         #initial_value: default value of the parameter
         #min_value: minimum value of the parameter
         #max_value: maximum value of the parameter
         # step_value: incremental step of the slider
-        #unit_name: string of the name of the unit of the parameter(e.g. [Hz])
-
-        super().__init__(parent)
 
         self.min_value=min_value
         self.max_value=max_value
+        #unit_name: string of the name of the unit of the parameter(e.g. [Hz])
+        super().__init__(parent)
+        
+        # Create a vertical sizer for each parameter
         parameter_sizer = wx.BoxSizer(wx.VERTICAL)
         
+        # Create a static text for the parameter name
         parameter_name_label = wx.StaticText(self, label=name, style=wx.ALIGN_LEFT)
         parameter_sizer.Add(parameter_name_label, 0, wx.EXPAND | wx.ALL, 5)
+        
+        # Create a horizontal sizer for the value control
         value_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
+        # Create a TextControl to display and edit the parameter value
         self.value_textctrl = wx.TextCtrl(self, value=str(initial_value), style=wx.TE_PROCESS_ENTER)
         self.Bind(wx.EVT_TEXT_ENTER, self.OnTextEnter, self.value_textctrl)
         value_sizer.Add(self.value_textctrl, 1, wx.EXPAND | wx.ALL, 5)
         
-        # Create a static text for the unity label"[un]"
+        # Create a static text for "[un]"
         value_sizer.Add(wx.StaticText(self, label=unit_name, style=wx.ALIGN_LEFT), 0, wx.EXPAND | wx.ALL, 5)
         
+        # Create a vertical spacer
         value_sizer.AddSpacer(20)
         
+        # Create a slider to control the parameter value
         self.slider = wx.Slider(self, minValue=min_value, maxValue=max_value, value=initial_value)
-        self.slider.SetTickFreq(step_value)  
+        self.slider.SetTickFreq(step_value)  # Set the tick frequency to control the step
 
         self.Bind(wx.EVT_SLIDER, self.OnSliderChange, self.slider)
         value_sizer.Add(self.slider, 1, wx.EXPAND | wx.ALL, 5)
         
         parameter_sizer.Add(value_sizer, 0, wx.EXPAND)
+        
+        # Create a horizontal spacer
         parameter_sizer.AddSpacer(10)
+        
         self.SetSizerAndFit(parameter_sizer)
         
 
@@ -166,6 +176,7 @@ class BoolParameterPanel(wx.Panel):
         self.SetSizerAndFit(parameter_sizer)
 
     def OnToggleParameterActive(self, event):
+        # You can use self.parameter_active_button.GetValue() to get the state (True or False)
         parameter_active = self.parameter_active_button.GetValue()
         print("toggle active")
         
@@ -214,6 +225,7 @@ class SpinDoubleValueParameterPanel(wx.Panel):
         parameter_name_label = wx.StaticText(self, label=name, style=wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM)
         value_sizer.Add(parameter_name_label, 0, wx.EXPAND | wx.ALL, 5)
 
+        # Replace wx.Choice with wx.SpinControlDouble
         self.parameter_spin = wx.SpinCtrlDouble(self, initial=initial_value, min=min_value, max=max_value)
         self.parameter_spin.SetDigits(len(str(step_value).split('.')[1]) if '.' in str(step_value) else 0)  # Adjust the number of decimal places if needed
         self.parameter_spin.SetIncrement(step_value)  # Set the increment step if needed
@@ -244,6 +256,7 @@ class RangeParameterPanel(wx.Panel):
         parameter_name_label = wx.StaticText(self, label=name, style=wx.ALIGN_LEFT)
         parameter_sizer.Add(parameter_name_label, 0, wx.EXPAND | wx.ALL, 5)
 
+        # Create an instance of the RangeSlider class
         range_slider = RangeSlider(self, 0, 20, 2, 15, 0.1)
         parameter_sizer.Add(range_slider, 0, wx.EXPAND | wx.ALL, 5)  # Add the RangeSlider to the sizer
 
@@ -253,6 +266,7 @@ class CustomPanel(wx.Panel):
     def __init__(self, parent, panel_name, parameter_classes):
         super(CustomPanel, self).__init__(parent)
 
+        # Create a vertical sizer for the parameters
         parameter_sizer = wx.BoxSizer(wx.VERTICAL)
 
         parameter_label = wx.StaticText(self, label=panel_name)
@@ -261,10 +275,13 @@ class CustomPanel(wx.Panel):
         parameter_label.SetFont(font)
         parameter_label.SetWindowStyleFlag(wx.ALIGN_CENTER_HORIZONTAL)
 
+        # Add the StaticText widget to the first slot
         parameter_sizer.Add(parameter_label, 0, wx.EXPAND | wx.ALL, 10)
 
+        # Add a spacer to the second slot
         parameter_sizer.AddSpacer(10)
 
+        # Create parameter panels based on the provided classes and arguments
         for param_class, *args in parameter_classes:
             parameter_panel = param_class(self, *args)
             parameter_sizer.Add(parameter_panel, 0, wx.EXPAND | wx.ALL, 10)

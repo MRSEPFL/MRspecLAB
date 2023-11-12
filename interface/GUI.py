@@ -37,39 +37,7 @@ class MyFrame(wxglade_out.MyFrame):
         
         # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
         self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-        self.steps = [self.processing_steps[step](self.pipelinePanel) for step in self.pipeline]
-        
-        
-        self.steps[0].panelparameters.Hide()
-        self.steps[1].panelparameters.Hide()
-        self.steps[2].panelparameters.Hide()
-        self.steps[3].panelparameters.Hide()
-        self.steps[4].panelparameters.Hide()
-        self.steps[5].panelparameters.Hide()
-        
-        self.pipelineSizer.Add(self.steps[0].panelparameters, 1, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.steps[1].panelparameters, 1, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.steps[2].panelparameters, 1, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.steps[3].panelparameters, 1, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.steps[4].panelparameters, 1, wx.EXPAND, 0)
-        self.pipelineSizer.Add(self.steps[5].panelparameters, 1, wx.EXPAND, 0)
-
-        
-        self.steps[4].panelparameters.Show()
-        self.steps[4].panelparameters.Hide()
-        self.steps[2].panelparameters.Show()
-        self.steps[2].panelparameters.Hide()
-
-
-        
-
-
-
-
-
-
-
-
+        self.steps = [self.processing_steps[step]() for step in self.pipeline]
         # self.processing_steps = dict of the definitions of all processing steps
         # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
         # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
@@ -200,23 +168,6 @@ class MyFrame(wxglade_out.MyFrame):
             self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
             self.pipeline.insert(selected_item_index+1, new_item_text)
             self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
-        self.pipelineSizer.Add(self.steps[selected_item_index+1].panelparameters, 1, wx.EXPAND, 0)
-        self.steps[selected_item_index+1].panelparameters.Hide()
-        
-    def OnListItemSelected(self, event):
-        
-        
-        selected_item_index = event.GetIndex()
-        for step in self.steps:
-            step.panelparameters.Hide()
-        self.Layout()
-
-        self.steps[selected_item_index-1].panelparameters.Show()
-        self.Layout()
-
-        event.Skip()
-    
-    
             
         
 

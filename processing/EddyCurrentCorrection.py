@@ -1,31 +1,14 @@
 import ProcessingStep as ps
 import numpy as np
 from scipy.optimize import curve_fit
-import parameter_changes_GUI
 
 def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
 
 class EddyCurrentCorrection(ps.ProcessingStep):
-    def __init__(self,parentpanel):
+    def __init__(self):
         super().__init__({ "gaussian_width": 32 })
-        self.panelparameters = parameter_changes_GUI.CustomPanel(
-            parentpanel,
-            "Eddy Current Correction",
-            [
-                (
-                    parameter_changes_GUI.NumericalParameterPanel,
-                    self.parameters,
-                    "gaussian_width",
-                    "",
-                    32,
-                    0,
-                    100,
-                    1,
-                    "",
-                )
-            ],
-        )    
+
     # https://suspect.readthedocs.io/en/latest/notebooks/consensus_playground.html#Eddy-Current-Correction
     def process(self, data):
         if data["wref"] is None:
