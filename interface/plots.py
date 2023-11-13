@@ -1,10 +1,11 @@
 import os
 import numpy as np
 import suspect
+import matplotlib
 from suspect import MRSData
 from readcoord import ReadlcmCoord
 
-def plot_ima(data, canvas, title=None):
+def plot_ima(data, figure: matplotlib.figure, title=None):
     if isinstance(data, str):
         filepath = data
         if filepath == "" or not os.path.exists(filepath):
@@ -18,23 +19,22 @@ def plot_ima(data, canvas, title=None):
         print("Invalid data type")
         return
     if title is None: title = "Result"
-    canvas.clear()
-    ax = canvas.figure.add_subplot(2, 1, 1)
+    # canvas.clear()
+    ax = figure.add_subplot(2, 1, 1)
     for d in data:
         ax.plot(d.time_axis(), np.absolute(d))
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Signal Intensity')
-    ax = canvas.figure.add_subplot(2, 1, 2)
+    ax = figure.add_subplot(2, 1, 2)
     for d in data:
         ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
     ax.set_xlabel('Chemical shift (ppm)')
     ax.set_ylabel('Amplitude')
     ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
-    canvas.figure.suptitle(title)
-    canvas.figure.tight_layout()
-    canvas.draw()
+    figure.suptitle(title)
+    figure.tight_layout()
 
-def plot_coord(lcmdata, canvas, title=None):
+def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     if isinstance(lcmdata, str):
         filepath = lcmdata
         if filepath == "" or not os.path.exists(filepath):
@@ -47,8 +47,8 @@ def plot_coord(lcmdata, canvas, title=None):
         return
     if title is None: title = ".coord file"
     
-    canvas.clear()
-    ax = canvas.figure.add_subplot(1, 1, 1)
+    # canvas.clear()
+    ax = figure.add_subplot(1, 1, 1)
     
     def getOffset(data):
         return 1.1 * max(data) - min(data)
@@ -76,6 +76,5 @@ def plot_coord(lcmdata, canvas, title=None):
     ax.set_xlim((4.2, 1))
     ax.get_yaxis().set_visible(False)
     
-    canvas.figure.suptitle(title)
-    canvas.figure.tight_layout()
-    canvas.draw()
+    figure.suptitle(title)
+    figure.tight_layout()

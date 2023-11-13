@@ -32,4 +32,3 @@ class LineBroadening(ps.ProcessingStep):
         ax.set_ylabel('Intensity')
         ax.set_title("Output")
         canvas.figure.tight_layout()
-        canvas.draw()

@@ -192,7 +192,7 @@ class MyFrame(wxglade_out.MyFrame):
             return
         if filepath.lower().endswith(".ima"):
             f = suspect.io.load_siemens_dicom(filepath)
-            plot_ima(f, self.matplotlib_canvas, title=filepath)
+            plot_ima(f, self.matplotlib_canvas.figure, title=filepath)
             self.infotext.SetValue("")
             self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {f.np}\n\tScanner frequency (MHz): {f.f0}\n\tDwell time (s): {f.dt}\n\tFrequency delta (Hz): {f.df}\n"
                                 + f"\tSpectral Width (Hz): {f.sw}\n\tEcho time (ms): {f.te}\n\tRepetition time (ms): {f.tr}\n"
@@ -200,24 +200,13 @@ class MyFrame(wxglade_out.MyFrame):
                                 + "\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()]))
         elif filepath.lower().endswith(".coord"):
             f = ReadlcmCoord(filepath)
-            plot_coord(f, self.matplotlib_canvas, title=filepath)
+            plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
             dtab = '\n\t\t'
             self.infotext.SetValue("")
             self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
         if event is not None: event.Skip()
-
-    def savefigure(self, figure, filepath, size=(10, 6), dpi=600):
-        # behold, the only way to copy a matplotlib figure (╯°□°）╯︵ ┻━┻
-        buf = io.BytesIO()
-        pickle.dump(figure, buf)
-        buf.seek(0)
-        figure = pickle.load(buf)
-        figure.set_size_inches(size[0], size[1])
-        figure.savefig(filepath, dpi=dpi)
-        figure.savefig(filepath)
-        print("Saved plot: ", filepath)
 
     def waitforprocessingbutton(self, label):
         self.button_processing.Enable()

@@ -1,5 +1,5 @@
-from interface.matplotlib_canvas import MatplotlibCanvas
 import numpy as np
+import matplotlib
 
 class ProcessingStep:
     def __init__(self, parameters = {}):
@@ -22,14 +22,13 @@ class ProcessingStep:
     def resetParameters(self):
         self.parameters = self.defaultParameters
     
-    def plot(self, canvas: MatplotlibCanvas, data: dict) -> None: # can be overridden
-        ax = canvas.figure.add_subplot(2, 1, 1)
+    def plot(self, figure: matplotlib.figure, data: dict) -> None: # can be overridden
+        ax = figure.add_subplot(2, 1, 1)
         self.plotData(ax, data["input"])
-        ax = canvas.figure.add_subplot(2, 1, 2)
+        ax = figure.add_subplot(2, 1, 2)
         self.plotData(ax, data["output"])
-        canvas.figure.suptitle(self.__class__.__name__)
-        canvas.figure.tight_layout()
-        canvas.draw()
+        figure.suptitle(self.__class__.__name__)
+        figure.tight_layout()
 
     def plotData(self, ax, data): # helper for plotting time, freq or ppm
         if self.plotSpectrum:

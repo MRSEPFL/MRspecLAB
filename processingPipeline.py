@@ -4,8 +4,10 @@ import threading
 import shutil
 import zipfile
 import numpy as np
+import matplotlib
+from readcoord import ReadlcmCoord
 
-from interface.plots import plot_ima
+from interface.plots import plot_ima, plot_coord
 from suspect import MRSData
 
 def processPipeline(self):
@@ -63,11 +65,14 @@ def processPipeline(self):
         if not os.path.exists(stepplotpath): os.makedirs(stepplotpath)
 
         ##### PROCESSING #####
-        def plotWorker(step, dataDict, nstep): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
+        def plotWorker(step, dataDict, nstep):
             self.matplotlib_canvas.clear()
-            step.plot(self.matplotlib_canvas, dataDict)
+            step.plot(self.matplotlib_canvas.figure, dataDict)
+            if not self.fast_processing: self.matplotlib_canvas.draw()
             filepath = os.path.join(stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
-            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(12, 9), dpi=600)
+            figure = matplotlib.figure.Figure(figsize=(12, 9), dpi=600)
+            step.plot(figure, dataDict)
+            figure.savefig(filepath, dpi=600)
         plotThread = None
 
         self.dataSteps: list[MRSData] = [originalData]
@@ -112,14 +117,24 @@ def processPipeline(self):
         self.button_processing.SetLabel("Saving plots...")
         dataplotpath = os.path.join(outputpath, "dataplots")
         if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
+
+        def plotWorker2(data, filepath): # apparently matplotlib is not thread safe, but this works
+            figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
+            plot_ima(data, figure)
+            figure.suptitle(filepath.rsplit(os.path.sep, 1)[-1][:-4])
+            figure.savefig(filepath, dpi=600)
+
         index = 0
-        for d in self.dataSteps: # save plots
-            plot_ima(d, self.matplotlib_canvas)
-            if index == 0: filepath = os.path.join(dataplotpath, "Original.png")
-            elif index-1 < len(self.steps): filepath = os.path.join(dataplotpath, str(index) + self.steps[index-1].__class__.__name__ + ".png")
-            else: filepath = os.path.join(dataplotpath, "Result.png")
-            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(10, 10), dpi=600)
+        plotthreads = []
+        for d in self.dataSteps: # save dataplots (time + freq for each intermediate output)
+            if index == 0: filename = "Original.png"
+            elif index-1 < len(self.steps): filename = str(index) + self.steps[index-1].__class__.__name__ + ".png"
+            else: filename = "Result.png"
+            filepath = os.path.join(dataplotpath, filename)
+            plotthreads.append(threading.Thread(target=plotWorker2, args=(d, filepath)))
+            plotthreads[-1].start()
             index += 1
+        for t in plotthreads: t.join()
 
         result = self.dataSteps[-1]
         wresult = None
@@ -131,7 +146,7 @@ def processPipeline(self):
         if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
         else: result = result[0].inherit(np.mean(result, axis=0))
 
-        self.waitforprocessingbutton("Next")
+        self.waitforprocessingbutton("Run LCModel")
 
         ##### ANALYSIS #####
         if wresult is not None:
@@ -217,9 +232,17 @@ def processPipeline(self):
             print("Moving files...\n\t", command)
             os.system(command)
 
-            self.read_file(None, os.path.join(outputpath, "result.coord"))
+            # plot to canvas
+            filepath = os.path.join(outputpath, "result.coord")
+            self.matplotlib_canvas.clear()
+            self.read_file(None, filepath)
+            self.matplotlib_canvas.draw()
+            # save to file with a fixed size
+            f = ReadlcmCoord(filepath)
+            figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
             filepath = os.path.join(outputpath, "lcmodel.png")
-            self.savefigure(self.matplotlib_canvas.figure, filepath, size=(8, 8), dpi=600)
+            plot_coord(f, figure, title=filepath)
+            figure.savefig(filepath, dpi=600)
 
         self.processing = False
         self.next = False

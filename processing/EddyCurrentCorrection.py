@@ -33,10 +33,10 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         data["output"] = output
         data["wref_output"] = ecwref
     
-    def plot(self, canvas, data):
-        canvas.figure.suptitle(self.__class__.__name__)
+    def plot(self, figure, data):
+        figure.suptitle(self.__class__.__name__)
         if data["wref"] is None:
-            ax = canvas.figure.add_subplot(1, 1, 1)
+            ax = figure.add_subplot(1, 1, 1)
             for d in data["output"]:
                 ax.plot(d.frequency_axis_ppm(), d.spectrum())
             ax.set_xlabel('Chemical shift (ppm)')
@@ -45,7 +45,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
             ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
             return
         # input
-        ax = canvas.figure.add_subplot(2, 2, 1)
+        ax = figure.add_subplot(2, 2, 1)
         for d in data["input"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
@@ -53,7 +53,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         ax.set_title("Input")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         # output
-        ax = canvas.figure.add_subplot(2, 2, 2)
+        ax = figure.add_subplot(2, 2, 2)
         for d in data["output"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
@@ -61,7 +61,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         ax.set_title("Output")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         # water reference phase
-        ax = canvas.figure.add_subplot(2, 2, 3)
+        ax = figure.add_subplot(2, 2, 3)
         ax.plot(data["wref"].time_axis(), self.wphase, "-k", label="original phase")
         ax.plot(data["wref"].time_axis(), self.wphasesmooth, ":r", label="smoothed phase")
         ax.plot(data["wref"].time_axis(), self.wphasefit, ":k", label="linear fit to smoothed phase")
@@ -71,7 +71,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         ax.legend()
         ax.set_title("Water reference phase")
         # water reference
-        ax = canvas.figure.add_subplot(2, 2, 4)
+        ax = figure.add_subplot(2, 2, 4)
         fwhm = np.abs(2 * np.sqrt(2 * np.log(2)) * self.gaussparams[2])
         fwhmhz = data["wref_output"].ppm_to_hertz(fwhm)
         gauss = gaussian(data["wref_output"].frequency_axis_ppm(), *self.gaussparams)
@@ -84,5 +84,4 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         ax.legend()
         ax.set_xlim(self.gaussparams[1] + 5 * self.gaussparams[2], self.gaussparams[1] - 5 * self.gaussparams[2])
         ax.set_title("Water reference")
-        canvas.figure.tight_layout()
-        canvas.draw()
+        figure.tight_layout()

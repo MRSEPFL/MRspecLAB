@@ -52,23 +52,23 @@ class FreqPhaseAlignment(ps.ProcessingStep):
             output.append(data["original"][i].adjust_frequency(-freqShift).adjust_phase(-phaseShift))
         data["output"] = output
 
-    def plot(self, canvas, data):
-        canvas.figure.suptitle(self.__class__.__name__)
-        ax = canvas.figure.add_subplot(2, 6, (1, 3))
+    def plot(self, figure, data):
+        figure.suptitle(self.__class__.__name__)
+        ax = figure.add_subplot(2, 6, (1, 3))
         for d in data["input"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
-        ax = canvas.figure.add_subplot(2, 6, (4, 6))
+        ax = figure.add_subplot(2, 6, (4, 6))
         for d in data["output"]:
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
-        ax = canvas.figure.add_subplot(2, 6, (7, 8))
+        ax = figure.add_subplot(2, 6, (7, 8))
         for i, d in enumerate(data["input"]):
             d = d.adjust_frequency(-self.freqShifts[i]).adjust_phase(-self.phaseShifts[i])
             ax.plot(d.frequency_axis_ppm(), d.spectrum())
@@ -76,15 +76,14 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         ax.set_ylabel('Amplitude')
         ax.set_title("Aligned Input")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
-        ax = canvas.figure.add_subplot(2, 6, (9, 10))
+        ax = figure.add_subplot(2, 6, (9, 10))
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Frequency shift (Hz)')
         ax.set_title("Frequency shifts")
-        ax = canvas.figure.add_subplot(2, 6, (11, 12))
+        ax = figure.add_subplot(2, 6, (11, 12))
         ax.plot(self.phaseShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Phase shift (rad)')
         ax.set_title("Phase shifts")
-        canvas.figure.tight_layout()
-        canvas.draw()
+        figure.tight_layout()
