@@ -1,5 +1,5 @@
-from suspect import MRSData
 from interface.matplotlib_canvas import MatplotlibCanvas
+import numpy as np
 
 class ProcessingStep:
     def __init__(self, parameters = {}):
@@ -36,7 +36,8 @@ class ProcessingStep:
             if self.plotPPM:
                 for d in data:
                     ax.plot(d.frequency_axis_ppm(), d.spectrum())
-                ax.set_xlabel('Frequency (ppm)')
+                ax.set_xlabel('Chemical shift (ppm)')
+                ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
             else:
                 for d in data:
                     ax.plot(d.frequency_axis(), d.spectrum())
