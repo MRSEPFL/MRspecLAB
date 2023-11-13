@@ -54,16 +54,19 @@ def processPipeline(self):
             return
         print(len(originalData), " files loaded")
         
-        plotPath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
-        if plotPath == "": plotPath = "plots"
-        plotPath = os.path.join(self.rootPath, plotPath)
-        if not os.path.exists(plotPath): os.makedirs(plotPath)
+        outputpath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
+        if outputpath == "": outputpath = "output"
+        outputpath = os.path.join(self.rootPath, outputpath)
+        if not os.path.exists(outputpath): os.makedirs(outputpath)
+
+        stepplotpath = os.path.join(outputpath, "stepplots")
+        if not os.path.exists(stepplotpath): os.makedirs(stepplotpath)
 
         ##### PROCESSING #####
         def plotWorker(step, dataDict, nstep): # /!\ matplotlib is not thread safe, so we shouldn't plot multiple things in parallel
             self.matplotlib_canvas.clear()
             step.plot(self.matplotlib_canvas, dataDict)
-            filepath = os.path.join(plotPath, str(nstep) + step.__class__.__name__ + ".png")
+            filepath = os.path.join(stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
             self.savefigure(self.matplotlib_canvas.figure, filepath, size=(12, 9), dpi=600)
         plotThread = None
 
@@ -104,10 +107,10 @@ def processPipeline(self):
 
         if plotThread is not None: plotThread.join() # wait for last step plot to finish
 
-        ##### SAVING PLOTS #####
+        ##### SAVING DATA PLOTS #####
         self.button_processing.Disable()
         self.button_processing.SetLabel("Saving plots...")
-        dataplotpath = os.path.join(plotPath, "dataplots")
+        dataplotpath = os.path.join(outputpath, "dataplots")
         if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
         index = 0
         for d in self.dataSteps: # save plots
@@ -134,10 +137,26 @@ def processPipeline(self):
         if wresult is not None:
             self.button_processing.Disable()
             self.button_processing.SetLabel("Running LCModel...")
-            outputdir = os.path.join(self.rootPath, "output")
-            controlfile = os.path.join(outputdir, "control")
+            workpath = os.path.join(self.rootPath, "temp")
+            controlfile = os.path.join(workpath, "result")
+            
+            # basis set
+            tesla = round(result.f0 / 42.57747892, 0) # larmor frequency in MHz
+            if result.te >= 30: sequence = "PRESS" # very advanced detection
+            else: sequence = "STEAM"
+            strte = str(result.te)
+            if strte.endswith(".0"): strte = strte[:-2]
+            basisfile = str(int(tesla)) + "T_" + sequence + "_" + str(strte) + "ms.BASIS"
+
+            if not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+                print("Basis set not found:\n\t", basisfile)
+                self.processing = False
+                self.button_processing.SetLabel("Start Processing")
+                self.button_processing.Enable()
+                return
+
             params = {
-                "FILBAS": "../lcmodel/7T_SIM_STEAM_TE4p5_TM25_mod.BASIS",
+                "FILBAS": "../lcmodel/" + basisfile,
                 "FILCSV": "./result.csv",
                 "FILCOO": "./result.coord",
                 "FILPS": "./result.ps",
@@ -151,24 +170,25 @@ def processPipeline(self):
                 "PPMST": 4.2,
                 "PPMEND": 0.2,
                 "RFWHM": 1.8,
-                "ECHOT": 16.0,
+                "ECHOT": result.te,
                 "ATTH2O": 0.8187,
                 "ATTMET": 0.8521,
                 "NCOMBI": 5,
-                "DELTAT": 2.5e-04,
+                "DELTAT": result.dt,
                 "CONREL": 8.0,
                 "DKNTMN": 0.25,
-                "HZPPPM": 2.9721e+02,
+                "HZPPPM": result.f0,
                 "WCONC": 44444,
                 "NEACH": 999,
-                "NUNFIL": 2048,
+                "NUNFIL": result.np,
                 "NSIMUL": 0,
                 "NCALIB": 0,
                 "PGNORM": "US"
             }
-            if os.path.exists(outputdir):
-                shutil.rmtree(outputdir) # delete output folder content
-            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to output folder
+            
+            if os.path.exists(workpath): shutil.rmtree(workpath) # delete work folder content
+            suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
+            save_raw(os.path.join(workpath, "result.RAW"), result, seq=sequence) # overwrite raw file with correct sequence type
 
             lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
             if os.name == 'nt': lcmodelfile += ".exe" # windows exe
@@ -183,13 +203,22 @@ def processPipeline(self):
                 with zipfile.ZipFile(zippath, "r") as zip_ref:
                     zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
-            if os.name == 'nt': command = f"""mkdir {outputdir} & copy {lcmodelfile} {outputdir} & cd {outputdir} & lcmodel.exe < control_sl0.CONTROL & del lcmodel.exe"""
-            else: command = f"""mkdir {outputdir} && cp {lcmodelfile} {outputdir} && cd {outputdir} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
-            print(command)
+            if os.name == 'nt': command = f"""mkdir {workpath} & copy {lcmodelfile} {workpath} & cd {workpath} & lcmodel.exe < result_sl0.CONTROL & del lcmodel.exe"""
+            else: command = f"""mkdir {workpath} && cp {lcmodelfile} {workpath} && cd {workpath} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
+            print("Running LCModel...\n\t", command)
+            os.system(command)
+            
+            command = ''
+            for f in os.listdir(workpath):
+                if os.name == 'nt': command += f" & move {os.path.join(workpath, f)} {outputpath}"
+                else: command += f" && mv {os.path.join(workpath, f)} {outputpath}"
+            if os.name == 'nt': command = command[3:] + f" & rmdir {workpath}"
+            else: command = command[3:] + f" && rm -r {workpath}"
+            print("Moving files...\n\t", command)
             os.system(command)
 
-            self.read_file(None, os.path.join(outputdir, "result.coord"))
-            filepath = os.path.join(plotPath, "lcmodel.png")
+            self.read_file(None, os.path.join(outputpath, "result.coord"))
+            filepath = os.path.join(outputpath, "lcmodel.png")
             self.savefigure(self.matplotlib_canvas.figure, filepath, size=(8, 8), dpi=600)
 
         self.processing = False
@@ -197,3 +226,19 @@ def processPipeline(self):
         self.button_processing.SetLabel("Start Processing")
         self.button_processing.Enable()
         return
+
+# adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
+def save_raw(filename, data, seq="PRESS"):
+    with open(filename, 'w') as fout:
+        fout.write(" $SEQPAR\n")
+        fout.write(" ECHOT = {}\n".format(data.te))
+        fout.write(" HZPPPM = {}\n".format(data.f0))
+        fout.write(f" SEQ = {seq}\n")
+        fout.write(" $END\n")
+        fout.write(" $NMID\n")
+        fout.write(" FMTDAT = '(2E15.6)'\n")
+        if data.transform is not None: fout.write(" VOLUME = {}\n".format(data.voxel_volume() * 1e-3))
+        else: print("Saving LCModel data without a transform, using default voxel volume of 1ml")
+        fout.write(" $END\n")
+        for point in np.nditer(data, order='C'):
+            fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))

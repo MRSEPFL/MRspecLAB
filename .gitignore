@@ -1,5 +1,8 @@
 __pycache__/
-output/
+/*/
+!interface/
+!/lcmodel/
+!/processing/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
