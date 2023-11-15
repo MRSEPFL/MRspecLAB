@@ -190,23 +190,37 @@ class MyFrame(wxglade_out.MyFrame):
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
-        if filepath.lower().endswith(".ima"):
-            f = suspect.io.load_siemens_dicom(filepath)
-            plot_ima(f, self.matplotlib_canvas.figure, title=filepath)
-            self.infotext.SetValue("")
-            self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {f.np}\n\tScanner frequency (MHz): {f.f0}\n\tDwell time (s): {f.dt}\n\tFrequency delta (Hz): {f.df}\n"
-                                + f"\tSpectral Width (Hz): {f.sw}\n\tEcho time (ms): {f.te}\n\tRepetition time (ms): {f.tr}\n"
-                                + f"\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}\n\tCentre: {f.centre}\n"
-                                + "\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()]))
-        elif filepath.lower().endswith(".coord"):
+        if filepath.lower().endswith(".coord"):
             f = ReadlcmCoord(filepath)
+            self.matplotlib_canvas.clear()
             plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
+            self.matplotlib_canvas.draw()
             dtab = '\n\t\t'
             self.infotext.SetValue("")
             self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
+            if event is not None: event.Skip()
+            return
+        
+        else:
+            if filepath.lower().endswith((".ima", ".dcm")):
+                f = suspect.io.load_siemens_dicom(filepath)
+            elif filepath.lower().endswith(".dat"):
+                f = suspect.io.load_twix(filepath)
+                f = suspect.processing.channel_combination.combine_channels(f)
+            if len(f.shape) == 1: flist = [f]
+            else: flist = [f.inherit(d) for d in f]
+            self.matplotlib_canvas.clear()
+            plot_ima(flist, self.matplotlib_canvas.figure, title=filepath)
+            self.matplotlib_canvas.draw()
+            self.infotext.SetValue("")
+            self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {f.np}\n\tScanner frequency (MHz): {f.f0}\n\tDwell time (s): {f.dt}\n\tFrequency delta (Hz): {f.df}\n"
+                                + f"\tSpectral Width (Hz): {f.sw}\n\tEcho time (ms): {f.te}\n\tRepetition time (ms): {f.tr}\n"
+                                + f"\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}\n\tCentre: {f.centre}\n"
+                                + "\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()]))
         if event is not None: event.Skip()
+        return
 
     def waitforprocessingbutton(self, label):
         self.button_processing.Enable()
