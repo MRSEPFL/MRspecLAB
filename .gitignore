@@ -9,4 +9,4 @@ __pycache__/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
-*.png
+*output/.png

@@ -120,12 +120,12 @@ class NodeGraphPanel(wx.Panel):
         
         self.available_registery_nodes= {
             ##All the line below are added for MRS software
-            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
             "average_nodeid":AverageNode,
-            "removebadaverages_nodeid":RemoveBadAveragesNode,
-            "linebroadening_nodeid":LineBroadeningNode,
-            "zeropadding_nodeid":ZeroPaddingNode,
             "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
+            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
+            "linebroadening_nodeid":LineBroadeningNode,
+            "removebadaverages_nodeid":RemoveBadAveragesNode,
+            "zeropadding_nodeid":ZeroPaddingNode,
         }
         # Setup the config with datatypes and node categories
         config = {
