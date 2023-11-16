@@ -5,8 +5,9 @@ class ProcessingStep:
     def __init__(self, parameters = {}):
         self.parameters = parameters
         self.defaultParameters = parameters
-        self.plotSpectrum = False # set these if you don't override plot()
-        self.plotPPM = False
+        self.plotTime = True # set these if you don't override plot()
+        self.plotSpectrum = True
+        self.plotPPM = True
 
     def __str__(self) -> str:
         output = self.__name__ + ":\n"
@@ -23,23 +24,38 @@ class ProcessingStep:
         self.parameters = self.defaultParameters
     
     def plot(self, figure: matplotlib.figure, data: dict) -> None: # can be overridden
-        ax = figure.add_subplot(2, 1, 1)
-        self.plotData(ax, data["input"])
-        ax = figure.add_subplot(2, 1, 2)
-        self.plotData(ax, data["output"])
+        if not self.plotTime and not self.plotSpectrum: return
+        if self.plotTime and self.plotSpectrum: sx, sy = 2, 2
+        else: sx, sy = 2, 1
+        index = 1
+        if self.plotTime:
+            ax = figure.add_subplot(sx, sy, index)
+            self.plotData(ax, data["input"], False)
+            ax.set_title("Input")
+            ax = figure.add_subplot(sx, sy, index + sy)
+            self.plotData(ax, data["output"], False)
+            ax.set_title("Output")
+            index += 1
+        if self.plotSpectrum:
+            ax = figure.add_subplot(sx, sy, index)
+            self.plotData(ax, data["input"], True)
+            ax.set_title("Input")
+            ax = figure.add_subplot(sx, sy, index + sy)
+            self.plotData(ax, data["output"], True)
+            ax.set_title("Output")
         figure.suptitle(self.__class__.__name__)
         figure.tight_layout()
 
-    def plotData(self, ax, data): # helper for plotting time, freq or ppm
-        if self.plotSpectrum:
+    def plotData(self, ax, data, plotfreq): # helper plotting function
+        if plotfreq:
             if self.plotPPM:
                 for d in data:
-                    ax.plot(d.frequency_axis_ppm(), d.spectrum())
+                    ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
                 ax.set_xlabel('Chemical shift (ppm)')
                 ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
             else:
                 for d in data:
-                    ax.plot(d.frequency_axis(), d.spectrum())
+                    ax.plot(d.frequency_axis(), np.real(d.spectrum()))
                 ax.set_xlabel('Frequency (Hz)')
             ax.set_ylabel('Amplitude')
         else:
