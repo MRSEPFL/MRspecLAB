@@ -134,11 +134,11 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = not self.show_editor
         if self.show_editor:
             self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
-            self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
+            # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
             self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
-            self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
+            # self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
             self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
         if event is not None: event.Skip()

@@ -147,16 +147,16 @@ class MyFrame(wx.Frame):
 
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)       
-        self.leftSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        # self.leftSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.pipelineplotSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.consoleinfoSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
 
         self.mainSplitter.SetMinimumPaneSize(100)
         self.rightSplitter.SetMinimumPaneSize(100)  
-        self.leftSplitter.SetMinimumPaneSize(100)
+        # self.leftSplitter.SetMinimumPaneSize(100)
 
 
-        self.leftPanel = wx.Panel(self.leftSplitter, wx.ID_ANY)
+        self.leftPanel = wx.Panel(self.mainSplitter, wx.ID_ANY)
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftPanel.SetSizer(self.leftSizer)
         self.rightPanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
@@ -168,38 +168,38 @@ class MyFrame(wx.Frame):
 
         ### LEFT PANEL ###
         ## notebook of available steps
-        self.notebook_1 = wx.Notebook(self.leftSplitter, wx.ID_ANY, style=wx.NB_BOTTOM)
-        self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
-        self.notebook_1.AddPage(self.notebook_1_pane_1, "Import Data Steps")
-        self.notebook_1_pane_2 = wx.ScrolledWindow(self.notebook_1, wx.ID_ANY)
+        # self.notebook_1 = wx.Notebook(self.leftSplitter, wx.ID_ANY, style=wx.NB_BOTTOM)
+        # self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
+        # self.notebook_1.AddPage(self.notebook_1_pane_1, "Import Data Steps")
+        # self.notebook_1_pane_2 = wx.ScrolledWindow(self.notebook_1, wx.ID_ANY)
 
-        self.notebook_1.AddPage(self.notebook_1_pane_2, "Quality Control Steps")
+        # self.notebook_1.AddPage(self.notebook_1_pane_2, "Quality Control Steps")
         
 
-        self.notebook_1_pane_2.SetScrollRate(10, 10)  # Set scroll rate (adjust as needed)
+        # self.notebook_1_pane_2.SetScrollRate(10, 10)  # Set scroll rate (adjust as needed)
         
-        available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
-        available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
+        # available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
+        # available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
 
-        for label in available_icon_labels:
-            # Create a button with the specified label
-            icon_button = wx.Button(self.notebook_1_pane_2, label=label)
+        # for label in available_icon_labels:
+        #     # Create a button with the specified label
+        #     icon_button = wx.Button(self.notebook_1_pane_2, label=label)
             
-            # Set the fixed size for the button (e.g., 100x100 pixels)
-            icon_button.SetMinSize((120, 100))
+        #     # Set the fixed size for the button (e.g., 100x100 pixels)
+        #     icon_button.SetMinSize((120, 100))
 
-            # Set the background and foreground colors for the button
-            # icon_button.SetBackgroundColour(wx.Colour(100, 100, 100))
-            # icon_button.SetForegroundColour(wx.Colour(250, 250, 250))
-            icon_button.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        #     # Set the background and foreground colors for the button
+        #     # icon_button.SetBackgroundColour(wx.Colour(100, 100, 100))
+        #     # icon_button.SetForegroundColour(wx.Colour(250, 250, 250))
+        #     icon_button.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
-            # Bind the event for the button (if needed)
-            # icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
+        #     # Bind the event for the button (if needed)
+        #     # icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
 
-            # Add the button to the sizer with wx.ALIGN_CENTER_HORIZONTAL flag
-            available_icons_sizer.Add(icon_button, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
+        #     # Add the button to the sizer with wx.ALIGN_CENTER_HORIZONTAL flag
+        #     available_icons_sizer.Add(icon_button, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
 
-        self.notebook_1_pane_2.SetSizer(available_icons_sizer)
+        # self.notebook_1_pane_2.SetSizer(available_icons_sizer)
 
         
         
@@ -217,7 +217,7 @@ class MyFrame(wx.Frame):
         self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
 
-        self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
+        # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
 
         ### RIGHT PANEL ###
         self.buttonsProcessing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
@@ -393,7 +393,7 @@ class MyFrame(wx.Frame):
 
 
 
-        self.mainSplitter.SplitVertically(self.leftSplitter, self.rightSplitter, 300)
+        self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
         self.dt = FileDrop(self.drag_and_drop_list, self.drag_and_drop_label)
