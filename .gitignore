@@ -4,6 +4,7 @@ __pycache__/
 !/lcmodel/
 !/GimelStudio/
 !/processing/
+!/resources/
 !/gsnodegraph/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe

@@ -6,6 +6,7 @@ from . import DragList
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
 
+
 # import sys
 # import wx
 # import ctypes
@@ -187,7 +188,7 @@ class MyFrame(wx.Frame):
             icon_button.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
             # Bind the event for the button (if needed)
-            icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
+            # icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
 
             # Add the button to the sizer with wx.ALIGN_CENTER_HORIZONTAL flag
             available_icons_sizer.Add(icon_button, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
@@ -213,8 +214,21 @@ class MyFrame(wx.Frame):
         self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
 
         ### RIGHT PANEL ###
+        self.buttonsProcessing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
+        
+        
         self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
         self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        
+        bmp = wx.Bitmap("resources/fastforwardbutton.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
+        self.button_fast_processing = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp, style=wx.BORDER_SUNKEN)
+        self.button_fast_processing.SetMinSize((100, -1))
+        
+        self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
+        self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.rightSizer.Add(self.buttonsProcessing_Sizer, 1, wx.ALL | wx.EXPAND, 0)
+        
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         
@@ -222,7 +236,10 @@ class MyFrame(wx.Frame):
         self.consoltext.SetBackgroundColour(wx.Colour(0, 0, 0))  # Set the background color to black
         self.consoltext.SetForegroundColour(wx.Colour(255, 255, 255))
 
-        self.rightSizer.Add(self.button_processing, 0, wx.ALL | wx.EXPAND, 5)
+
+
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_fast_processing, self.button_fast_processing)
+
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
         
