@@ -15,6 +15,24 @@ from .plots import plot_ima, plot_coord
 from readcoord import ReadlcmCoord
 import processingPipeline
 
+
+# def get_node_type(node):
+#     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
+#         return "ZeroPadding"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
+#         return "RemoveBadAverages"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
+#         return "FreqPhaseAlignment"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
+#         return "Average"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
+#         return "EddyCurrentCorrection"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
+#         return "LineBroadening"
+#     else:
+#         return "Unknown steps"
+
+
 class MyFrame(wxglade_out.MyFrame):
 
     def __init__(self, *args, **kwds):
@@ -36,7 +54,8 @@ class MyFrame(wxglade_out.MyFrame):
                         self.processing_steps[name] = obj
         
         # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
-        self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+        # self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
+        self.pipeline=self.retrievePipeline()
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
         # self.processing_steps = dict of the definitions of all processing steps
         # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
@@ -150,29 +169,31 @@ class MyFrame(wxglade_out.MyFrame):
     
 
         
-    def OnRightClickList(self, event):
-        pos = event.GetPosition()
-        pos = self.list_ctrl.ScreenToClient(pos)
-        item, flags = self.list_ctrl.HitTest(pos)
+    # def OnRightClickList(self, event):
+    #     pos = event.GetPosition()
+    #     pos = self.list_ctrl.ScreenToClient(pos)
+    #     item, flags = self.list_ctrl.HitTest(pos)
         
-        if item != -1:
-            self.list_ctrl.Select(item)  # Select the item that was right-clicked
-            self.PopupMenu(self.context_menu_pipeline)
+    #     if item != -1:
+    #         self.list_ctrl.Select(item)  # Select the item that was right-clicked
+    #         self.PopupMenu(self.context_menu_pipeline)
             
-    def OnAddStep(self, event):
-        # Get the label text to add it to the list
-        label = event.GetEventObject()
-        new_item_text = label.GetLabel()
-        selected_item_index = self.list_ctrl.GetFirstSelected()
-        if selected_item_index >= 0:
-            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-            self.pipeline.insert(selected_item_index+1, new_item_text)
-            self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
+    # def OnAddStep(self, event):
+    #     # Get the label text to add it to the list
+    #     label = event.GetEventObject()
+    #     new_item_text = label.GetLabel()
+    #     selected_item_index = self.list_ctrl.GetFirstSelected()
+    #     if selected_item_index >= 0:
+    #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+    #         self.pipeline.insert(selected_item_index+1, new_item_text)
+    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
         
 
     def on_button_processing(self, event):
         if not self.processing:
+            self.pipeline=self.retrievePipeline()
+            self.steps = [self.processing_steps[step]() for step in self.pipeline]
             self.processing = True
             self.next = False
             thread = threading.Thread(target=self.processPipeline, args=())
@@ -230,6 +251,25 @@ class MyFrame(wxglade_out.MyFrame):
 
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
+    
+    def retrievePipeline(self):
+        current_node= self.pipelinePanel.GetInputNode()
+        pipeline =[]
+        while current_node is not None:
+            for socket in current_node.GetSockets():
+                if socket.direction == 1:
+                    if len(socket.GetWires())==0:
+                        current_node=None
+                    elif len(socket.GetWires())>1:
+                        print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
+                        current_node=None
+
+                    else:
+                        for wire in socket.GetWires():
+                            current_node = wire.dstsocket.node
+                            pipeline.append(wxglade_out.get_node_type(wire.dstsocket.node))
+        
+        return pipeline
 
 class MyApp(wx.App):
     def OnInit(self):
