@@ -3,31 +3,32 @@ import os
 # import matplotlib_canvas
 from . import matplotlib_canvas  # Use a relative import to import wxglade_out
 from . import DragList
+from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
 
-import sys
-import wx
-import ctypes
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(True)
-except Exception:
-    pass
+# import sys
+# import wx
+# import ctypes
+# try:
+#     ctypes.windll.shcore.SetProcessDpiAwareness(True)
+# except Exception:
+#     pass
 
 from gsnodegraph.gsnodegraph import EVT_GSNODEGRAPH_ADDNODEBTN
-from gsnodegraph.nodes import OutputNode, MixNode, ImageNode, BlurNode, BlendNode, ValueNode, FrequencyPhaseAlignementNode,AverageNode,RemoveBadAveragesNode,LineBroadeningNode,ZeroPaddingNode,EddyCurrentCorrectionNode,InputNode
-from gsnodegraph.nodegraph import NodeGraph
+# from gsnodegraph.nodes import OutputNode, MixNode, ImageNode, BlurNode, BlendNode, ValueNode, FrequencyPhaseAlignementNode,AverageNode,RemoveBadAveragesNode,LineBroadeningNode,ZeroPaddingNode,EddyCurrentCorrectionNode,InputNode
+# from gsnodegraph.nodegraph import NodeGraph
 import gsnodegraph.nodes
 
 
-# Install a custom displayhook to keep Python from setting the global
-# _ (underscore) to the value of the last evaluated expression.
-# If we don't do this, our mapping of _ to gettext can get overwritten.
-# This is useful/needed in interactive debugging with PyShell.
-def _displayHook(obj):
-    """ Custom display hook to prevent Python stealing '_'. """
+# # Install a custom displayhook to keep Python from setting the global
+# # _ (underscore) to the value of the last evaluated expression.
+# # If we don't do this, our mapping of _ to gettext can get overwritten.
+# # This is useful/needed in interactive debugging with PyShell.
+# def _displayHook(obj):
+#     """ Custom display hook to prevent Python stealing '_'. """
 
-    if obj is not None:
-        print(repr(obj))
+#     if obj is not None:
+#         print(repr(obj))
         
 def get_node_type(node):
     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -46,11 +47,11 @@ def get_node_type(node):
         return "Unknown steps"
 
 
-# Add translation macro to builtin similar to what gettext does.
-import builtins
-builtins.__dict__['_'] = wx.GetTranslation
+# # Add translation macro to builtin similar to what gettext does.
+# import builtins
+# builtins.__dict__['_'] = wx.GetTranslation
 
-
+from . import PipelineNodeGraph
 
 class FileDrop(wx.FileDropTarget):
 
@@ -227,6 +228,15 @@ class MyFrame(wx.Frame):
         
 
 
+        self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(parent=self.pipelineplotSplitter, size=(100, 100))
+        self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
+        # self.mgr.AddPane(self.nodegraph_pnl,
+        #                   aui.AuiPaneInfo()
+        #                   .Name("NODE_EDITOR")
+        #                   .CaptionVisible(False)
+        #                   .CenterPane()
+        #                   .CloseButton(visible=False)
+        #                   .BestSize(500, 300))
 
 
         ## pipelinepart ##
@@ -235,75 +245,75 @@ class MyFrame(wx.Frame):
         # self.pipelinePanel.SetSizer(self.pipelineSizer)
         
         #pipeline node graph directly imported from a modified version of the main  of gsnodegraph
-        node_registry = {
-            "image_nodeid": ImageNode,
-            "mix_nodeid": MixNode,
-            "blur_nodeid": BlurNode,
-            "blend_nodeid": BlendNode,
-            "value_nodeid": ValueNode,
-            "output_nodeid": OutputNode,
-            ##All the line below are added for MRS software
-            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
-            "average_nodeid":AverageNode,
-            "removebadaverages_nodeid":RemoveBadAveragesNode,
-            "linebroadening_nodeid":LineBroadeningNode,
-            "zeropadding_nodeid":ZeroPaddingNode,
-            "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
-            "input_nodeid":InputNode
+        # node_registry = {
+        #     "image_nodeid": ImageNode,
+        #     "mix_nodeid": MixNode,
+        #     "blur_nodeid": BlurNode,
+        #     "blend_nodeid": BlendNode,
+        #     "value_nodeid": ValueNode,
+        #     "output_nodeid": OutputNode,
+        #     ##All the line below are added for MRS software
+        #     "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
+        #     "average_nodeid":AverageNode,
+        #     "removebadaverages_nodeid":RemoveBadAveragesNode,
+        #     "linebroadening_nodeid":LineBroadeningNode,
+        #     "zeropadding_nodeid":ZeroPaddingNode,
+        #     "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
+        #     "input_nodeid":InputNode
 
-        }
-        # Setup the config with datatypes and node categories
-        config = {
-            "image_datatype": "IMAGE",
-            "node_datatypes": {
-                "IMAGE": "#C6C62D",  # Yellow
-                "INTEGER": "#A0A0A0",  # Grey
-                "FLOAT": "#A0A0A0",  # Grey
-                "VALUE": "#A0A0A0",  # Depreciated!
-                "TRANSIENTS": "#B33641", 
-            },
-            "input_nodes_categories": ["INPUT"],
-            "node_categories": {
-                "INPUT": "#008000",  # Burgendy
-                "DRAW": "#AF4467",  # Pink
-                "MASK": "#084D4D",  # Blue-green
-                "CONVERT": "#564B7C",  # Purple
-                "FILTER": "#558333",  # Green
-                "BLEND": "#498DB8",  # Light blue
-                "QUALITY CONTROL": "#B33641",  # Light blue
+        # }
+        # # Setup the config with datatypes and node categories
+        # config = {
+        #     "image_datatype": "IMAGE",
+        #     "node_datatypes": {
+        #         "IMAGE": "#C6C62D",  # Yellow
+        #         "INTEGER": "#A0A0A0",  # Grey
+        #         "FLOAT": "#A0A0A0",  # Grey
+        #         "VALUE": "#A0A0A0",  # Depreciated!
+        #         "TRANSIENTS": "#B33641", 
+        #     },
+        #     "input_nodes_categories": ["INPUT"],
+        #     "node_categories": {
+        #         "INPUT": "#008000",  # Burgendy
+        #         "DRAW": "#AF4467",  # Pink
+        #         "MASK": "#084D4D",  # Blue-green
+        #         "CONVERT": "#564B7C",  # Purple
+        #         "FILTER": "#558333",  # Green
+        #         "BLEND": "#498DB8",  # Light blue
+        #         "QUALITY CONTROL": "#B33641",  # Light blue
 
-                "COLOR": "#C2AF3A",  # Yellow
-                "TRANSFORM": "#6B8B8B", # Blue-grey
-                "OUTPUT": "#B33641"  # Red
-            }
-        }
+        #         "COLOR": "#C2AF3A",  # Yellow
+        #         "TRANSFORM": "#6B8B8B", # Blue-grey
+        #         "OUTPUT": "#B33641"  # Red
+        #     }
+        # }
 
-        # Init the nodegraph
-        self.pipelinePanel = NodeGraph(self.pipelineplotSplitter, registry=node_registry, config=config)
+        # # Init the nodegraph
+        # self.pipelinePanel = NodeGraph(self.pipelineplotSplitter, registry=node_registry, config=config)
 
-        # Add nodes to the node graph
-        node1 = self.pipelinePanel.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(200, 100))
-        node2 = self.pipelinePanel.AddNode("zeropadding_nodeid",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
-        node3 = self.pipelinePanel.AddNode("linebroadening_nodeid", nodeid='linebroadening0',pos=wx.Point(600, 100))
-        node4 = self.pipelinePanel.AddNode("freqphasealignement_nodeid",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
-        node5 = self.pipelinePanel.AddNode("eddyccurentcorrection_nodeid",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
-        node6 = self.pipelinePanel.AddNode("removebadaverages_nodeid",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
-        node7 = self.pipelinePanel.AddNode("average_nodeid", nodeid='average0', pos=wx.Point(1400, 100))
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['input0'].GetSockets()[0],self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[1])
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[0],self.pipelinePanel.nodes['linebroadening0'].GetSockets()[1])
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['linebroadening0'].GetSockets()[0],self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[1])
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[0],self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[1])
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[0],self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[1])
-        self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[0],self.pipelinePanel.nodes['average0'].GetSockets()[1])
+        # # Add nodes to the node graph
+        # node1 = self.pipelinePanel.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(200, 100))
+        # node2 = self.pipelinePanel.AddNode("zeropadding_nodeid",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
+        # node3 = self.pipelinePanel.AddNode("linebroadening_nodeid", nodeid='linebroadening0',pos=wx.Point(600, 100))
+        # node4 = self.pipelinePanel.AddNode("freqphasealignement_nodeid",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
+        # node5 = self.pipelinePanel.AddNode("eddyccurentcorrection_nodeid",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
+        # node6 = self.pipelinePanel.AddNode("removebadaverages_nodeid",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
+        # node7 = self.pipelinePanel.AddNode("average_nodeid", nodeid='average0', pos=wx.Point(1400, 100))
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['input0'].GetSockets()[0],self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[1])
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[0],self.pipelinePanel.nodes['linebroadening0'].GetSockets()[1])
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['linebroadening0'].GetSockets()[0],self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[1])
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[0],self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[1])
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[0],self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[1])
+        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[0],self.pipelinePanel.nodes['average0'].GetSockets()[1])
 
 
 
-        # Maximize the window
-        self.Maximize(True)
+        # # Maximize the window
+        # self.Maximize(True)
 
-        # Bind events
-        self.pipelinePanel.Bind(EVT_GSNODEGRAPH_ADDNODEBTN, self.OnAddNodeMenuBtn)
-        
+        # # Bind events
+        # self.pipelinePanel.nodegraph.Bind(EVT_GSNODEGRAPH_ADDNODEBTN, self.OnAddNodeMenuBtn)
+
         
         
         # self.list_ctrl = DragList.MyDragList(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
@@ -373,30 +383,31 @@ class MyFrame(wx.Frame):
         print("Event handler 'on_button_processing' not implemented!")
         event.Skip()
         
-    def OnAddNodeMenuBtn(self, event):
-        # print(self.ng.nodes['lol'].GetSockets().GetWires())
-        current_node= self.pipelinePanel.GetInputNode()
-        pipeline =[]
-        while current_node is not None:
-            for socket in current_node.GetSockets():
-                if socket.direction == 1:
-                    if len(socket.GetWires())==0:
-                        current_node=None
-                    elif len(socket.GetWires())>1:
-                        print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
-                        current_node=None
+    # def OnAddNodeMenuBtn(self, event):
+    #     # print(self.ng.nodes['lol'].GetSockets().GetWires())
+    #     current_node= self.pipelinePanel.nodegraph.GetInputNode()
+    #     pipeline =[]
+    #     while current_node is not None:
+    #         for socket in current_node.GetSockets():
+    #             if socket.direction == 1:
+    #                 if len(socket.GetWires())==0:
+    #                     current_node=None
+    #                 elif len(socket.GetWires())>1:
+    #                     print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
+    #                     current_node=None
 
-                    else:
-                        for wire in socket.GetWires():
-                            current_node = wire.dstsocket.node
-                            pipeline.append(get_node_type(wire.dstsocket.node))
+    #                 else:
+    #                     for wire in socket.GetWires():
+    #                         current_node = wire.dstsocket.node
+    #                         pipeline.append(get_node_type(wire.dstsocket.node))
                         
-        print (pipeline)
-                        
+    #     print (pipeline)
+    #     pos = (8, self.pipelinePanel.nodegraph.GetRect()[3]-310)
+    #     self.pipelinePanel.PopupAddNodeMenu(pos)
         # print(self.ng.GetInputNode())
         # print()
         # print(self.ng.nodes['lol'].GetSockets()[0].GetWires()[0].dstsocket.node)
-        #  print(len(self.ng.nodes['lol'].GetSockets()[1].GetWires()))
+        # print(len(self.ng.nodes['lol'].GetSockets()[1].GetWires()))
 
         
 

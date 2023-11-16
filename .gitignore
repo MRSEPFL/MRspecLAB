@@ -2,6 +2,7 @@ __pycache__/
 /*/
 !interface/
 !/lcmodel/
+!/GimelStudio/
 !/processing/
 !/gsnodegraph/
 lcmodel/lcmodel

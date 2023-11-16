@@ -169,24 +169,24 @@ class MyFrame(wxglade_out.MyFrame):
     
 
         
-    # def OnRightClickList(self, event):
-    #     pos = event.GetPosition()
-    #     pos = self.list_ctrl.ScreenToClient(pos)
-    #     item, flags = self.list_ctrl.HitTest(pos)
+    def OnRightClickList(self, event):
+        pos = event.GetPosition()
+        pos = self.list_ctrl.ScreenToClient(pos)
+        item, flags = self.list_ctrl.HitTest(pos)
         
-    #     if item != -1:
-    #         self.list_ctrl.Select(item)  # Select the item that was right-clicked
-    #         self.PopupMenu(self.context_menu_pipeline)
+        if item != -1:
+            self.list_ctrl.Select(item)  # Select the item that was right-clicked
+            self.PopupMenu(self.context_menu_pipeline)
             
-    # def OnAddStep(self, event):
-    #     # Get the label text to add it to the list
-    #     label = event.GetEventObject()
-    #     new_item_text = label.GetLabel()
-    #     selected_item_index = self.list_ctrl.GetFirstSelected()
-    #     if selected_item_index >= 0:
-    #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-    #         self.pipeline.insert(selected_item_index+1, new_item_text)
-    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
+    def OnAddStep(self, event):
+        # Get the label text to add it to the list
+        label = event.GetEventObject()
+        new_item_text = label.GetLabel()
+        selected_item_index = self.list_ctrl.GetFirstSelected()
+        if selected_item_index >= 0:
+            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+            self.pipeline.insert(selected_item_index+1, new_item_text)
+            self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
         
 
@@ -253,7 +253,7 @@ class MyFrame(wxglade_out.MyFrame):
         return processingPipeline.processPipeline(self)
     
     def retrievePipeline(self):
-        current_node= self.pipelinePanel.GetInputNode()
+        current_node= self.pipelinePanel.nodegraph.GetInputNode()
         pipeline =[]
         while current_node is not None:
             for socket in current_node.GetSockets():
