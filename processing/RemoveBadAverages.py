@@ -15,9 +15,9 @@ class RemoveBadAverages(ps.ProcessingStep):
             trange = data["input"][0].time_axis() <= self.parameters["tmax"]
             for d in data["input"]: metric.append(np.sum((d[trange] - ref[trange])**2))
         elif self.parameters["domain"].lower().startswith("freq"):
-            specs = [d.spectrum() for d in data["input"]]
+            specs = [np.abs(d.spectrum()) for d in data["input"]]
             ref = np.mean(specs, axis=0)
-            for d in data["input"]: metric = np.sum((s - ref)**2 for s in specs)
+            for d in specs: metric.append(np.sum((d - ref)**2))
         self.zscores = (metric - np.mean(metric)) / np.std(metric)
         mask = np.abs(self.zscores) < self.parameters["stdDevThreshold"]
         self.removed = []
@@ -39,7 +39,7 @@ class RemoveBadAverages(ps.ProcessingStep):
         for i, d in enumerate(data["input"]):
             if i in self.removed: colour = "red"
             else: colour = (0, 0, 0, 1/len(data["input"]))
-            ax.plot(d.frequency_axis_ppm(), d.spectrum(), c=colour)
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()), c=colour)
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
