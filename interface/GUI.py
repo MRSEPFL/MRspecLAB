@@ -67,7 +67,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = False
         self.next = False
         self.show_editor = True
-        sys.stdout = self.consoltext
+        # sys.stdout = self.consoltext
         self.on_toggle_editor(None)
 
     def on_read_ima(self, event):
@@ -266,14 +266,8 @@ class MyFrame(wxglade_out.MyFrame):
         return processingPipeline.processPipeline(self)
     
     def on_fast_processing(self, event):
-        if self.button_fast_processing.GetValue():
-            print("Fast Processing enabled")
-            self.fast_processing= True
-            # Add your code for when the button is toggled on
-        else:
-            print("Fast Processing disabled")
-            self.fast_processing=False
-            # Add your code for when the button is toggled off
+        self.fast_processing = self.button_fast_processing.GetValue()
+        event.Skip()
     
     def retrievePipeline(self):
         current_node= self.pipelinePanel.nodegraph.GetInputNode()
@@ -293,6 +287,31 @@ class MyFrame(wxglade_out.MyFrame):
                             pipeline.append(wxglade_out.get_node_type(wire.dstsocket.node))
         
         return pipeline
+    
+    def log_text(self, colour, *args):
+        self.consoltext.BeginTextColour(colour)
+        text = ""
+        for arg in args:
+            text += str(arg)
+        self.consoltext.WriteText(text)
+        self.consoltext.EndTextColour()
+        self.consoltext.Newline()
+
+    def log_info(self, *args):
+        colour = (100, 100, 255)
+        self.log_text(colour, *args)
+
+    def log_error(self, *args):
+        colour = (255, 0, 0)
+        self.log_text(colour, *args)
+
+    def log_warning(self, *args):
+        colour = (255, 255, 0)
+        self.log_text(colour, *args)
+
+    def log_debug(self, *args):
+        colour = (0, 255, 0)
+        self.log_text(colour, *args)
 
 class MyApp(wx.App):
     def OnInit(self):

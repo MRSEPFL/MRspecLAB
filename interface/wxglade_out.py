@@ -3,6 +3,7 @@ import os
 # import matplotlib_canvas
 from . import matplotlib_canvas  # Use a relative import to import wxglade_out
 from . import DragList
+import wx.richtext
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
 
@@ -91,6 +92,11 @@ class FileDrop(wx.FileDropTarget):
         newindex = self.list.GetSelection()
         if newindex == wx.NOT_FOUND:
             print("No file selected")
+            return
+        if newindex == self.wrefindex:
+            self.wrefindex = None
+            self.list.SetItemBackgroundColour(newindex, self.list.GetBackgroundColour())
+            print("water reference cleared")
             return
         self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
         if self.wrefindex is not None:
@@ -198,7 +204,7 @@ class MyFrame(wx.Frame):
         
         
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
-        self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Set Selection as Water Reference")
+        self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
         self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
         self.clear_button.Disable()
@@ -232,7 +238,8 @@ class MyFrame(wx.Frame):
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         
-        self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        # self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.consoltext = wx.richtext.RichTextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.consoltext.SetBackgroundColour(wx.Colour(0, 0, 0))  # Set the background color to black
         self.consoltext.SetForegroundColour(wx.Colour(255, 255, 255))
 

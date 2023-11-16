@@ -16,14 +16,14 @@ def processPipeline(self):
             if not f.lower().endswith(".coord"):
                 filepaths.append(f)
         if len(filepaths) == 0:
-            print("No files found")
+            self.log_error("No files found")
             self.button_processing.SetLabel("Start Processing")
             self.processing = False
             return
 
         if not self.dt.wrefindex:
             wrefindex = None
-            print("No water reference found")
+            self.log_warning("No water reference found")
         else:
             wrefindex = self.dt.wrefindex
 
@@ -37,24 +37,24 @@ def processPipeline(self):
                     data = suspect.io.load_twix(filepaths[i])
                     data = suspect.processing.channel_combination.combine_channels(data) # temporary?
                 else:
-                    print("Unsupported file format: " + filepaths[i])
+                    self.log_error("Unsupported file format: " + filepaths[i])
                     continue
 
                 if i == wrefindex:
                     originalWref = data
-                    print("Water reference loaded:" + filepaths[i])
+                    self.log_info("Water reference loaded:" + filepaths[i])
                 elif len(data.shape) > 1:
                     for d in data:
                         originalData.append(data.inherit(d))
                 else:
                     originalData.append(data)
-            except: print("Error loading file: " + filepaths[i])
+            except: self.log_warning("Error loading file: " + filepaths[i])
         if len(originalData) == 0:
-            print("No files loaded")
+            self.log_error("No files loaded")
             self.button_processing.SetLabel("Start Processing")
             self.processing = False
             return
-        print(len(originalData), " files loaded")
+        self.log_info(len(originalData), " files loaded")
         
         outputpath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
         if outputpath == "": outputpath = "output"
@@ -97,7 +97,7 @@ def processPipeline(self):
             }
             self.button_processing.Disable()
             self.button_processing.SetLabel("Running " + step.__class__.__name__ + "...")
-            print("Processing step: ", step.__class__.__name__)
+            self.log_debug("Processing step: ", step.__class__.__name__)
             step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
             self.wrefSteps.append(dataDict["wref_output"]) # might append None; we need this to keep a history of steps while saving memory
@@ -164,7 +164,7 @@ def processPipeline(self):
             basisfile = str(int(tesla)) + "T_" + sequence + "_" + str(strte) + "ms.BASIS"
 
             if not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-                print("Basis set not found:\n\t", basisfile)
+                self.log_error("Basis set not found:\n\t", basisfile)
                 self.processing = False
                 self.button_processing.SetLabel("Start Processing")
                 self.button_processing.Enable()
@@ -208,19 +208,19 @@ def processPipeline(self):
             lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
             if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
-            print("Looking for executable here: ", lcmodelfile)
+            self.log_info("Looking for executable here: ", lcmodelfile)
             if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
                 zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
                 if not os.path.exists(zippath):
-                    print("lcmodel executable or zip not found")
+                    self.log_error("lcmodel executable or zip not found")
                     pass
-                print("lcmodel executable not found, extracting from zip here: ", zippath)
+                self.log_info("lcmodel executable not found, extracting from zip here: ", zippath)
                 with zipfile.ZipFile(zippath, "r") as zip_ref:
                     zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
             if os.name == 'nt': command = f"""mkdir {workpath} & copy {lcmodelfile} {workpath} & cd {workpath} & lcmodel.exe < result_sl0.CONTROL & del lcmodel.exe"""
             else: command = f"""mkdir {workpath} && cp {lcmodelfile} {workpath} && cd {workpath} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
-            print("Running LCModel...\n\t", command)
+            self.log_debug("Running LCModel...\n\t", command)
             os.system(command)
             
             command = ''
@@ -229,7 +229,7 @@ def processPipeline(self):
                 else: command += f" && mv {os.path.join(workpath, f)} {outputpath}"
             if os.name == 'nt': command = command[3:] + f" & rmdir {workpath}"
             else: command = command[3:] + f" && rm -r {workpath}"
-            print("Moving files...\n\t", command)
+            self.log_debug("Moving files...\n\t", command)
             os.system(command)
 
             # plot to canvas
@@ -261,7 +261,7 @@ def save_raw(filename, data, seq="PRESS"):
         fout.write(" $NMID\n")
         fout.write(" FMTDAT = '(2E15.6)'\n")
         if data.transform is not None: fout.write(" VOLUME = {}\n".format(data.voxel_volume() * 1e-3))
-        else: print("Saving LCModel data without a transform, using default voxel volume of 1ml")
+        # else: print("Saving LCModel data without a transform, using default voxel volume of 1ml")
         fout.write(" $END\n")
         for point in np.nditer(data, order='C'):
             fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))
