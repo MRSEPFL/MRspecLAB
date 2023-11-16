@@ -56,14 +56,14 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         figure.suptitle(self.__class__.__name__)
         ax = figure.add_subplot(2, 6, (1, 3))
         for d in data["input"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
         ax = figure.add_subplot(2, 6, (4, 6))
         for d in data["output"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
@@ -71,7 +71,7 @@ class FreqPhaseAlignment(ps.ProcessingStep):
         ax = figure.add_subplot(2, 6, (7, 8))
         for i, d in enumerate(data["input"]):
             d = d.adjust_frequency(-self.freqShifts[i]).adjust_phase(-self.phaseShifts[i])
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Aligned Input")

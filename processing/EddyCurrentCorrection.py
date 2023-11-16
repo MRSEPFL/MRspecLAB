@@ -29,7 +29,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         for d in data["input"]:
             output.append(d * ecc)
         ecwref = data["wref"] * ecc
-        self.gaussparams, _ = curve_fit(gaussian, ecwref.frequency_axis_ppm(), ecwref.spectrum(), p0=[np.abs(np.max(ecwref.spectrum())), 4.7, 1])
+        self.gaussparams, _ = curve_fit(gaussian, ecwref.frequency_axis_ppm(), np.real(ecwref.spectrum()), p0=[np.max(np.real(ecwref.spectrum())), 4.7, 1])
         data["output"] = output
         data["wref_output"] = ecwref
     
@@ -38,7 +38,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         if data["wref"] is None:
             ax = figure.add_subplot(1, 1, 1)
             for d in data["output"]:
-                ax.plot(d.frequency_axis_ppm(), d.spectrum())
+                ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
             ax.set_xlabel('Chemical shift (ppm)')
             ax.set_ylabel('Amplitude')
             ax.set_title("Output (no water reference given)")
@@ -47,7 +47,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         # input
         ax = figure.add_subplot(2, 2, 1)
         for d in data["input"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
@@ -55,7 +55,7 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         # output
         ax = figure.add_subplot(2, 2, 2)
         for d in data["output"]:
-            ax.plot(d.frequency_axis_ppm(), d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Output")
@@ -75,8 +75,8 @@ class EddyCurrentCorrection(ps.ProcessingStep):
         fwhm = np.abs(2 * np.sqrt(2 * np.log(2)) * self.gaussparams[2])
         fwhmhz = data["wref_output"].ppm_to_hertz(fwhm)
         gauss = gaussian(data["wref_output"].frequency_axis_ppm(), *self.gaussparams)
-        ax.plot(data["wref"].frequency_axis_ppm(), data["wref"].spectrum(), "-k", label="original")
-        ax.plot(data["wref"].frequency_axis_ppm(), data["wref_output"].spectrum(), "-b", label="corrected")
+        ax.plot(data["wref"].frequency_axis_ppm(), np.real(data["wref"].spectrum()), "-k", label="original")
+        ax.plot(data["wref"].frequency_axis_ppm(), np.real(data["wref_output"].spectrum()), "-b", label="corrected")
         ax.plot(data["wref"].frequency_axis_ppm(), gauss, ":r", label="gaussian fit")
         ax.text(self.gaussparams[1], self.gaussparams[0] / 2, f"FWHM = {fwhm:.2f} ppm\n= {fwhmhz:.2f} Hz", ha="center", va="center")
         ax.set_xlabel('Chemical shift (ppm)')
