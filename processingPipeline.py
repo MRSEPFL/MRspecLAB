@@ -58,7 +58,7 @@ def processPipeline(self):
         
         outputpath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
         if outputpath == "": outputpath = "output"
-        outputpath = os.path.join(self.rootPath, outputpath)
+        outputpath = os.path.join(self.rootPath, "output", outputpath)
         if not os.path.exists(outputpath): os.makedirs(outputpath)
 
         stepplotpath = os.path.join(outputpath, "stepplots")
