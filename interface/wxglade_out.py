@@ -227,7 +227,7 @@ class MyFrame(wx.Frame):
         self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
         self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.rightSizer.Add(self.buttonsProcessing_Sizer, 1, wx.ALL | wx.EXPAND, 0)
+        self.rightSizer.Add(self.buttonsProcessing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
         
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
@@ -395,6 +395,8 @@ class MyFrame(wx.Frame):
         self.dt.water_ref_button = self.water_ref_button
         self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
+        
+        self.SetIcon(wx.Icon("resources/iconapp.png"))
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
