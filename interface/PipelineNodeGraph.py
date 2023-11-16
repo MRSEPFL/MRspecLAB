@@ -108,12 +108,6 @@ class NodeGraphPanel(wx.Panel):
 
         # Setup the config with datatypes and node categories
         self.registry = {
-            # "image_nodeid": ImageNode,
-            # "mix_nodeid": MixNode,
-            # "blur_nodeid": BlurNode,
-            # "blend_nodeid": BlendNode,
-            # "value_nodeid": ValueNode,
-            # "output_nodeid": OutputNode,
             ##All the line below are added for MRS software
             "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
             "average_nodeid":AverageNode,
@@ -122,7 +116,16 @@ class NodeGraphPanel(wx.Panel):
             "zeropadding_nodeid":ZeroPaddingNode,
             "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
             "input_nodeid":InputNode
-
+        }
+        
+        self.available_registery_nodes= {
+            ##All the line below are added for MRS software
+            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
+            "average_nodeid":AverageNode,
+            "removebadaverages_nodeid":RemoveBadAveragesNode,
+            "linebroadening_nodeid":LineBroadeningNode,
+            "zeropadding_nodeid":ZeroPaddingNode,
+            "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
         }
         # Setup the config with datatypes and node categories
         config = {
@@ -242,9 +245,7 @@ class NodeGraphPanel(wx.Panel):
     #     self.zoom_field.Refresh()
 
     def PopupAddNodeMenu(self, pos):
-        available_registery_nodes=self.registry
-        del available_registery_nodes ["input_nodeid"]
-        self.addnodemenu = AddNodeMenu(self, available_registery_nodes,
+        self.addnodemenu = AddNodeMenu(self, self.available_registery_nodes,
                                        size=wx.Size(250, self.Size[1] - 50))
         self.addnodemenu.Position(pos, (2, 2))
         self.addnodemenu.SetSize(250, 400)

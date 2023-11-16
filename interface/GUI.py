@@ -161,12 +161,12 @@ class MyFrame(wxglade_out.MyFrame):
             return False
         self.dt.OnDropFiles(None, None, files)
         
-    def OnDeleteClick(self, event):
-        selected_item = self.list_ctrl.GetFirstSelected()
-        if selected_item >= 0:
-            self.list_ctrl.DeleteItem(selected_item)
-            self.pipeline.pop(selected_item)
-            self.steps.pop(selected_item)
+    # def OnDeleteClick(self, event):
+    #     selected_item = self.list_ctrl.GetFirstSelected()
+    #     if selected_item >= 0:
+    #         self.list_ctrl.DeleteItem(selected_item)
+    #         self.pipeline.pop(selected_item)
+    #         self.steps.pop(selected_item)
             
     def OnPlotClick(self, event):
         if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
@@ -182,24 +182,24 @@ class MyFrame(wxglade_out.MyFrame):
     
 
         
-    def OnRightClickList(self, event):
-        pos = event.GetPosition()
-        pos = self.list_ctrl.ScreenToClient(pos)
-        item, flags = self.list_ctrl.HitTest(pos)
+    # def OnRightClickList(self, event):
+    #     pos = event.GetPosition()
+    #     pos = self.list_ctrl.ScreenToClient(pos)
+    #     item, flags = self.list_ctrl.HitTest(pos)
         
-        if item != -1:
-            self.list_ctrl.Select(item)  # Select the item that was right-clicked
-            self.PopupMenu(self.context_menu_pipeline)
+    #     if item != -1:
+    #         self.list_ctrl.Select(item)  # Select the item that was right-clicked
+    #         self.PopupMenu(self.context_menu_pipeline)
             
-    def OnAddStep(self, event):
-        # Get the label text to add it to the list
-        label = event.GetEventObject()
-        new_item_text = label.GetLabel()
-        selected_item_index = self.list_ctrl.GetFirstSelected()
-        if selected_item_index >= 0:
-            self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-            self.pipeline.insert(selected_item_index+1, new_item_text)
-            self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
+    # def OnAddStep(self, event):
+    #     # Get the label text to add it to the list
+    #     label = event.GetEventObject()
+    #     new_item_text = label.GetLabel()
+    #     selected_item_index = self.list_ctrl.GetFirstSelected()
+    #     if selected_item_index >= 0:
+    #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
+    #         self.pipeline.insert(selected_item_index+1, new_item_text)
+    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
         
 
@@ -264,6 +264,16 @@ class MyFrame(wxglade_out.MyFrame):
 
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
+    
+    def on_fast_processing(self, event):
+        if self.button_fast_processing.GetValue():
+            print("Fast Processing enabled")
+            self.fast_processing= True
+            # Add your code for when the button is toggled on
+        else:
+            print("Fast Processing disabled")
+            self.fast_processing=False
+            # Add your code for when the button is toggled off
     
     def retrievePipeline(self):
         current_node= self.pipelinePanel.nodegraph.GetInputNode()
