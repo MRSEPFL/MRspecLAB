@@ -3,6 +3,7 @@ __pycache__/
 !interface/
 !/lcmodel/
 !/processing/
+!/gsnodegraph/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
