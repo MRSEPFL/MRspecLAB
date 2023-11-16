@@ -92,7 +92,11 @@ class MyFrame(wxglade_out.MyFrame):
         if filepath == "":
             print(f"File not found")
             return
-        tosave = [(step.__class__.__name__, step.parameters) for step in self.steps]
+        tosave = [[(step.__class__.__name__, step.parameters) for step in self.steps]]
+        nodes = dict(self.pipelinePanel.nodegraph.nodes)
+        tosave.append([[nodes[n].idname, nodes[n].id, nodes[n].pos] for n in nodes.keys()])
+        wires = list(self.pipelinePanel.nodegraph.wires)
+        tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
         with open(filepath, 'wb') as f:
             pickle.dump(tosave, f)
         event.Skip()
@@ -106,14 +110,23 @@ class MyFrame(wxglade_out.MyFrame):
             return
         with open(filepath, 'rb') as f:
             toload = pickle.load(f)
-        self.list_ctrl.DeleteAllItems()
+        # pipeline
         self.pipeline = []
         self.steps = []
-        for data in toload:
-            self.list_ctrl.Append([data[0]])
+        for data in toload[0]:
             self.pipeline = [data[0]]
             self.steps.append(self.processing_steps[data[0]]())
             self.steps[-1].parameters = data[1]
+        # nodegraph
+        self.pipelinePanel.nodegraph.nodes = {}
+        self.pipelinePanel.nodegraph.wires = []
+        for data in toload[-2]:
+            self.pipelinePanel.nodegraph.AddNode(data[0], data[1], data[2])
+        for data in toload[-1]:
+            src = self.pipelinePanel.nodegraph.nodes[data[0]].FindSocket(data[1])
+            dst = self.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
+            self.pipelinePanel.nodegraph.ConnectNodes(src, dst)
+        self.pipelinePanel.nodegraph.Refresh()
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
         event.Skip()
 
