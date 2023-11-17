@@ -267,6 +267,7 @@ class MyFrame(wxglade_out.MyFrame):
     
     def on_fast_processing(self, event):
         self.fast_processing = self.button_fast_processing.GetValue()
+        if self.fast_processing: self.on_button_processing(None)
         event.Skip()
     
     def retrievePipeline(self):
