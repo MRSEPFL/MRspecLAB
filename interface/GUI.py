@@ -53,9 +53,7 @@ class MyFrame(wxglade_out.MyFrame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
-        # self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-        self.pipeline=self.retrievePipeline()
+        self.pipeline = self.retrievePipeline()
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
         # self.processing_steps = dict of the definitions of all processing steps
         # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
@@ -67,15 +65,12 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = False
         self.next = False
         self.show_editor = True
+        self.debug = True
         # sys.stdout = self.consoltext
         self.on_toggle_editor(None)
 
-    def on_read_ima(self, event):
-        self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
-        event.Skip()
-
-    def on_read_twix(self, event):
-        self.import_to_list("TWIX files (*.dat)|*.dat")
+    def on_read_mrs(self, event):
+        self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
         event.Skip()
 
     def on_read_coord(self, event):
@@ -134,11 +129,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = not self.show_editor
         if self.show_editor:
             self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
-            # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
             self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
-            # self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
             self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
         if event is not None: event.Skip()
@@ -311,6 +304,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_text(colour, *args)
 
     def log_debug(self, *args):
+        if not self.debug: return
         colour = (0, 255, 0)
         self.log_text(colour, *args)
 
