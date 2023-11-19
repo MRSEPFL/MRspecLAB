@@ -291,8 +291,6 @@ class MyFrame(wxglade_out.MyFrame):
         self.consoltext.EndTextColour()
         self.consoltext.Newline()
         self.consoltext.SetScrollPos(wx.VERTICAL, self.consoltext.GetScrollRange(wx.VERTICAL))
-        # self.consoltext.SetInsertionPoint(-1)
-        # self.consoltext.ScrollIntoView(self.consoltext.GetLastPosition(), 0)
         self.consoltext.ShowPosition(self.consoltext.GetLastPosition())
 
     def log_info(self, *args):
