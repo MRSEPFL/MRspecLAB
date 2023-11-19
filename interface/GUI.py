@@ -206,7 +206,7 @@ class MyFrame(wxglade_out.MyFrame):
             thread.start()
         else:
             self.next = True
-        event.Skip()
+        if event is not None: event.Skip()
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -290,6 +290,10 @@ class MyFrame(wxglade_out.MyFrame):
         self.consoltext.WriteText(text)
         self.consoltext.EndTextColour()
         self.consoltext.Newline()
+        self.consoltext.SetScrollPos(wx.VERTICAL, self.consoltext.GetScrollRange(wx.VERTICAL))
+        # self.consoltext.SetInsertionPoint(-1)
+        # self.consoltext.ScrollIntoView(self.consoltext.GetLastPosition(), 0)
+        self.consoltext.ShowPosition(self.consoltext.GetLastPosition())
 
     def log_info(self, *args):
         colour = (100, 100, 255)
