@@ -55,18 +55,25 @@ class MyFrame(wxglade_out.MyFrame):
         
         self.pipeline = self.retrievePipeline()
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        # self.processing_steps = dict of the definitions of all processing steps
-        # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
-        # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
         self.supported_files = ["ima", "dcm", "dat", "coord"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
+        
         self.processing = False
         self.fast_processing = False
         self.next = False
         self.show_editor = True
         self.debug = True
-        # sys.stdout = self.consoltext
+        
+        self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
+        filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
+        if os.path.exists(filepath):
+            with open(filepath, 'rb') as f:
+                filepaths, wrefindex = pickle.load(f)
+            self.dt.OnDropFiles(None, None, filepaths)
+            if wrefindex is not None:
+                self.dt.on_water_ref(None, wrefindex)
+
         self.on_toggle_editor(None)
 
     def on_read_mrs(self, event):
@@ -309,6 +316,16 @@ class MyFrame(wxglade_out.MyFrame):
         if not self.debug: return
         colour = (0, 255, 0)
         self.log_text(colour, *args)
+
+    def on_close(self, event):
+        filepaths = self.dt.dropped_file_paths
+        if len(filepaths) > 0:
+            wrefindex = self.dt.wrefindex
+            tosave = [filepaths, wrefindex]
+            filepath = os.path.join(self.rootPath, "lastfiles.pickle")
+            with open(filepath, 'wb') as f:
+                pickle.dump(tosave, f)
+        self.Destroy()
 
 class MyApp(wx.App):
     def OnInit(self):

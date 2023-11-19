@@ -57,8 +57,9 @@ from . import PipelineNodeGraph
 
 class FileDrop(wx.FileDropTarget):
 
-    def __init__(self, listbox, label):
+    def __init__(self, parent, listbox, label):
         wx.FileDropTarget.__init__(self)
+        self.parent = parent
         self.list = listbox
         self.label = label
         self.dropped_file_paths = []
@@ -85,25 +86,27 @@ class FileDrop(wx.FileDropTarget):
         self.list.Set([])
         self.clear_button.Disable()
         self.water_ref_button.Disable()
-        print("filepaths cleared")
+        self.parent.log_info("filepaths cleared")
         event.Skip()
 
-    def on_water_ref(self, event):
+    def on_water_ref(self, event, index=None):
         newindex = self.list.GetSelection()
+        if index is not None: newindex = index
         if newindex == wx.NOT_FOUND:
-            print("No file selected")
-            return
+            self.parent.log_warning("No file selected")
+            if event is not None: event.Skip()
         if newindex == self.wrefindex:
             self.wrefindex = None
             self.list.SetItemBackgroundColour(newindex, self.list.GetBackgroundColour())
-            print("water reference cleared")
-            return
-        self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
-        if self.wrefindex is not None:
-            self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
-        self.wrefindex = newindex
-        print("water reference set to " + self.list.GetStrings()[self.wrefindex])
-        event.Skip()
+            self.parent.log_info("water reference cleared")
+        else:
+            if self.wrefindex is not None:
+                self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
+            self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
+            self.wrefindex = newindex
+            self.parent.log_info("water reference set to " + self.list.GetStrings()[self.wrefindex])
+        self.list.Refresh()
+        if event is not None: event.Skip()
 
 class MyFrame(wx.Frame):
 
@@ -393,7 +396,7 @@ class MyFrame(wx.Frame):
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
-        self.dt = FileDrop(self.drag_and_drop_list, self.drag_and_drop_label)
+        self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
         self.leftPanel.SetDropTarget(self.dt)
         self.dt.clear_button = self.clear_button
         self.dt.water_ref_button = self.water_ref_button
