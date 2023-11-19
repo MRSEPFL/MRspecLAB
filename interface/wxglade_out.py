@@ -70,8 +70,9 @@ class FileDrop(wx.FileDropTarget):
             self.clear_button.Disable()
             self.water_ref_button.Disable()
             return False
-        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0])
-        self.list.Set([f.rsplit(os.path.sep, 1)[1] for f in filenames])
+        prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
+        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
+        self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
         self.clear_button.Enable()
         if filenames[0].lower().endswith(".coord"):
             self.water_ref_button.Disable() # no processing for .coords
