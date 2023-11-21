@@ -135,17 +135,17 @@ class NodeGraphPanel(wx.Panel):
                 "INTEGER": "#A0A0A0",  # Grey
                 "FLOAT": "#A0A0A0",  # Grey
                 "VALUE": "#A0A0A0",  # Depreciated!
-                "TRANSIENTS": "#B33641", 
+                "TRANSIENTS": "#FFA07A", 
             },
             "input_nodes_categories": ["INPUT"],
             "node_categories": {
-                "INPUT": "#008000",  # Burgendy
+                "INPUT": "#32CD32",  # Burgendy     008000
                 "DRAW": "#AF4467",  # Pink
                 "MASK": "#084D4D",  # Blue-green
                 "CONVERT": "#564B7C",  # Purple
                 "FILTER": "#558333",  # Green
                 "BLEND": "#498DB8",  # Light blue
-                "QUALITY CONTROL": "#B33641",  # Light blue
+                "QUALITY CONTROL": "#02ccfe",  # Light blue  B33641   ff00fe
 
                 "COLOR": "#C2AF3A",  # Yellow
                 "TRANSFORM": "#6B8B8B", # Blue-grey

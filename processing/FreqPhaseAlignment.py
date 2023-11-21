@@ -5,7 +5,7 @@ import scipy
 
 class FreqPhaseAlignment(ps.ProcessingStep):
     def __init__(self):
-        super().__init__({"alignFreq": True, "alignPhase": False, "freqRange": (3., 3.2), "median": True, "target": 0})
+        super().__init__({"alignFreq": True, "alignPhase": True, "freqRange": (3., 3.2), "median": True, "target": 0})
     
     def process(self, data):
         if not self.parameters["alignFreq"] and not self.parameters["alignPhase"]:

@@ -23,6 +23,9 @@ from gsnodegraph.gsnodegraph.node import NodeWire
 from gsnodegraph.gsnodegraph.constants import (GRAPH_BACKGROUND_COLOR, SOCKET_OUTPUT,
                                    SELECTION_BOX_COLOR, SELECTION_BOX_BORDER_COLOR,
                                    DEFAULT_WIRE_CURVATURE)
+
+from constants import (LIGHT_BEIGE_COLOR_WX)  ## Added for MRSoftware
+
 from gsnodegraph.gsnodegraph.assets import ICON_ADD_NODE
 from .utils.z_matrix import ZMatrix
 from .btn import AddNodeBtn
@@ -40,6 +43,8 @@ ID_CONTEXTMENU_DELETENODES = wx.NewIdRef()
 ID_CONTEXTMENU_DUPLICATENODE = wx.NewIdRef()
 ID_CONTEXTMENU_DESELECTALLNODES = wx.NewIdRef()
 ID_CONTEXTMENU_SELECTALLNODES = wx.NewIdRef()
+
+ID_CONTEXTMENU_PLOTNODE  = wx.NewIdRef() ##added MRSoftware
 
 
 class NodeGraphBase(wx.ScrolledCanvas):
@@ -112,6 +117,8 @@ class NodeGraphBase(wx.ScrolledCanvas):
                           id=ID_CONTEXTMENU_DESELECTALLNODES)
         self.Bind(wx.EVT_MENU, self.OnDuplicateNode,
                           id=ID_CONTEXTMENU_DUPLICATENODE)
+        self.Bind(wx.EVT_MENU, self.OnPlotNode,
+                          id=ID_CONTEXTMENU_PLOTNODE)
 
         # Keyboard shortcut bindings
         self.accel_tbl = wx.AcceleratorTable([(wx.ACCEL_SHIFT, ord('D'),
@@ -372,6 +379,10 @@ class NodeGraphBase(wx.ScrolledCanvas):
     def OnDuplicateNode(self, event):
         """ Event that duplicates the currently selected node. """
         self.DuplicateNode(self.active_node)
+        
+    def OnPlotNode(self, event): ##Added Mrsoftware
+        """ Event that Plot the currently selected node. """
+
 
     def OnContextMenu(self, event):
         # Create the popup menu
@@ -402,6 +413,13 @@ class NodeGraphBase(wx.ScrolledCanvas):
                                                         "{0}{1}".format(_("Delete"), "\tDel"), "",
                                                         wx.ITEM_NORMAL)
                 self.context_menu.AppendItem(delete_menuitem)
+                
+                plot_menuitem = flatmenu.FlatMenuItem(self.context_menu,
+                                                        ID_CONTEXTMENU_PLOTNODE,
+                                                        _("Plot"), "",
+                                                        wx.ITEM_NORMAL)
+                self.context_menu.AppendItem(plot_menuitem)
+                    
 
                 if self.IsInputNode(self.active_node) is not True:
                     if self.active_node.IsMuted() is not True:
@@ -438,7 +456,7 @@ class NodeGraphBase(wx.ScrolledCanvas):
         self.context_menu.AppendItem(deselectallnodes_menuitem)
 
     def DrawSelectionBox(self, dc, rect):
-        dc.SetPen(wx.Pen(wx.Colour(SELECTION_BOX_BORDER_COLOR), 2,
+        dc.SetPen(wx.Pen(wx.Colour(255,160,122,255), 2,
                   wx.PENSTYLE_SHORT_DASH))
         dc.SetBrush(wx.Brush(wx.Colour(SELECTION_BOX_COLOR)))
         dc.DrawRectangle(rect)
@@ -535,7 +553,7 @@ class NodeGraphBase(wx.ScrolledCanvas):
         self.Update()
 
     def OnDrawBackground(self, dc):
-        dc.SetBackground(wx.Brush(wx.Colour(GRAPH_BACKGROUND_COLOR)))
+        dc.SetBackground(wx.Brush(wx.Colour(LIGHT_BEIGE_COLOR_WX)))
         dc.Clear()
 
     def OnDrawScene(self, dc):
@@ -911,3 +929,4 @@ class NodeGraphBase(wx.ScrolledCanvas):
 
     def ConvertWindowToScene(self, position):
         return self.matrix.InverseTransformPoint([position[0], position[1]])
+    

@@ -12,6 +12,8 @@ from .plots import plot_ima, plot_coord
 from readcoord import ReadlcmCoord
 import processingPipeline
 
+from constants import(DARK_BEIGE_COLOR_WX,DARK_BEIGE_COLOR_WX_PUSHED,LIGHT_BEIGE_COLOR_WX)
+
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
