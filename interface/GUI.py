@@ -5,10 +5,7 @@ import inspect
 import importlib.util
 import threading
 import suspect
-import sys
 import pickle
-import io
-import time
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
@@ -256,12 +253,6 @@ class MyFrame(wxglade_out.MyFrame):
         if event is not None: event.Skip()
         return
 
-    def waitforprocessingbutton(self, label):
-        self.button_processing.Enable()
-        self.button_processing.SetLabel(label)
-        while not self.next: time.sleep(0.1)
-        self.next = False
-
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
     
@@ -270,6 +261,10 @@ class MyFrame(wxglade_out.MyFrame):
         if self.fast_processing: self.on_button_processing(None)
         event.Skip()
     
+    def on_stop_processing(self, event):
+        self.processing = False
+        event.Skip()
+
     def retrievePipeline(self):
         current_node= self.pipelinePanel.nodegraph.GetInputNode()
         pipeline =[]

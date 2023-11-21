@@ -6,9 +6,26 @@ import zipfile
 import numpy as np
 import matplotlib
 from readcoord import ReadlcmCoord
+import time
 
 from interface.plots import plot_ima, plot_coord
 from suspect import MRSData
+
+def stop_processing(self):
+    self.next = False
+    self.processing = False
+    self.button_processing.SetLabel("Start Processing")
+    self.button_processing.Enable()	
+    return
+
+def waitforprocessingbutton(self, label):
+    self.button_processing.Enable()
+    self.button_processing.SetLabel(label)
+    while not self.next:
+        time.sleep(0.1)
+        if not self.processing: return False
+    self.next = False
+    return True
 
 def processPipeline(self):
         filepaths = []
@@ -17,9 +34,7 @@ def processPipeline(self):
                 filepaths.append(f)
         if len(filepaths) == 0:
             self.log_error("No files found")
-            self.button_processing.SetLabel("Start Processing")
-            self.processing = False
-            return
+            return stop_processing(self)
 
         if not self.dt.wrefindex:
             wrefindex = None
@@ -42,7 +57,7 @@ def processPipeline(self):
 
                 if i == wrefindex:
                     originalWref = data
-                    self.log_info("Water reference loaded:" + filepaths[i])
+                    self.log_info("Water reference loaded: " + filepaths[i])
                 elif len(data.shape) > 1:
                     for d in data:
                         originalData.append(data.inherit(d))
@@ -51,9 +66,7 @@ def processPipeline(self):
             except: self.log_warning("Error loading file: " + filepaths[i])
         if len(originalData) == 0:
             self.log_error("No files loaded")
-            self.button_processing.SetLabel("Start Processing")
-            self.processing = False
-            return
+            return stop_processing(self)
         self.log_info(len(originalData), " files loaded")
         
         outputpath = os.path.join(self.rootPath, "output")
@@ -97,6 +110,7 @@ def processPipeline(self):
                 "wref_output": None
             }
             self.button_processing.Disable()
+            self.button_stop_processing.Disable()
             self.button_processing.SetLabel("Running " + step.__class__.__name__ + "...")
             self.log_debug("Processing step: ", step.__class__.__name__)
             step.process(dataDict)
@@ -109,12 +123,15 @@ def processPipeline(self):
             plotThread = threading.Thread(target=plotWorker, args=(step, dict(dataDict), nstep)) # copy dataDict since it will be immediately modified by the next step
             plotThread.start()
             
-            if not self.fast_processing: self.waitforprocessingbutton("Next")
+            if not self.fast_processing:
+                if not waitforprocessingbutton(self, "Next"):
+                    return stop_processing(self)
 
         if plotThread is not None: plotThread.join() # wait for last step plot to finish
 
         ##### SAVING DATA PLOTS #####
         self.button_processing.Disable()
+        self.button_stop_processing.Disable()
         self.button_processing.SetLabel("Saving plots...")
         dataplotpath = os.path.join(outputpath, "dataplots")
         if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
@@ -147,10 +164,12 @@ def processPipeline(self):
         if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
         else: result = result[0].inherit(np.mean(result, axis=0))
 
-        self.waitforprocessingbutton("Run LCModel")
+        if not waitforprocessingbutton(self, "Run LCModel"):
+            return stop_processing(self)
 
         ##### ANALYSIS #####
         self.button_processing.Disable()
+        self.button_stop_processing.Disable()
         self.button_processing.SetLabel("Running LCModel...")
         workpath = os.path.join(self.rootPath, "temp")
         controlfile = os.path.join(workpath, "result")
@@ -257,11 +276,7 @@ def processPipeline(self):
         else:
             self.log_warning("LCModel output not found")
 
-        self.processing = False
-        self.next = False
-        self.button_processing.SetLabel("Start Processing")
-        self.button_processing.Enable()
-        return
+        return stop_processing(self)
 
 # adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
 def save_raw(filename, data, seq="PRESS"):

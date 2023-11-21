@@ -231,7 +231,12 @@ class MyFrame(wx.Frame):
         self.button_fast_processing = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp, style=wx.BORDER_SUNKEN)
         self.button_fast_processing.SetMinSize((100, -1))
         
+        self.button_stop_processing = wx.Button(self.rightPanel, wx.ID_ANY, "X", style=wx.BORDER_SUNKEN)
+        self.button_stop_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.button_stop_processing.SetMinSize((100, -1))
+
         self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
+        self.buttonsProcessing_Sizer.Add(self.button_stop_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
 
         self.rightSizer.Add(self.buttonsProcessing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
@@ -247,6 +252,7 @@ class MyFrame(wx.Frame):
 
 
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_fast_processing, self.button_fast_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_stop_processing, self.button_stop_processing)
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
