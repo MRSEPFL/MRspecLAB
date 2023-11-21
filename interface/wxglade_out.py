@@ -57,8 +57,9 @@ from . import PipelineNodeGraph
 
 class FileDrop(wx.FileDropTarget):
 
-    def __init__(self, listbox, label):
+    def __init__(self, parent, listbox, label):
         wx.FileDropTarget.__init__(self)
+        self.parent = parent
         self.list = listbox
         self.label = label
         self.dropped_file_paths = []
@@ -69,8 +70,9 @@ class FileDrop(wx.FileDropTarget):
             self.clear_button.Disable()
             self.water_ref_button.Disable()
             return False
-        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0])
-        self.list.Set([f.rsplit(os.path.sep, 1)[1] for f in filenames])
+        prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
+        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
+        self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
         self.clear_button.Enable()
         if filenames[0].lower().endswith(".coord"):
             self.water_ref_button.Disable() # no processing for .coords
@@ -85,25 +87,27 @@ class FileDrop(wx.FileDropTarget):
         self.list.Set([])
         self.clear_button.Disable()
         self.water_ref_button.Disable()
-        print("filepaths cleared")
+        self.parent.log_info("filepaths cleared")
         event.Skip()
 
-    def on_water_ref(self, event):
+    def on_water_ref(self, event, index=None):
         newindex = self.list.GetSelection()
+        if index is not None: newindex = index
         if newindex == wx.NOT_FOUND:
-            print("No file selected")
-            return
+            self.parent.log_warning("No file selected")
+            if event is not None: event.Skip()
         if newindex == self.wrefindex:
             self.wrefindex = None
             self.list.SetItemBackgroundColour(newindex, self.list.GetBackgroundColour())
-            print("water reference cleared")
-            return
-        self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
-        if self.wrefindex is not None:
-            self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
-        self.wrefindex = newindex
-        print("water reference set to " + self.list.GetStrings()[self.wrefindex])
-        event.Skip()
+            self.parent.log_info("water reference cleared")
+        else:
+            if self.wrefindex is not None:
+                self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
+            self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
+            self.wrefindex = newindex
+            self.parent.log_info("water reference set to " + self.list.GetStrings()[self.wrefindex])
+        self.list.Refresh()
+        if event is not None: event.Skip()
 
 class MyFrame(wx.Frame):
 
@@ -123,19 +127,16 @@ class MyFrame(wx.Frame):
         menuBar.Append(viewMenu, "&View")
         self.SetMenuBar(menuBar)
 
-        open_ima = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open DICOM files (.ima, .dcm)", "Open .ima or .dcm files")
-        open_twix = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open Twix files (.dat)", "Open .dat files")
+        open_mrs = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open MRS files", "Open .ima, .dcm or .dat files")
         open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open COORD file", "Open .coord file")
         load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
         save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
-        fileMenu.Append(open_ima)
-        fileMenu.Append(open_twix)
+        fileMenu.Append(open_mrs)
         fileMenu.Append(open_coord)
         fileMenu.AppendSeparator()
         fileMenu.Append(load_pipeline)
         fileMenu.Append(save_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_read_ima, open_ima)
-        self.Bind(wx.EVT_MENU, self.on_read_twix, open_twix)
+        self.Bind(wx.EVT_MENU, self.on_read_mrs, open_mrs)
         self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
         self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
         self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
@@ -240,7 +241,12 @@ class MyFrame(wx.Frame):
         self.button_fast_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
 
         
+        self.button_stop_processing = wx.Button(self.rightPanel, wx.ID_ANY, "X", style=wx.BORDER_SUNKEN)
+        self.button_stop_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.button_stop_processing.SetMinSize((100, -1))
+
         self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
+        self.buttonsProcessing_Sizer.Add(self.button_stop_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
 
         self.rightSizer.Add(self.buttonsProcessing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
@@ -256,6 +262,7 @@ class MyFrame(wx.Frame):
 
 
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_fast_processing, self.button_fast_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_stop_processing, self.button_stop_processing)
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
@@ -406,7 +413,7 @@ class MyFrame(wx.Frame):
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
-        self.dt = FileDrop(self.drag_and_drop_list, self.drag_and_drop_label)
+        self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
         self.leftPanel.SetDropTarget(self.dt)
         self.dt.clear_button = self.clear_button
         self.dt.water_ref_button = self.water_ref_button

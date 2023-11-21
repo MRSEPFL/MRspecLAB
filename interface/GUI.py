@@ -5,10 +5,7 @@ import inspect
 import importlib.util
 import threading
 import suspect
-import sys
 import pickle
-import io
-import time
 
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
@@ -55,29 +52,31 @@ class MyFrame(wxglade_out.MyFrame):
                         obj = getattr(module, name)
                         self.processing_steps[name] = obj
         
-        # self.pipeline = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "EddyCurrentCorrection", "RemoveBadAverages", "Average"]
-        # self.pipeline = [self.list_ctrl.GetItemText(i) for i in range(self.list_ctrl.GetItemCount())]
-        self.pipeline=self.retrievePipeline()
+        self.pipeline = self.retrievePipeline()
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        # self.processing_steps = dict of the definitions of all processing steps
-        # self.pipeline = mirror of the content of self.list_ctrl; might replace by self.list_ctrl.GetStrings()
-        # self.steps = instances of the processing steps in the pipeline; should be updated every time self.pipeline or self.list_ctrl is updated 
         self.supported_files = ["ima", "dcm", "dat", "coord"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
+        
         self.processing = False
         self.fast_processing = False
         self.next = False
         self.show_editor = True
-        # sys.stdout = self.consoltext
+        self.debug = True
+        
+        self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
+        filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
+        if os.path.exists(filepath):
+            with open(filepath, 'rb') as f:
+                filepaths, wrefindex = pickle.load(f)
+            self.dt.OnDropFiles(None, None, filepaths)
+            if wrefindex is not None:
+                self.dt.on_water_ref(None, wrefindex)
+
         self.on_toggle_editor(None)
 
-    def on_read_ima(self, event):
-        self.import_to_list("IMA files (*.ima)|*.ima|DICOM files (*.dcm)|*.dcm")
-        event.Skip()
-
-    def on_read_twix(self, event):
-        self.import_to_list("TWIX files (*.dat)|*.dat")
+    def on_read_mrs(self, event):
+        self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
         event.Skip()
 
     def on_read_coord(self, event):
@@ -136,13 +135,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = not self.show_editor
         if self.show_editor:
             self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
-            # self.mainSplitter.Unsplit(self.mainSplitter.GetWindow1())
-            # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
             self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
-            # self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter)
-            # self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
             self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
         if event is not None: event.Skip()
@@ -217,7 +212,7 @@ class MyFrame(wxglade_out.MyFrame):
             thread.start()
         else:
             self.next = True
-        event.Skip()
+        if event is not None: event.Skip()
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -260,28 +255,18 @@ class MyFrame(wxglade_out.MyFrame):
         if event is not None: event.Skip()
         return
 
-    def waitforprocessingbutton(self, label):
-        self.button_processing.Enable()
-        self.button_processing.SetLabel(label)
-        while not self.next: time.sleep(0.1)
-        self.next = False
-
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
     
     def on_fast_processing(self, event):
         self.fast_processing = self.button_fast_processing.GetValue()
-        if self.button_fast_processing.GetValue():
-            self.button_fast_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX_PUSHED))
-            self.log_info("fast processing enabled")
-        else:
-            self.button_fast_processing.SetBackgroundColour(wx.Colour(LIGHT_BEIGE_COLOR_WX))
-            self.log_info("fast processing disabled")
-
-            
-            
+        if self.fast_processing: self.on_button_processing(None)
         event.Skip()
     
+    def on_stop_processing(self, event):
+        self.processing = False
+        event.Skip()
+
     def retrievePipeline(self):
         current_node= self.pipelinePanel.nodegraph.GetInputNode()
         pipeline =[]
@@ -309,6 +294,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.consoltext.WriteText(text)
         self.consoltext.EndTextColour()
         self.consoltext.Newline()
+        self.consoltext.SetScrollPos(wx.VERTICAL, self.consoltext.GetScrollRange(wx.VERTICAL))
+        self.consoltext.ShowPosition(self.consoltext.GetLastPosition())
 
     def log_info(self, *args):
         colour = (100, 100, 255)
@@ -323,8 +310,19 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_text(colour, *args)
 
     def log_debug(self, *args):
+        if not self.debug: return
         colour = (0, 255, 0)
         self.log_text(colour, *args)
+
+    def on_close(self, event):
+        filepaths = self.dt.dropped_file_paths
+        if len(filepaths) > 0:
+            wrefindex = self.dt.wrefindex
+            tosave = [filepaths, wrefindex]
+            filepath = os.path.join(self.rootPath, "lastfiles.pickle")
+            with open(filepath, 'wb') as f:
+                pickle.dump(tosave, f)
+        self.Destroy()
 
 class MyApp(wx.App):
     def OnInit(self):
