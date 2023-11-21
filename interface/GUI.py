@@ -15,6 +15,8 @@ from .plots import plot_ima, plot_coord
 from readcoord import ReadlcmCoord
 import processingPipeline
 
+from constants import(DARK_BEIGE_COLOR_WX,DARK_BEIGE_COLOR_WX_PUSHED,LIGHT_BEIGE_COLOR_WX)
+
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -134,10 +136,12 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = not self.show_editor
         if self.show_editor:
             self.pipelineplotSplitter.SplitVertically(self.pipelinePanel, self.rightPanel)
+            # self.mainSplitter.Unsplit(self.mainSplitter.GetWindow1())
             # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel)
             self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
+            # self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter)
             # self.leftSplitter.Unsplit(self.leftSplitter.GetWindow1())
             self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
@@ -267,6 +271,15 @@ class MyFrame(wxglade_out.MyFrame):
     
     def on_fast_processing(self, event):
         self.fast_processing = self.button_fast_processing.GetValue()
+        if self.button_fast_processing.GetValue():
+            self.button_fast_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX_PUSHED))
+            self.log_info("fast processing enabled")
+        else:
+            self.button_fast_processing.SetBackgroundColour(wx.Colour(LIGHT_BEIGE_COLOR_WX))
+            self.log_info("fast processing disabled")
+
+            
+            
         event.Skip()
     
     def retrievePipeline(self):

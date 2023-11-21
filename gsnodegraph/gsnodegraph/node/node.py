@@ -15,7 +15,7 @@
 # ----------------------------------------------------------------------------
 
 import wx
-
+from constants import DARK_BEIGE_COLOR_WX
 from gsnodegraph.gsnodegraph.assets.bitmaps import ICON_IMAGE
 
 from .socket import NodeSocket
@@ -35,7 +35,7 @@ class NodeBase(object):
         self.idname = None
         self.pos = wx.Point(0, 0)
         self.size = wx.Size(NODE_DEFAULT_WIDTH, NODE_DEFAULT_HEIGHT)
-        self.header_color = wx.Colour("#242424")
+        self.header_color = wx.Colour("#242424") ##242424
 
         self.expanded = False
         self.selected = False
@@ -279,7 +279,7 @@ class NodeBase(object):
 
         # Node body and border
         if self.IsSelected() or self.IsActive():
-            border_color = NODE_BORDER_SELECTED_COLOR
+            border_color = (206,191,170,255)
         else:
             border_color = NODE_BORDER_NORMAL_COLOR
         if self.IsMuted():

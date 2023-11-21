@@ -6,7 +6,7 @@ from . import DragList
 import wx.richtext
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
-
+from constants import(DARK_BEIGE_COLOR_WX,MEDIUM_BEIGE_COLOR_WX,LIGHT_BEIGE_COLOR_WX)
 
 # import sys
 # import wx
@@ -118,6 +118,7 @@ class MyFrame(wx.Frame):
         fileMenu = wx.Menu()
         viewMenu = wx.Menu()
         menuBar = wx.MenuBar()
+        menuBar.SetBackgroundColour(wx.Colour(MEDIUM_BEIGE_COLOR_WX))
         menuBar.Append(fileMenu, "&File")
         menuBar.Append(viewMenu, "&View")
         self.SetMenuBar(menuBar)
@@ -205,12 +206,17 @@ class MyFrame(wx.Frame):
         
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
         self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
+        self.clear_button.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+        self.water_ref_button.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+
         self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
         self.clear_button.Disable()
         self.water_ref_button.Disable()
 
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
+        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(LIGHT_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+
         self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.drag_and_drop_list)
 
@@ -225,10 +231,14 @@ class MyFrame(wx.Frame):
         
         self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
         self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.button_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+
         
         bmp = wx.Bitmap("resources/fastforwardbutton.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.button_fast_processing = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp, style=wx.BORDER_SUNKEN)
         self.button_fast_processing.SetMinSize((100, -1))
+        self.button_fast_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+
         
         self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
         self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
@@ -389,7 +399,7 @@ class MyFrame(wx.Frame):
         self.pipelineplotSplitter.SetSashGravity(1.)
         
         
-
+        self.SetBackgroundColour(wx.Colour(MEDIUM_BEIGE_COLOR_WX)) 
 
 
 
