@@ -29,7 +29,20 @@ import processingPipeline
 #     else:
 #         return "Unknown steps"
 
+myEVT_LOG = wx.NewEventType()
+EVT_LOG = wx.PyEventBinder(myEVT_LOG, 1)
+class LogEvent(wx.PyCommandEvent):
+    def __init__(self, evtType, id, text=None, colour=None):
+        wx.PyCommandEvent.__init__(self, evtType, id)
+        self.text = text
+        self.colour = colour
 
+    def GetText(self):
+        return self.text
+    
+    def GetColour(self):
+        return self.colour
+    
 class MyFrame(wxglade_out.MyFrame):
 
     def __init__(self, *args, **kwds):
@@ -62,6 +75,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = True
         self.debug = True
         
+        self.Bind(EVT_LOG, self.on_log)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
@@ -221,6 +235,9 @@ class MyFrame(wxglade_out.MyFrame):
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
+        if not any([filepath.lower().endswith(ext) for ext in self.supported_files]):
+            self.log_error("Invalid file type")
+            return
         if filepath.lower().endswith(".coord"):
             f = ReadlcmCoord(filepath)
             self.matplotlib_canvas.clear()
@@ -235,6 +252,7 @@ class MyFrame(wxglade_out.MyFrame):
             return
         
         else:
+            f = None
             if filepath.lower().endswith((".ima", ".dcm")):
                 f = suspect.io.load_siemens_dicom(filepath)
             elif filepath.lower().endswith(".dat"):
@@ -263,6 +281,7 @@ class MyFrame(wxglade_out.MyFrame):
     
     def on_stop_processing(self, event):
         self.processing = False
+        self.fast_processing = False
         event.Skip()
 
     def retrievePipeline(self):
@@ -285,15 +304,21 @@ class MyFrame(wxglade_out.MyFrame):
         return pipeline
     
     def log_text(self, colour, *args):
-        self.consoltext.BeginTextColour(colour)
         text = ""
-        for arg in args:
-            text += str(arg)
+        for arg in args: text += str(arg)
+        evt = LogEvent(myEVT_LOG, -1, text=text, colour=colour)
+        wx.PostEvent(self, evt)
+
+    def on_log(self, event):
+        text = event.GetText()
+        colour = event.GetColour()
+        self.consoltext.BeginTextColour(colour)
         self.consoltext.WriteText(text)
         self.consoltext.EndTextColour()
         self.consoltext.Newline()
         self.consoltext.SetScrollPos(wx.VERTICAL, self.consoltext.GetScrollRange(wx.VERTICAL))
         self.consoltext.ShowPosition(self.consoltext.GetLastPosition())
+        event.Skip()
 
     def log_info(self, *args):
         colour = (100, 100, 255)
