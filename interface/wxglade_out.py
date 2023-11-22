@@ -6,7 +6,7 @@ from . import DragList
 import wx.richtext
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
-from constants import(DARK_BEIGE_COLOR_WX,MEDIUM_BEIGE_COLOR_WX,LIGHT_BEIGE_COLOR_WX)
+from constants import(BLACK_WX,YELLOW_WX,GREY_WX,ORANGE_WX,BEIGE_WX)
 
 # import sys
 # import wx
@@ -54,6 +54,9 @@ def get_node_type(node):
 # builtins.__dict__['_'] = wx.GetTranslation
 
 from . import PipelineNodeGraph
+
+from . import pipeline_window
+
 
 class FileDrop(wx.FileDropTarget):
 
@@ -122,7 +125,7 @@ class MyFrame(wx.Frame):
         fileMenu = wx.Menu()
         viewMenu = wx.Menu()
         menuBar = wx.MenuBar()
-        menuBar.SetBackgroundColour(wx.Colour(MEDIUM_BEIGE_COLOR_WX))
+        menuBar.SetBackgroundColour(wx.Colour(YELLOW_WX))
         menuBar.Append(fileMenu, "&File")
         menuBar.Append(viewMenu, "&View")
         self.SetMenuBar(menuBar)
@@ -150,7 +153,7 @@ class MyFrame(wx.Frame):
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)       
         # self.leftSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.pipelineplotSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        # self.pipelineplotSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.consoleinfoSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
 
         self.mainSplitter.SetMinimumPaneSize(100)
@@ -161,7 +164,7 @@ class MyFrame(wx.Frame):
         self.leftPanel = wx.Panel(self.mainSplitter, wx.ID_ANY)
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftPanel.SetSizer(self.leftSizer)
-        self.rightPanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
+        self.rightPanel = wx.Panel(self.rightSplitter, wx.ID_ANY)
         self.rightSizer = wx.BoxSizer(wx.VERTICAL)
         self.rightPanel.SetSizer(self.rightSizer)
         
@@ -207,8 +210,8 @@ class MyFrame(wx.Frame):
         
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
         self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
-        self.clear_button.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
-        self.water_ref_button.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+        self.clear_button.SetBackgroundColour(wx.Colour(ORANGE_WX))  # Set the background color (RGB values)
+        self.water_ref_button.SetBackgroundColour(wx.Colour(ORANGE_WX))  # Set the background color (RGB values)
 
         self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
@@ -216,7 +219,7 @@ class MyFrame(wx.Frame):
         self.water_ref_button.Disable()
 
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(LIGHT_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
 
         self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.drag_and_drop_list)
@@ -232,13 +235,13 @@ class MyFrame(wx.Frame):
         
         self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
         self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.button_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+        self.button_processing.SetBackgroundColour(wx.Colour(ORANGE_WX))  # Set the background color (RGB values)
 
         
         bmp = wx.Bitmap("resources/fastforwardbutton.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.button_fast_processing = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp, style=wx.BORDER_SUNKEN)
         self.button_fast_processing.SetMinSize((100, -1))
-        self.button_fast_processing.SetBackgroundColour(wx.Colour(DARK_BEIGE_COLOR_WX))  # Set the background color (RGB values)
+        self.button_fast_processing.SetBackgroundColour(wx.Colour(ORANGE_WX))  # Set the background color (RGB values)
 
         
         self.button_stop_processing = wx.Button(self.rightPanel, wx.ID_ANY, "X", style=wx.BORDER_SUNKEN)
@@ -269,8 +272,10 @@ class MyFrame(wx.Frame):
         
 
 
-        self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(parent=self.pipelineplotSplitter, size=(100, 100))
-        self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
+        # self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(parent=self.pipelineplotSplitter, size=(100, 100))
+        # self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
+        
+        self.pipelineWindow=pipeline_window.PipelineWindow(parent=self)
         # self.mgr.AddPane(self.nodegraph_pnl,
         #                   aui.AuiPaneInfo()
         #                   .Name("NODE_EDITOR")
@@ -393,7 +398,7 @@ class MyFrame(wx.Frame):
 
         
         
-        self.rightSplitter.SplitHorizontally(self.pipelineplotSplitter, self.consoleinfoSplitter, -150)
+        self.rightSplitter.SplitHorizontally(self.rightPanel, self.consoleinfoSplitter, -150)
         self.rightSplitter.SetSashGravity(1.)
         
         self.consoleinfoSplitter.SplitVertically(self.consoltext, self.infotext, -150)
@@ -402,11 +407,11 @@ class MyFrame(wx.Frame):
         
 
         
-        self.pipelineplotSplitter.SplitVertically(self.pipelinePanel,self.rightPanel , -150)
-        self.pipelineplotSplitter.SetSashGravity(1.)
+        # self.pipelineplotSplitter.SplitVertically(self.pipelinePanel,self.rightPanel , -150)
+        # self.pipelineplotSplitter.SetSashGravity(1.)
         
         
-        self.SetBackgroundColour(wx.Colour(MEDIUM_BEIGE_COLOR_WX)) 
+        self.SetBackgroundColour(wx.Colour(YELLOW_WX)) 
 
 
 
@@ -420,7 +425,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
         
-        self.SetIcon(wx.Icon("resources/iconapp.png"))
+        self.SetIcon(wx.Icon("resources/icon_32p.png"))
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
