@@ -9,6 +9,8 @@ class PipelineWindow(wx.Frame):
     def __init__(self, *args, **kw):
         super(PipelineWindow, self).__init__(*args, **kw)
 
+        self.SetSize(wx.Size(1200, 500))
+
 
         self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(self, size=(100, 100))
         self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
