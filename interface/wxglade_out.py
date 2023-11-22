@@ -265,8 +265,6 @@ class MyFrame(wx.Frame):
         
         # self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.consoltext = wx.richtext.RichTextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
-        self.consoltext.SetBackgroundColour(wx.Colour(0, 0, 0))  # Set the background color to black
-        self.consoltext.SetForegroundColour(wx.Colour(255, 255, 255))
 
 
 
@@ -407,8 +405,8 @@ class MyFrame(wx.Frame):
         self.rightSplitter.SplitHorizontally(self.rightPanel, self.consoleinfoSplitter, -150)
         self.rightSplitter.SetSashGravity(1.)
         
-        self.consoleinfoSplitter.SplitVertically(self.consoltext, self.infotext, -150)
-        self.consoleinfoSplitter.SetSashGravity(1.)
+        self.consoleinfoSplitter.SplitVertically(self.consoltext, self.infotext, 0)
+        self.consoleinfoSplitter.SetSashGravity(.5)
         
         
 
