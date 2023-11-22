@@ -12,7 +12,7 @@ from .plots import plot_ima, plot_coord
 from readcoord import ReadlcmCoord
 import processingPipeline
 
-from constants import(DARK_BEIGE_COLOR_WX,DARK_BEIGE_COLOR_WX_PUSHED,LIGHT_BEIGE_COLOR_WX)
+import constants
 
 
 # def get_node_type(node):
@@ -325,20 +325,20 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def log_info(self, *args):
-        colour = (100, 100, 255)
+        colour = constants.INFO_COLOR
         self.log_text(colour, *args)
 
     def log_error(self, *args):
-        colour = (255, 0, 0)
+        colour = constants.ERROR_COLOR
         self.log_text(colour, *args)
 
     def log_warning(self, *args):
-        colour = (255, 255, 0)
+        colour = constants.WARNING_COLOR
         self.log_text(colour, *args)
 
     def log_debug(self, *args):
         if not self.debug: return
-        colour = (0, 255, 0)
+        colour = constants.DEBUG_COLOR
         self.log_text(colour, *args)
 
     def on_close(self, event):
