@@ -16,6 +16,8 @@ class PipelineWindow(wx.Frame):
         self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
         
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.SetIcon(wx.Icon("resources/icon_32p.png"))
+
 
     def on_close(self, event):
         self.Hide()
