@@ -1,5 +1,9 @@
 import wx
 import os
+import wx.lib.agw.pygauge as PG
+import wx.lib.throbber as throbber
+
+
 # import matplotlib_canvas
 from . import matplotlib_canvas  # Use a relative import to import wxglade_out
 from . import DragList
@@ -8,6 +12,7 @@ from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
 from constants import(BLACK_WX,GREY_WX,ORANGE_WX,BEIGE_WX,BEIGE_WX)
 
+from . import custom_wxwidgets
 # import sys
 # import wx
 # import ctypes
@@ -214,6 +219,7 @@ class MyFrame(wx.Frame):
         self.water_ref_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
         self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
         self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
+        
 
         
         
@@ -236,29 +242,87 @@ class MyFrame(wx.Frame):
         # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
 
         ### RIGHT PANEL ###
-        self.buttonsProcessing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
+        self.Processing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
         
+        self.bmp_steppro = wx.Bitmap("resources/run.png", wx.BITMAP_TYPE_PNG)  
+        self.bmp_steppro_greyed= wx.Bitmap("resources/run_greyed.png", wx.BITMAP_TYPE_PNG) 
+        self.button_step_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_steppro)
+        self.button_step_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_step_processing.SetMinSize((-1, 100))
         
-        self.button_processing = wx.Button(self.rightPanel, wx.ID_ANY, "Start Processing", style=wx.BORDER_SUNKEN)
-        self.button_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.button_processing.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        self.bmp_autopro = wx.Bitmap("resources/autorun.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
+        self.bmp_autopro_greyed = wx.Bitmap("resources/autorun_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
+        self.bmp_pause = wx.Bitmap("resources/pause.png", wx.BITMAP_TYPE_PNG) 
+
+        self.button_auto_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_autopro)
+        self.button_auto_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_auto_processing.SetMinSize((-1, 100))
+        
+        self.bmp_terminate= wx.Bitmap("resources/terminate.png", wx.BITMAP_TYPE_PNG)
+        self.bmp_terminate_greyed = wx.Bitmap("resources/terminate_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
+        self.button_terminate_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_terminate)
+        self.button_terminate_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_terminate_processing.SetMinSize((-1, 100))
+        self.button_terminate_processing.Disable()
+
 
         
-        bmp = wx.Bitmap("resources/fastforwardbutton.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
-        self.button_fast_processing = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp, style=wx.BORDER_SUNKEN)
-        self.button_fast_processing.SetMinSize((100, -1))
-        self.button_fast_processing.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
-
         
-        self.button_stop_processing = wx.Button(self.rightPanel, wx.ID_ANY, "X", style=wx.BORDER_SUNKEN)
-        self.button_stop_processing.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.button_stop_processing.SetMinSize((100, -1))
+        self.ProgressBar_Sizer= wx.BoxSizer(wx.VERTICAL)
 
-        self.buttonsProcessing_Sizer.Add(self.button_processing, 1, wx.ALL | wx.EXPAND, 5)
-        self.buttonsProcessing_Sizer.Add(self.button_stop_processing, 0, wx.ALL | wx.EXPAND, 5)
-        self.buttonsProcessing_Sizer.Add(self.button_fast_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.progress_bar= PG.PyGauge(self.rightPanel, -1, size=(250, 25), style=wx.GA_HORIZONTAL)
+        self.progress_bar.SetValue(0)
+        self.progress_bar.SetBorderPadding(2)
+        self.progress_bar.SetBarColor(wx.Colour(ORANGE_WX))
+        self.progress_bar.SetBackgroundColour(wx.WHITE)
+        self.progress_bar.SetBorderColor(wx.BLACK)
+        
+        
+        
+        self.progress_bar_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Progress(0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.progress_bar_info.SetForegroundColour(wx.Colour(BEIGE_WX)) 
 
-        self.rightSizer.Add(self.buttonsProcessing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
+        self.ProgressBar_Sizer.Add(self.progress_bar, 0, wx.ALL | wx.EXPAND, 5)
+        self.ProgressBar_Sizer.Add(self.progress_bar_info, 0, wx.ALL | wx.EXPAND, 5)
+        
+        
+        self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
+        
+        self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.textdropdown.SetForegroundColour(wx.Colour(BEIGE_WX)) 
+        
+        self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
+        self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
+        
+        
+        self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
+        self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
+        
+   
+        # bmp= wx.Bitmap("resources/throbber1.png", wx.BITMAP_TYPE_PNG)
+        # bmp2= wx.Bitmap("resources/throbber2.png", wx.BITMAP_TYPE_PNG)
+        # bmp3= wx.Bitmap("resources/throbber3.png", wx.BITMAP_TYPE_PNG)
+        # bmp4= wx.Bitmap("resources/throbber4.png", wx.BITMAP_TYPE_PNG)
+
+
+        # self.processing_throbber = throbber.Throbber(self.rightPanel,-1,[bmp,bmp2,bmp3,bmp4], size=(100, 100), style=wx.NO_BORDER)
+        # self.processing_throbber.Hide()
+
+
+        self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
+        
+        
+        self.DDstepselection.AddMenuItem("yo" )
+
+
+
+
+        self.rightSizer.Add(self.Processing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
         
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
@@ -270,8 +334,8 @@ class MyFrame(wx.Frame):
 
 
 
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_fast_processing, self.button_fast_processing)
-        self.Bind(wx.EVT_BUTTON, self.on_stop_processing, self.button_stop_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_terminate_processing, self.button_terminate_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
@@ -423,7 +487,7 @@ class MyFrame(wx.Frame):
 
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
-        self.Bind(wx.EVT_BUTTON, self.on_button_processing, self.button_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
         self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
         self.leftPanel.SetDropTarget(self.dt)
         self.dt.clear_button = self.clear_button

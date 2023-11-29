@@ -10,21 +10,40 @@ import time
 from interface.plots import plot_ima, plot_coord
 from suspect import MRSData
 
+from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
+
 def stop_processing(self):
     self.next = False
     self.processing = False
-    self.button_processing.SetLabel("Start Processing")
-    self.button_processing.Enable()	
+    # self.button_step_processing.SetLabel("Start Processing")
+    self.button_step_processing.Enable()	
     return
 
-def waitforprocessingbutton(self, label):
-    self.button_processing.Enable()
-    self.button_processing.SetLabel(label)
+def waitforprocessingbutton(self):
+    self.button_step_processing.Enable()
+    self.button_auto_processing.Enable()
+    # self.processing_throbber.Hide()
+
+
     while not self.next:
         time.sleep(0.1)
         if not self.processing: return False
     self.next = False
     return True
+
+
+
+
+def updateprogressbar(self,current_step,current_step_index,totalstep):
+    
+    self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
+    # self.progress_bar.Update((current_step_index/totalstep)*100, 1500)
+
+def updatedropdownstep(self,current_step,current_step_index):
+    # self.DDstepselection.AddMenuItem(str(current_step_index)+" - "+current_step.__class__.__name__ )
+    print("to")
+    # self.Layout()
+
 
 def processPipeline(self):
         filepaths = []
@@ -93,33 +112,46 @@ def processPipeline(self):
                 "output": None,
                 "wref_output": None
             }
-            self.button_processing.Disable()
-            self.button_processing.SetLabel("Running " + step.__class__.__name__ + "...")
+            # self.processing_throbber.Start()
+            # self.processing_throbber.Show()
+            self.button_step_processing.Disable()
+            if not self.fast_processing:
+                self.button_auto_processing.Disable()
+
+            updateprogressbar(self,step,nstep,len(self.steps))
+            # self.button_step_processing.SetLabel("Running " + step.__class__.__name__ + "...")
             self.log_debug("Running ", step.__class__.__name__)
             step.process(dataDict)
             self.dataSteps.append(dataDict["output"])
             if dataDict["wref_output"] is not None:
                 self.wrefSteps.append(dataDict["wref_output"])
             else: self.wrefSteps.append(dataDict["wref"])
-            self.button_processing.SetLabel("Plotting " + step.__class__.__name__ + "...")
+            # self.button_step_processing.SetLabel("Plotting " + step.__class__.__name__ + "...")
             self.log_debug("Plotting ", step.__class__.__name__)
 
             filepath = os.path.join(stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
             figure = matplotlib.figure.Figure(figsize=(12, 9), dpi=600)
             step.plot(figure, dataDict)
             figure.savefig(filepath, dpi=600)
+            
+
+            updatedropdownstep(self,step,nstep)
+            time.sleep(5)
+            
+
             if not self.fast_processing:
                 self.matplotlib_canvas.clear()
                 step.plot(self.matplotlib_canvas.figure, dataDict)
                 self.matplotlib_canvas.draw()
 
             if not self.fast_processing:
-                if not waitforprocessingbutton(self, "Next"):
+                if not waitforprocessingbutton(self):
                     return stop_processing(self)
+                
 
         ##### SAVING DATA PLOTS #####
-        self.button_processing.Disable()
-        self.button_processing.SetLabel("Saving plots...")
+        self.button_step_processing.Disable()
+        self.button_step_processing.SetLabel("Saving plots...")
         dataplotpath = os.path.join(outputpath, "dataplots")
         if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
 
@@ -141,12 +173,12 @@ def processPipeline(self):
         else: result = result[0].inherit(np.mean(result, axis=0))
 
         if not self.fast_processing:
-            if not waitforprocessingbutton(self, "Run LCModel"):
+            if not waitforprocessingbutton(self):
                 return stop_processing(self)
 
         ##### ANALYSIS #####
-        self.button_processing.Disable()
-        self.button_processing.SetLabel("Running LCModel...")
+        self.button_step_processing.Disable()
+        # self.button_step_processing.SetLabel("Running LCModel...")
         workpath = os.path.join(self.rootPath, "temp")
         controlfile = os.path.join(workpath, "result")
         

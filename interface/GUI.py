@@ -88,6 +88,8 @@ class MyFrame(wxglade_out.MyFrame):
                 self.dt.on_water_ref(None, wrefindex)
 
         self.on_toggle_editor(None)
+        
+        self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
 
     def on_read_mrs(self, event):
         self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
@@ -218,17 +220,20 @@ class MyFrame(wxglade_out.MyFrame):
             
         
 
-    def on_button_processing(self, event):
+    def on_button_step_processing(self, event):
         if not self.processing:
             self.pipeline=self.retrievePipeline()
             self.steps = [self.processing_steps[step]() for step in self.pipeline]
             self.processing = True
             self.next = False
+            self.button_terminate_processing.Enable()
+            # self.button_terminate_processing.SetBitmap(self.bmpterminatecolor)
+
             thread = threading.Thread(target=self.processPipeline, args=())
             thread.start()
         else:
             self.next = True
-        if event is not None: event.Skip()
+        if event is not None:event.Skip()
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -278,15 +283,28 @@ class MyFrame(wxglade_out.MyFrame):
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
     
-    def on_fast_processing(self, event):
-        self.fast_processing = self.button_fast_processing.GetValue()
-        if self.fast_processing: self.on_button_processing(None)
+    def on_autorun_processing(self, event):
+        self.fast_processing = not self.fast_processing
+        if not self.fast_processing:
+            self.button_auto_processing.SetBitmap(self.bmp_autopro)
+        else:
+            self.button_auto_processing.SetBitmap(self.bmp_pause)
+
+        if self.fast_processing: self.on_button_step_processing(None)
         event.Skip()
     
-    def on_stop_processing(self, event):
+    def on_terminate_processing(self, event):
         self.processing = False
         self.fast_processing = False
+        self.button_terminate_processing.Disable()        
+        self.progress_bar_info.SetLabel("Progress(0/0):")
+        self.button_auto_processing.SetBitmap(self.bmp_autopro)
+        self.matplotlib_canvas.clear()
         event.Skip()
+        
+        
+    def OnDropdownProcessingStep(self, event):
+        print("->", event.value)
 
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
