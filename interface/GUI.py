@@ -12,7 +12,7 @@ from .plots import plot_ima, plot_coord
 from readcoord import ReadlcmCoord
 import processingPipeline
 
-from constants import(DARK_BEIGE_COLOR_WX,DARK_BEIGE_COLOR_WX_PUSHED,LIGHT_BEIGE_COLOR_WX)
+import constants
 
 
 # def get_node_type(node):
@@ -99,13 +99,14 @@ class MyFrame(wxglade_out.MyFrame):
         self.import_to_list("coord files (*.coord)|*.coord")
         event.Skip()
     
-    def on_save_pipeline(self, event):
+    def on_save_pipeline(self, event, filepath=None):
         if self.steps == []:
             print("No pipeline to save")
             return
-        fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPath()
+        if filepath is None:
+            fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
+            if fileDialog.ShowModal() == wx.ID_CANCEL: return
+            filepath = fileDialog.GetPath()
         if filepath == "":
             print(f"File not found")
             return
@@ -116,7 +117,7 @@ class MyFrame(wxglade_out.MyFrame):
         tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
         with open(filepath, 'wb') as f:
             pickle.dump(tosave, f)
-        event.Skip()
+        if event is not None: event.Skip()
 
     def on_load_pipeline(self, event):
         fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_OPEN)
@@ -343,20 +344,20 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def log_info(self, *args):
-        colour = (100, 100, 255)
+        colour = constants.INFO_COLOR
         self.log_text(colour, *args)
 
     def log_error(self, *args):
-        colour = (255, 0, 0)
+        colour = constants.ERROR_COLOR
         self.log_text(colour, *args)
 
     def log_warning(self, *args):
-        colour = (255, 255, 0)
+        colour = constants.WARNING_COLOR
         self.log_text(colour, *args)
 
     def log_debug(self, *args):
         if not self.debug: return
-        colour = (0, 255, 0)
+        colour = constants.DEBUG_COLOR
         self.log_text(colour, *args)
 
     def on_close(self, event):

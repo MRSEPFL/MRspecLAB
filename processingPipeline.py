@@ -15,8 +15,9 @@ from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 def stop_processing(self):
     self.next = False
     self.processing = False
+    self.fast_processing = False
     # self.button_step_processing.SetLabel("Start Processing")
-    self.button_step_processing.Enable()	
+    self.button_step_processing.Enable()
     return
 
 def waitforprocessingbutton(self):
@@ -26,8 +27,8 @@ def waitforprocessingbutton(self):
 
 
     while not self.next:
-        time.sleep(0.1)
         if not self.processing: return False
+        time.sleep(0.1)
     self.next = False
     return True
 
@@ -87,14 +88,26 @@ def processPipeline(self):
             return stop_processing(self)
         self.log_info(len(originalData), " files loaded")
         
+        ##### OUTPUT FOLDERS #####
         outputpath = os.path.join(self.rootPath, "output")
         if not os.path.exists(outputpath): os.mkdir(outputpath)
-        outputpath = os.path.commonprefix([os.path.basename(f) for f in filepaths])
-        if outputpath == "": outputpath = "output"
-        outputpath = os.path.join(self.rootPath, "output", outputpath)
+        prefix = os.path.commonprefix([os.path.basename(f) for f in filepaths])
+        if prefix == "": prefix = "output"
+        outputpath = os.path.join(self.rootPath, "output", prefix)
         if not os.path.exists(outputpath): os.mkdir(outputpath)
+
         stepplotpath = os.path.join(outputpath, "stepplots")
-        if not os.path.exists(stepplotpath): os.mkdir(stepplotpath)
+        if os.path.exists(stepplotpath): shutil.rmtree(stepplotpath)
+        os.mkdir(stepplotpath)
+        dataplotpath = os.path.join(outputpath, "dataplots")
+        if os.path.exists(dataplotpath): shutil.rmtree(dataplotpath)
+        os.makedirs(dataplotpath)
+        lcmodelsavepath = os.path.join(outputpath, "lcmodel")
+        if os.path.exists(lcmodelsavepath): os.makedirs(dataplotpath)
+        os.makedirs(lcmodelsavepath)
+        workpath = os.path.join(self.rootPath, "temp")
+        if os.path.exists(workpath): shutil.rmtree(workpath)
+        os.mkdir(workpath)
 
         ##### PROCESSING #####
         self.dataSteps: list[MRSData] = [originalData]
@@ -150,10 +163,9 @@ def processPipeline(self):
                 
 
         ##### SAVING DATA PLOTS #####
-        self.button_step_processing.Disable()
-        self.button_step_processing.SetLabel("Saving plots...")
-        dataplotpath = os.path.join(outputpath, "dataplots")
-        if not os.path.exists(dataplotpath): os.makedirs(dataplotpath)
+        self.button_processing.Disable()
+        # self.button_processing.SetLabel("Saving plots...")
+        self.on_save_pipeline(None, os.path.join(outputpath, "pipeline.pipe"))
 
         index = 0
         for d in self.dataSteps: # save dataplots (time + freq for each intermediate output)
@@ -177,9 +189,8 @@ def processPipeline(self):
                 return stop_processing(self)
 
         ##### ANALYSIS #####
-        self.button_step_processing.Disable()
-        # self.button_step_processing.SetLabel("Running LCModel...")
-        workpath = os.path.join(self.rootPath, "temp")
+        self.button_processing.Disable()
+        # self.button_processing.SetLabel("Running LCModel...")
         controlfile = os.path.join(workpath, "result")
         
         # basis set
@@ -230,12 +241,6 @@ def processPipeline(self):
             "PGNORM": "US"
         }
         
-        if os.path.exists(workpath): shutil.rmtree(workpath) # delete work folder
-        os.mkdir(workpath)
-        for f in os.listdir(outputpath): # delete old lcmodel outputs
-            filepath = os.path.join(outputpath, f)
-            if os.path.isfile(filepath): os.remove(filepath)
-        
         suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
         save_raw(os.path.join(workpath, "result.RAW"), result, seq=sequence) # overwrite raw file with correct sequence type
 
@@ -259,14 +264,14 @@ def processPipeline(self):
         
         command = ''
         for f in os.listdir(workpath):
-            if os.name == 'nt': command += f" & move {os.path.join(workpath, f)} {outputpath}"
-            else: command += f" && mv {os.path.join(workpath, f)} {outputpath}"
+            if os.name == 'nt': command += f" & move {os.path.join(workpath, f)} {lcmodelsavepath}"
+            else: command += f" && mv {os.path.join(workpath, f)} {lcmodelsavepath}"
         command = command[3:]
         self.log_debug("Moving files...\n\t", command)
         os.system(command)
         shutil.rmtree(workpath) # delete work folder
 
-        filepath = os.path.join(outputpath, "result.coord")
+        filepath = os.path.join(lcmodelsavepath, "result.coord")
         if os.path.exists(filepath):
             f = ReadlcmCoord(filepath)
             figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
@@ -274,7 +279,7 @@ def processPipeline(self):
             self.matplotlib_canvas.clear()
             self.read_file(None, filepath) # also fills info panel
             self.matplotlib_canvas.draw()
-            filepath = os.path.join(outputpath, "lcmodel.png")
+            filepath = os.path.join(lcmodelsavepath, "lcmodel.png")
             figure.savefig(filepath, dpi=600)
         else:
             self.log_warning("LCModel output not found")
