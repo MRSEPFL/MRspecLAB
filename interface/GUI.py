@@ -13,6 +13,7 @@ from readcoord import ReadlcmCoord
 import processingPipeline
 
 import constants
+import time
 
 
 # def get_node_type(node):
@@ -90,6 +91,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.on_toggle_editor(None)
         
         self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
+        self.current_step=0
+        # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
+        self.proces_completion =False
 
     def on_read_mrs(self, event):
         self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
@@ -197,6 +201,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.matplotlib_canvas.clear()
         plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
         event.Skip()
+        
+    
+    
     
 
         
@@ -222,19 +229,89 @@ class MyFrame(wxglade_out.MyFrame):
         
 
     def on_button_step_processing(self, event):
-        if not self.processing:
-            self.pipeline=self.retrievePipeline()
-            self.steps = [self.processing_steps[step]() for step in self.pipeline]
-            self.processing = True
-            self.next = False
-            self.button_terminate_processing.Enable()
-            # self.button_terminate_processing.SetBitmap(self.bmpterminatecolor)
+        # if not self.processing:
+        #     self.pipeline=self.retrievePipeline()
+        #     self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        #     self.processing = True
+        #     self.next = False
+        #     self.button_terminate_processing.Enable()
+        #     # self.button_terminate_processing.SetBitmap(self.bmpterminatecolor)
 
-            thread = threading.Thread(target=self.processPipeline, args=())
-            thread.start()
+        #     thread = threading.Thread(target=self.processPipeline, args=())
+        #     thread.start()
+        #     # self.processPipeline()
+        # else:
+        #     self.next = True
+        # if event is not None:event.Skip()
+        self.button_step_processing.Disable()
+        self.button_auto_processing.Disable()
+        if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
+            self.button_terminate_processing.Disable()
+        self.progress_bar.SetValue(0)
+        self.progress_bar.Update(100, 15000)
+        thread_processing = threading.Thread(target=self.processPipeline, args=())
+        # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
+
+        thread_processing.start()
+        # thread_post_processing.start()
+        
+        # event.Skip()
+        
+    def on_autorun_processing(self, event):
+        self.fast_processing = not self.fast_processing
+        if not self.fast_processing:
+            self.button_auto_processing.SetBitmap(self.bmp_autopro)
         else:
-            self.next = True
-        if event is not None:event.Skip()
+            self.button_auto_processing.SetBitmap(self.bmp_pause)
+            self.button_step_processing.Disable()
+            if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
+                self.button_terminate_processing.Disable()
+            self.progress_bar.SetValue(0)
+            self.progress_bar.Update(100, 15000)
+            thread_processing = threading.Thread(target=self.autorun_pipeline_exe, args=())
+            # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
+
+            thread_processing.start()
+
+        event.Skip()
+        
+    def PostStepProcessingGUIChanges(self):
+        # self.semaphore_step_pro.acquire()
+        if self.proces_completion:
+            self.proces_completion=False
+            self.progress_bar.Update(0,50)
+            time.sleep(0.100)
+            self.progress_bar.Update(100-self.progress_bar.GetValue(),200)
+            if 0<=self.current_step and self.current_step<=(len(self.steps)):
+                self.updateprogress(self.steps[self.current_step-1],self.current_step,len(self.steps))
+        else:
+            self.progress_bar.Update(0,50)
+            time.sleep(0.050)
+            self.progress_bar.SetValue(0)
+            
+            
+        if 0<=self.current_step and self.current_step<=(len(self.steps)) and self.fast_processing==False:
+                self.button_step_processing.Enable()
+                self.button_auto_processing.Enable()
+                
+        if 0<self.current_step and self.fast_processing==False:##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
+            self.button_terminate_processing.Enable()
+            
+        #After Fast Processing update
+        if self.fast_processing==True and self.current_step<=(len(self.steps)):
+            self.progress_bar.SetValue(0)
+            self.progress_bar.Update(100, 10000)
+        elif self.fast_processing==True and self.current_step==(len(self.steps)+1):#When the fast processing finish all the execution (LCMODEL)
+            self.button_auto_processing.SetBitmap(self.bmp_autopro)
+            self.button_auto_processing.Disable()
+            
+
+            
+
+
+    def updateprogress(self,current_step,current_step_index,totalstep):
+        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
+
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -284,20 +361,18 @@ class MyFrame(wxglade_out.MyFrame):
     def processPipeline(self):
         return processingPipeline.processPipeline(self)
     
-    def on_autorun_processing(self, event):
-        self.fast_processing = not self.fast_processing
-        if not self.fast_processing:
-            self.button_auto_processing.SetBitmap(self.bmp_autopro)
-        else:
-            self.button_auto_processing.SetBitmap(self.bmp_pause)
+    def autorun_pipeline_exe(self):
+        return processingPipeline.autorun_pipeline_exe(self)
+    
 
-        if self.fast_processing: self.on_button_step_processing(None)
-        event.Skip()
     
     def on_terminate_processing(self, event):
-        self.processing = False
+        # self.processing = False
         self.fast_processing = False
-        self.button_terminate_processing.Disable()        
+        self.button_terminate_processing.Disable()
+        self.button_step_processing.Enable()
+        self.button_auto_processing.Enable()
+        self.current_step=0 
         self.progress_bar_info.SetLabel("Progress(0/0):")
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
         self.matplotlib_canvas.clear()
