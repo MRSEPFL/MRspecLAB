@@ -274,7 +274,13 @@ class MyFrame(wxglade_out.MyFrame):
             thread_processing.start()
 
         event.Skip()
-        
+
+    def on_open_output_folder(self, event):
+        output_folder = os.path.join(self.rootPath, "output")
+        if not os.path.exists(output_folder): os.mkdir(output_folder)
+        os.startfile(output_folder)
+        event.Skip()        
+
     def PostStepProcessingGUIChanges(self):
         # self.semaphore_step_pro.acquire()
         if self.proces_completion:
