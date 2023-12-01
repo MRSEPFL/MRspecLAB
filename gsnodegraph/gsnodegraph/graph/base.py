@@ -24,7 +24,7 @@ from gsnodegraph.gsnodegraph.constants import (GRAPH_BACKGROUND_COLOR, SOCKET_OU
                                    SELECTION_BOX_COLOR, SELECTION_BOX_BORDER_COLOR,
                                    DEFAULT_WIRE_CURVATURE)
 
-from constants import (LIGHT_BEIGE_COLOR_WX)  ## Added for MRSoftware
+# from constants import (LIGHT_BEIGE_COLOR_WX)  ## Added for MRSoftware
 
 from gsnodegraph.gsnodegraph.assets import ICON_ADD_NODE
 from .utils.z_matrix import ZMatrix
@@ -45,6 +45,8 @@ ID_CONTEXTMENU_DESELECTALLNODES = wx.NewIdRef()
 ID_CONTEXTMENU_SELECTALLNODES = wx.NewIdRef()
 
 ID_CONTEXTMENU_PLOTNODE  = wx.NewIdRef() ##added MRSoftware
+
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 
 class NodeGraphBase(wx.ScrolledCanvas):
@@ -456,9 +458,9 @@ class NodeGraphBase(wx.ScrolledCanvas):
         self.context_menu.AppendItem(deselectallnodes_menuitem)
 
     def DrawSelectionBox(self, dc, rect):
-        dc.SetPen(wx.Pen(wx.Colour(255,160,122,255), 2,
+        dc.SetPen(wx.Pen(wx.Colour(XISLAND6), 2,
                   wx.PENSTYLE_SHORT_DASH))
-        dc.SetBrush(wx.Brush(wx.Colour(SELECTION_BOX_COLOR)))
+        dc.SetBrush(wx.Brush(wx.Colour(165,165,141,56)))
         dc.DrawRectangle(rect)
 
     def SetZoomLevel(self, zoom, x=0, y=0):
@@ -553,7 +555,7 @@ class NodeGraphBase(wx.ScrolledCanvas):
         self.Update()
 
     def OnDrawBackground(self, dc):
-        dc.SetBackground(wx.Brush(wx.Colour(LIGHT_BEIGE_COLOR_WX)))
+        dc.SetBackground(wx.Brush(wx.Colour(XISLAND1)))
         dc.Clear()
 
     def OnDrawScene(self, dc):

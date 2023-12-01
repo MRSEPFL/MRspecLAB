@@ -10,7 +10,8 @@ from . import DragList
 import wx.richtext
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
-from constants import(BLACK_WX,GREY_WX,ORANGE_WX,BEIGE_WX,BEIGE_WX)
+from constants import(BLACK_WX,XISLAND1,ORANGE_WX,XISLAND3,XISLAND3)
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 from . import custom_wxwidgets
 # import sys
@@ -124,13 +125,17 @@ class MyFrame(wx.Frame):
         wx.Frame.__init__(self, *args, **kwds)
         WIDTH = 1200
         HEIGHT = 800
+        
+        font1 = wx.Font(10, wx.MODERN, wx.NORMAL,wx.FONTWEIGHT_BOLD, False, u'NeverMind')
+
+        
         self.SetSize((WIDTH, HEIGHT))
         self.SetTitle("MRSprocessing")
 
         fileMenu = wx.Menu()
         viewMenu = wx.Menu()
         menuBar = wx.MenuBar()
-        menuBar.SetBackgroundColour(wx.Colour(GREY_WX))
+        menuBar.SetBackgroundColour(wx.Colour(XISLAND1))
         menuBar.Append(fileMenu, "&File")
         menuBar.Append(viewMenu, "&View")
         self.SetMenuBar(menuBar)
@@ -214,9 +219,10 @@ class MyFrame(wx.Frame):
         
         
         self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
+        # self.clear_button.SetFont(font1)
         self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
-        self.clear_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
-        self.water_ref_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        self.clear_button.SetBackgroundColour(wx.Colour(XISLAND3))  # Set the background color (RGB values)
+        self.water_ref_button.SetBackgroundColour(wx.Colour(XISLAND3))  # Set the background color (RGB values)
         self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
         self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
         
@@ -229,10 +235,10 @@ class MyFrame(wx.Frame):
         self.water_ref_button.Disable()
 
         self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4))  # Set the background color (RGB values)
 
         self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        self.drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.drag_and_drop_list)
 
@@ -247,40 +253,50 @@ class MyFrame(wx.Frame):
         self.bmp_steppro = wx.Bitmap("resources/run.png", wx.BITMAP_TYPE_PNG)  
         self.bmp_steppro_greyed= wx.Bitmap("resources/run_greyed.png", wx.BITMAP_TYPE_PNG) 
         self.button_step_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_steppro)
-        self.button_step_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_step_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
         self.button_step_processing.SetMinSize((-1, 100))
+        self.button_step_processing.SetToolTip("Run next step of the pipeline \nand show its results plot") 
         
         self.bmp_autopro = wx.Bitmap("resources/autorun.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.bmp_autopro_greyed = wx.Bitmap("resources/autorun_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.bmp_pause = wx.Bitmap("resources/pause.png", wx.BITMAP_TYPE_PNG) 
 
         self.button_auto_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_autopro)
-        self.button_auto_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_auto_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
         self.button_auto_processing.SetMinSize((-1, 100))
+        self.button_auto_processing.SetToolTip("Run all the steps after one another until desactivation, \nshow only plot of the last step processed") 
+
         
         self.bmp_terminate= wx.Bitmap("resources/terminate.png", wx.BITMAP_TYPE_PNG)
         self.bmp_terminate_greyed = wx.Bitmap("resources/terminate_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.button_terminate_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_terminate)
-        self.button_terminate_processing.SetBackgroundColour(wx.Colour(GREY_WX))  # Set the background color (RGB values)
+        self.button_terminate_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
         self.button_terminate_processing.SetMinSize((-1, 100))
         self.button_terminate_processing.Disable()
+        self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
 
 
-        
+
+        self.bmp_pipeline= wx.Bitmap("resources/Open_Pipeline.png", wx.BITMAP_TYPE_PNG)
+        self.button_open_pipeline = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_pipeline)
+        self.button_open_pipeline.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_open_pipeline.SetMinSize((-1, 100))
+        self.button_open_pipeline.SetToolTip("Open editor of the \npipeline to modify it") 
+
         
         self.ProgressBar_Sizer= wx.BoxSizer(wx.VERTICAL)
 
-        self.progress_bar= PG.PyGauge(self.rightPanel, -1, size=(250, 25), style=wx.GA_HORIZONTAL)
+        self.progress_bar= PG.PyGauge(self.rightPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
         self.progress_bar.SetValue(0)
-        self.progress_bar.SetBorderPadding(2)
-        self.progress_bar.SetBarColor(wx.Colour(ORANGE_WX))
+        self.progress_bar.SetBorderPadding(5)
+        self.progress_bar.SetBarColor(wx.Colour(XISLAND5))
         self.progress_bar.SetBackgroundColour(wx.WHITE)
         self.progress_bar.SetBorderColor(wx.BLACK)
         
         
         
         self.progress_bar_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Progress(0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.progress_bar_info.SetForegroundColour(wx.Colour(BEIGE_WX)) 
+        self.progress_bar_info.SetForegroundColour(wx.Colour(BLACK_WX)) 
 
         self.ProgressBar_Sizer.Add(self.progress_bar, 0, wx.ALL | wx.EXPAND, 5)
         self.ProgressBar_Sizer.Add(self.progress_bar_info, 0, wx.ALL | wx.EXPAND, 5)
@@ -289,7 +305,7 @@ class MyFrame(wx.Frame):
         self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
         
         self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.textdropdown.SetForegroundColour(wx.Colour(BEIGE_WX)) 
+        self.textdropdown.SetForegroundColour(wx.Colour(BLACK_WX)) 
         
         self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
         self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
@@ -308,7 +324,7 @@ class MyFrame(wx.Frame):
         # self.processing_throbber = throbber.Throbber(self.rightPanel,-1,[bmp,bmp2,bmp3,bmp4], size=(100, 100), style=wx.NO_BORDER)
         # self.processing_throbber.Hide()
 
-
+        self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
@@ -334,6 +350,8 @@ class MyFrame(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.on_terminate_processing, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.button_open_pipeline)
+
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
@@ -479,7 +497,7 @@ class MyFrame(wx.Frame):
         # self.pipelineplotSplitter.SetSashGravity(1.)
         
         
-        self.SetBackgroundColour(wx.Colour(GREY_WX)) 
+        self.SetBackgroundColour(wx.Colour(XISLAND1)) 
 
 
 

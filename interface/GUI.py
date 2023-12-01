@@ -91,6 +91,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.on_toggle_editor(None)
         
         self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
+        self.bmpRunLCModel= wx.Bitmap("resources/run_lcmodel.png")
+
         self.current_step=0
         # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
         self.proces_completion =False
@@ -275,9 +277,19 @@ class MyFrame(wxglade_out.MyFrame):
 
         event.Skip()
         
+    def on_open_pipeline(self, event):
+        self.pipelineWindow.Show()
+        self.Layout()
+        if event is not None: event.Skip()
+        
     def PostStepProcessingGUIChanges(self):
         # self.semaphore_step_pro.acquire()
         if self.proces_completion:
+            if self.current_step==1:
+                self.pipelineWindow.Hide()
+                self.button_open_pipeline.Disable()
+
+
             self.proces_completion=False
             self.progress_bar.Update(0,50)
             time.sleep(0.100)
@@ -294,8 +306,11 @@ class MyFrame(wxglade_out.MyFrame):
                 self.button_step_processing.Enable()
                 self.button_auto_processing.Enable()
                 
-        if 0<self.current_step and self.fast_processing==False:##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
+        if (0<self.current_step and self.fast_processing==False) or((self.current_step )==(len(self.steps)+1)):##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
             self.button_terminate_processing.Enable()
+           
+        if self.current_step==(len(self.steps)):
+            self.button_step_processing.SetBitmap(self.bmpRunLCModel)
             
         #After Fast Processing update
         if self.fast_processing==True and self.current_step<=(len(self.steps)):
@@ -372,6 +387,10 @@ class MyFrame(wxglade_out.MyFrame):
         self.button_terminate_processing.Disable()
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
+        self.button_open_pipeline.Enable()
+        if self.current_step >=(len(self.steps)):
+            self.button_step_processing.SetBitmap(self.bmp_steppro)
+
         self.current_step=0 
         self.progress_bar_info.SetLabel("Progress(0/0):")
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
