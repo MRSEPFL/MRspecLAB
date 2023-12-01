@@ -273,6 +273,15 @@ class MyFrame(wx.Frame):
         self.button_terminate_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
         self.button_terminate_processing.SetMinSize((-1, 100))
         self.button_terminate_processing.Disable()
+
+        bmp_folder = wx.Bitmap("resources/folder.png", wx.BITMAP_TYPE_PNG)
+        bmp_folder.SetSize((100, 100))
+        bmp_folder.SetScaleFactor(8)
+        self.button_open_output_folder = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_folder)
+        self.button_open_output_folder.SetBackgroundColour(wx.Colour(GREY_WX))
+        self.button_open_output_folder.SetMinSize((-1, 100))
+        self.button_open_output_folder.SetMaxSize((-1, 100))
+        
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
 
 
@@ -283,6 +292,7 @@ class MyFrame(wx.Frame):
         self.button_open_pipeline.SetMinSize((-1, 100))
         self.button_open_pipeline.SetToolTip("Open editor of the \npipeline to modify it") 
 
+        
         
         self.ProgressBar_Sizer= wx.BoxSizer(wx.VERTICAL)
 
@@ -329,6 +339,7 @@ class MyFrame(wx.Frame):
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
         # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
         
@@ -350,6 +361,7 @@ class MyFrame(wx.Frame):
 
         self.Bind(wx.EVT_BUTTON, self.on_terminate_processing, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.button_open_output_folder)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.button_open_pipeline)
 
 
