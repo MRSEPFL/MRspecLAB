@@ -73,7 +73,7 @@ def loadInput(self):
                 continue
 
             if i == wrefindex:
-                originalWref = data
+                self.originalWref = data
                 self.log_info("Water reference loaded: " + self.filepaths[i])
             elif len(data.shape) > 1:
                 for d in data:
@@ -83,6 +83,7 @@ def loadInput(self):
         except: self.log_warning("Error loading file: " + self.filepaths[i])
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
+        self.proces_completion = True
         # return stop_processing(self)
         return False
     self.log_info(len(self.originalData), " files loaded")
@@ -134,14 +135,16 @@ def processStep(self,step,nstep):
     # updateprogressbar(self,step,nstep,len(self.steps))
     # self.button_step_processing.SetLabel("Running " + step.__class__.__name__ + "...")
     self.log_debug("Running ", step.__class__.__name__)
+    start_time = time.time()
     step.process(dataDict)
+    self.log_debug("\tTime to process: ", "{:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
     # self.button_step_processing.SetLabel("Plotting " + step.__class__.__name__ + "...")
     self.log_debug("Plotting ", step.__class__.__name__)
-
+    start_time = time.time()
     filepath = os.path.join(self.stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
     figure = matplotlib.figure.Figure(figsize=(12, 9), dpi=600)
     step.plot(figure, dataDict)
@@ -151,6 +154,7 @@ def processStep(self,step,nstep):
         self.matplotlib_canvas.clear()
         step.plot(self.matplotlib_canvas.figure, dataDict)
         self.matplotlib_canvas.draw()
+    self.log_debug("\tTime to plot: ", "{:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self): 
     index = 0
