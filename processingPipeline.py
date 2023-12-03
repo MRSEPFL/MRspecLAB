@@ -150,6 +150,12 @@ def processStep(self,step,nstep):
     filepath = os.path.join(steppath, "result.png")
     figure.savefig(filepath, dpi=600)
     self.log_info("Saved "+ "Result of " + step.__class__.__name__ +" to " + filepath)
+    # raw
+    if self.save_raw:
+        filepath = os.path.join(steppath, "data")
+        if not os.path.exists(filepath): os.mkdir(filepath)
+        for i, d in enumerate(dataDict["output"]):
+            save_raw(os.path.join(filepath, str(i) + ".RAW"), d)
     # canvas plot
     if not self.fast_processing:
         self.matplotlib_canvas.clear()

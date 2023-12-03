@@ -281,6 +281,12 @@ class MyFrame(wx.Frame):
         self.button_open_output_folder.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_open_output_folder.SetMinSize((-1, 100))
         self.button_open_output_folder.SetMaxSize((-1, 100))
+
+        self.button_toggle_save_raw = wx.ToggleButton(self.rightPanel, wx.ID_ANY, "Save Raw Data")
+        self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
+        self.button_toggle_save_raw.SetMinSize((-1, 100))
+        self.button_toggle_save_raw.SetValue(False)
+        self.button_toggle_save_raw.SetToolTip("Save raw data in the output folder")
         
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
 
@@ -340,6 +346,7 @@ class MyFrame(wx.Frame):
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
         # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
         
@@ -362,6 +369,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_terminate_processing, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
         self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.button_open_output_folder)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_save_raw, self.button_toggle_save_raw)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.button_open_pipeline)
 
 

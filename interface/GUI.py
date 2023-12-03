@@ -77,6 +77,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.next = False
         self.show_editor = True
         self.debug = True
+        self.save_raw = False
         
         self.Bind(EVT_LOG, self.on_log)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
@@ -282,6 +283,10 @@ class MyFrame(wxglade_out.MyFrame):
         if not os.path.exists(output_folder): os.mkdir(output_folder)
         os.startfile(output_folder)
         event.Skip()        
+
+    def on_toggle_save_raw(self, event):
+        self.save_raw = self.button_toggle_save_raw.GetValue()
+        event.Skip()
 
     def on_open_pipeline(self, event):
         self.pipelineWindow.Show()
