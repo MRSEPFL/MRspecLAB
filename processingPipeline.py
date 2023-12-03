@@ -95,21 +95,12 @@ def loadInput(self):
     if prefix == "": prefix = "output"
     self.outputpath = os.path.join(self.rootPath, "output", prefix)
     if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
-
-    self.stepplotpath = os.path.join(self.outputpath, "stepplots")
-    if os.path.exists(self.stepplotpath): shutil.rmtree(self.stepplotpath)
-    os.mkdir(self.stepplotpath)
-    self.dataplotpath = os.path.join(self.outputpath, "dataplots")
-    if os.path.exists(self.dataplotpath): shutil.rmtree(self.dataplotpath)
-    os.makedirs(self.dataplotpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
     if os.path.exists(self.lcmodelsavepath): shutil.rmtree(self.lcmodelsavepath)
     os.makedirs(self.lcmodelsavepath)
     self.workpath = os.path.join(self.rootPath, "temp")
     if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
     os.mkdir(self.workpath)
-    
-    
     initializeDataprocessed(self)
     
 def initializeDataprocessed(self):
@@ -133,43 +124,47 @@ def processStep(self,step,nstep):
         self.button_auto_processing.Disable()
 
     # updateprogressbar(self,step,nstep,len(self.steps))
-    # self.button_step_processing.SetLabel("Running " + step.__class__.__name__ + "...")
     self.log_debug("Running ", step.__class__.__name__)
     start_time = time.time()
     step.process(dataDict)
-    self.log_debug("\tTime to process: ", "{:.3f}".format(time.time() - start_time))
+    self.log_debug("\tTime to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
-    # self.button_step_processing.SetLabel("Plotting " + step.__class__.__name__ + "...")
+
     self.log_debug("Plotting ", step.__class__.__name__)
     start_time = time.time()
-    filepath = os.path.join(self.stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
-    figure = matplotlib.figure.Figure(figsize=(12, 9), dpi=600)
+    steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
+    if not os.path.exists(steppath): os.mkdir(steppath)
+    figure = matplotlib.figure.Figure(figsize=(10, 10))
+    # step plot
     step.plot(figure, dataDict)
+    figure.suptitle(step.__class__.__name__)
+    filepath = os.path.join(steppath, "step.png")
     figure.savefig(filepath, dpi=600)
-    
+    self.log_info("Saved "+ str(step.__class__.__name__) +" to " + filepath)
+    # data plot
+    plot_ima(dataDict["output"], figure)
+    figure.suptitle("Result of " + step.__class__.__name__)
+    filepath = os.path.join(steppath, "result.png")
+    figure.savefig(filepath, dpi=600)
+    self.log_info("Saved "+ "Result of " + step.__class__.__name__ +" to " + filepath)
+    # canvas plot
     if not self.fast_processing:
         self.matplotlib_canvas.clear()
         step.plot(self.matplotlib_canvas.figure, dataDict)
         self.matplotlib_canvas.draw()
-    self.log_debug("\tTime to plot: ", "{:.3f}".format(time.time() - start_time))
+    self.log_debug("\tTime to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self): 
-    index = 0
-    self.log_info("Save Data Plots")
-    for d in self.dataSteps: # save dataplots (time + freq for each intermediate output)
-        if index == 0: filename = "Original.png"
-        elif index-1 < len(self.steps): filename = str(index) + self.steps[index-1].__class__.__name__ + ".png"
-        else: filename = "Result.png"
-        filepath = os.path.join(self.dataplotpath, filename)
+    for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original", "Result"]):
+        filepath = os.path.join(self.outputpath, name + ".png")
         figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
         plot_ima(d, figure)
-        figure.suptitle(filepath.rsplit(os.path.sep, 1)[-1][:-4])
+        figure.suptitle(name)
         figure.savefig(filepath, dpi=600)
-        self.log_info("Save "+str(filename)+" to: ",filepath)
-        index += 1
+        self.log_info("Saved "+ str(name) +" to " + filepath)
         
 def analyseResults(self):
     
