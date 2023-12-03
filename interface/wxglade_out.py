@@ -232,7 +232,7 @@ class MyFrame(wx.Frame):
         #MRS files
         
         self.inputMRSfiles_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
         
         
         self.inputMRSfilesButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -246,7 +246,7 @@ class MyFrame(wx.Frame):
 
         
         self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX)) 
+        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
         
         
         self.inputMRSfiles_dt = FileDrop_MRSfiles(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_drag_and_drop_label)
@@ -258,7 +258,7 @@ class MyFrame(wx.Frame):
         
         
         self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
-        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
 
 
@@ -267,7 +267,7 @@ class MyFrame(wx.Frame):
         #wref
 
         self.inputwref_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import water reference here (optional)", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
         
         self.inputwrefButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.inputwrefclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
@@ -280,7 +280,7 @@ class MyFrame(wx.Frame):
   
         
         self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX)) 
+        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
         
         
         
@@ -292,7 +292,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
         
         self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
-        self.inputwref_number_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
         
         ###################################################
@@ -300,8 +300,8 @@ class MyFrame(wx.Frame):
         
         # self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
         # self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
-        # self.clear_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
-        # self.water_ref_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        # self.clear_button.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
+        # self.water_ref_button.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
         # self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
         # self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
         
@@ -314,10 +314,10 @@ class MyFrame(wx.Frame):
         # self.water_ref_button.Disable()
 
         # self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        # self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        # self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
 
         # self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
-        # self.drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        # self.drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.inputMRSfiles_drag_and_drop_list)
 
