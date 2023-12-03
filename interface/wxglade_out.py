@@ -279,7 +279,7 @@ class MyFrame(wx.Frame):
         bmp_folder.SetScaleFactor(8)
         self.button_open_output_folder = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_folder)
         self.button_open_output_folder.SetBackgroundColour(wx.Colour(XISLAND1))
-        self.button_open_output_folder.SetMinSize(git checkout -b [branchname](-1, 100))
+        self.button_open_output_folder.SetMinSize((-1, 100))
         self.button_open_output_folder.SetMaxSize((-1, 100))
         
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
@@ -339,8 +339,9 @@ class MyFrame(wx.Frame):
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
+
         # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
         
         
