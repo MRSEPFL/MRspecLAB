@@ -84,9 +84,9 @@ class MyFrame(wxglade_out.MyFrame):
         if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
                 filepaths, wrefindex = pickle.load(f)
-            self.dt.OnDropFiles(None, None, filepaths)
-            if wrefindex is not None:
-                self.dt.on_water_ref(None, wrefindex)
+            self.inputMRSfiles_dt.OnDropFiles(None, None, filepaths)
+            # if wrefindex is not None:
+            #     self.inputMRSfiles_dt.on_water_ref(None, wrefindex)
 
         self.on_toggle_editor(None)
         
@@ -183,7 +183,7 @@ class MyFrame(wxglade_out.MyFrame):
         if ext.lower().strip() not in self.supported_files:
             print("Invalid file type")
             return False
-        self.dt.OnDropFiles(None, None, files)
+        self.inputMRSfiles_dt.OnDropFiles(None, None, files)
         
     # def OnDeleteClick(self, event):
     #     selected_item = self.list_ctrl.GetFirstSelected()
@@ -336,10 +336,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
-            index = self.drag_and_drop_list.GetSelection()
+            index = self.inputwref_drag_and_drop_list.GetSelection()
             if index == wx.NOT_FOUND:
                 return
-            filepath = self.dt.dropped_file_paths[index]
+            filepath = self.inputMRSfiles_dt.dropped_file_paths[index]
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
@@ -461,9 +461,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_text(colour, *args)
 
     def on_close(self, event):
-        filepaths = self.dt.dropped_file_paths
+        filepaths = self.inputMRSfiles_dt.dropped_file_paths
         if len(filepaths) > 0:
-            wrefindex = self.dt.wrefindex
+            wrefindex = self.inputMRSfiles_dt.wrefindex
             tosave = [filepaths, wrefindex]
             filepath = os.path.join(self.rootPath, "lastfiles.pickle")
             with open(filepath, 'wb') as f:

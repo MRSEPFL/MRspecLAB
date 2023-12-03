@@ -64,7 +64,7 @@ from . import PipelineNodeGraph
 from . import pipeline_window
 
 
-class FileDrop(wx.FileDropTarget):
+class FileDrop_MRSfiles(wx.FileDropTarget):
 
     def __init__(self, parent, listbox, label):
         wx.FileDropTarget.__init__(self)
@@ -77,15 +77,15 @@ class FileDrop(wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         if len(filenames) == 0:
             self.clear_button.Disable()
-            self.water_ref_button.Disable()
+            # self.water_ref_button.Disable()
             return False
         prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
         self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
         self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
         self.clear_button.Enable()
-        if filenames[0].lower().endswith(".coord"):
-            self.water_ref_button.Disable() # no processing for .coords
-        else: self.water_ref_button.Enable()
+        # if filenames[0].lower().endswith(".coord"):
+            # self.water_ref_button.Disable() # no processing for .coords
+        # else: self.water_ref_button.Enable()
         self.dropped_file_paths = filenames
         self.dropped_file_paths.sort() # get correct sorting for wrefindex
         return True
@@ -95,28 +95,76 @@ class FileDrop(wx.FileDropTarget):
         self.label.SetLabel("Drop Inputs Files Here")
         self.list.Set([])
         self.clear_button.Disable()
-        self.water_ref_button.Disable()
+        # self.water_ref_button.Disable()
         self.parent.log_info("filepaths cleared")
         event.Skip()
+        
+    def on_plus(self, event):
+        event.Skip()
+        
+    def on_minus(self, event):
+        event.Skip()
 
-    def on_water_ref(self, event, index=None):
-        newindex = self.list.GetSelection()
-        if index is not None: newindex = index
-        if newindex == wx.NOT_FOUND:
-            self.parent.log_warning("No file selected")
-            if event is not None: event.Skip()
-        if newindex == self.wrefindex:
-            self.wrefindex = None
-            self.list.SetItemBackgroundColour(newindex, self.list.GetBackgroundColour())
-            self.parent.log_info("water reference cleared")
-        else:
-            if self.wrefindex is not None:
-                self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
-            self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
-            self.wrefindex = newindex
-            self.parent.log_info("water reference set to " + self.list.GetStrings()[self.wrefindex])
-        self.list.Refresh()
-        if event is not None: event.Skip()
+    # def on_water_ref(self, event, index=None):
+    #     newindex = self.list.GetSelection()
+    #     if index is not None: newindex = index
+    #     if newindex == wx.NOT_FOUND:
+    #         self.parent.log_warning("No file selected")
+    #         if event is not None: event.Skip()
+    #     if newindex == self.wrefindex:
+    #         self.wrefindex = None
+    #         self.list.SetItemBackgroundColour(newindex, self.list.GetBackgroundColour())
+    #         self.parent.log_info("water reference cleared")
+    #     else:
+    #         if self.wrefindex is not None:
+    #             self.list.SetItemBackgroundColour(self.wrefindex, self.list.GetBackgroundColour())
+    #         self.list.SetItemBackgroundColour(newindex, wx.Colour(171, 219, 227))
+    #         self.wrefindex = newindex
+    #         self.parent.log_info("water reference set to " + self.list.GetStrings()[self.wrefindex])
+    #     self.list.Refresh()
+    #     if event is not None: event.Skip()
+    
+    
+class FileDrop_wref(wx.FileDropTarget):
+
+    def __init__(self, parent, listbox, label):
+        wx.FileDropTarget.__init__(self)
+        self.parent = parent
+        self.list = listbox
+        self.label = label
+        self.dropped_file_paths = []
+        self.wrefindex = None
+
+    def OnDropFiles(self, x, y, filenames):
+        if len(filenames) == 0:
+            self.clear_button.Disable()
+            # self.water_ref_button.Disable()
+            return False
+        prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
+        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
+        self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
+        self.clear_button.Enable()
+        # if filenames[0].lower().endswith(".coord"):
+            # self.water_ref_button.Disable() # no processing for .coords
+        # else: self.water_ref_button.Enable()
+        self.dropped_file_paths = filenames
+        self.dropped_file_paths.sort() # get correct sorting for wrefindex
+        return True
+    
+    def Mon_clear(self, event):
+        self.dropped_file_paths = []
+        self.label.SetLabel("Drop Inputs Files Here")
+        self.list.Set([])
+        self.clear_button.Disable()
+        # self.water_ref_button.Disable()
+        self.parent.log_info("filepaths cleared")
+        event.Skip()
+        
+    def on_plus(self, event):
+        event.Skip()
+        
+    def on_minus(self, event):
+        event.Skip()
 
 class MyFrame(wx.Frame):
 
@@ -180,73 +228,117 @@ class MyFrame(wx.Frame):
         
         
 
-
-        ### LEFT PANEL ###
-        ## notebook of available steps
-        # self.notebook_1 = wx.Notebook(self.leftSplitter, wx.ID_ANY, style=wx.NB_BOTTOM)
-        # self.notebook_1_pane_1 = wx.Panel(self.notebook_1, wx.ID_ANY)
-        # self.notebook_1.AddPage(self.notebook_1_pane_1, "Import Data Steps")
-        # self.notebook_1_pane_2 = wx.ScrolledWindow(self.notebook_1, wx.ID_ANY)
-
-        # self.notebook_1.AddPage(self.notebook_1_pane_2, "Quality Control Steps")
+        #New input panel
+        #MRS files
         
-
-        # self.notebook_1_pane_2.SetScrollRate(10, 10)  # Set scroll rate (adjust as needed)
-        
-        # available_icons_sizer = wx.GridSizer(rows=3, cols=2, hgap=5, vgap=5)
-        # available_icon_labels = ["ZeroPadding", "LineBroadening", "FreqPhaseAlignment", "RemoveBadAverages", "Average"]
-
-        # for label in available_icon_labels:
-        #     # Create a button with the specified label
-        #     icon_button = wx.Button(self.notebook_1_pane_2, label=label)
-            
-        #     # Set the fixed size for the button (e.g., 100x100 pixels)
-        #     icon_button.SetMinSize((120, 100))
-
-        #     # Set the background and foreground colors for the button
-        #     # icon_button.SetBackgroundColour(wx.Colour(100, 100, 100))
-        #     # icon_button.SetForegroundColour(wx.Colour(250, 250, 250))
-        #     icon_button.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-
-        #     # Bind the event for the button (if needed)
-        #     # icon_button.Bind(wx.EVT_BUTTON, self.OnAddStep)
-
-        #     # Add the button to the sizer with wx.ALIGN_CENTER_HORIZONTAL flag
-        #     available_icons_sizer.Add(icon_button, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
-
-        # self.notebook_1_pane_2.SetSizer(available_icons_sizer)
-
+        self.inputMRSfiles_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
         
         
-        self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
-        # self.clear_button.SetFont(font1)
-        self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
-        self.clear_button.SetBackgroundColour(wx.Colour(XISLAND3))  # Set the background color (RGB values)
-        self.water_ref_button.SetBackgroundColour(wx.Colour(XISLAND3))  # Set the background color (RGB values)
-        self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
-        self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
+        self.inputMRSfilesButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.inputMRSfilesclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
+        self.inputMRSfilesplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
+        self.inputMRSfilesminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
+        
+        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesplus_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesminus_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesclear_button, 0, wx.ALL | wx.EXPAND, 5)
+
+        
+        self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
+        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX)) 
+        
+        
+        self.inputMRSfiles_dt = FileDrop_MRSfiles(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_drag_and_drop_label)
+        self.inputMRSfiles_drag_and_drop_list.SetDropTarget(self.inputMRSfiles_dt)
+        self.inputMRSfiles_dt.clear_button = self.inputMRSfilesclear_button
+        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_clear, self.inputMRSfilesclear_button)
+        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_plus, self.inputMRSfilesplus_button)
+        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_minus, self.inputMRSfilesminus_button)
+        
+        
+        self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
+        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+
+
+
+        
+    
+        #wref
+
+        self.inputwref_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import water reference here (optional)", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+        
+        self.inputwrefButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.inputwrefclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
+        self.inputwrefplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
+        self.inputwrefminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
+        
+        self.inputwrefButtonSizer.Add(self.inputwrefplus_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.inputwrefButtonSizer.Add(self.inputwrefminus_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.inputwrefButtonSizer.Add(self.inputwrefclear_button, 0, wx.ALL | wx.EXPAND, 5)
+  
+        
+        self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
+        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX)) 
+        
+        
+        
+        self.inputwref_dt = FileDrop_MRSfiles(self, self.inputwref_drag_and_drop_list, self.inputwref_drag_and_drop_label)
+        self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
+        self.inputwref_dt.clear_button = self.inputwrefclear_button
+        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_clear, self.inputwrefclear_button)
+        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_plus, self.inputwrefplus_button)
+        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
+        
+        self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
+        self.inputwref_number_label.SetForegroundColour(wx.Colour(BEIGE_WX))
+
+        
+        ###################################################
+        
+        
+        # self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
+        # self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
+        # self.clear_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        # self.water_ref_button.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
+        # self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
+        # self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
         
 
         
         
-        self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.clear_button.Disable()
-        self.water_ref_button.Disable()
+        # self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
+        # self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
+        # self.clear_button.Disable()
+        # self.water_ref_button.Disable()
 
-        self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        self.drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4))  # Set the background color (RGB values)
+        # self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
+        # self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BEIGE_WX))  # Set the background color (RGB values)
 
-        self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        # self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
+        # self.drag_and_drop_label.SetForegroundColour(wx.Colour(BEIGE_WX))
 
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.drag_and_drop_list)
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.inputMRSfiles_drag_and_drop_list)
 
-        self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
+        # self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
+        # self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
 
-        # self.leftSplitter.SplitHorizontally(self.notebook_1, self.leftPanel, 300)
 
+        self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputMRSfilesButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputMRSfiles_number_label, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.leftSizer.AddSpacer(20) 
+        
+        self.leftSizer.Add(self.inputwref_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputwrefButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputwref_drag_and_drop_list, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.inputwref_number_label, 0, wx.ALL | wx.EXPAND, 5)
+
+
+        
         ### RIGHT PANEL ###
         self.Processing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
         
@@ -517,12 +609,12 @@ class MyFrame(wx.Frame):
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
-        self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
-        self.leftPanel.SetDropTarget(self.dt)
-        self.dt.clear_button = self.clear_button
-        self.dt.water_ref_button = self.water_ref_button
-        self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
-        self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
+        # self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
+        # self.leftPanel.SetDropTarget(self.dt)
+        # self.dt.clear_button = self.clear_button
+        # self.dt.water_ref_button = self.water_ref_button
+        # self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
+        # self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
         
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
 
