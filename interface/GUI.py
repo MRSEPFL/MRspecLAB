@@ -83,8 +83,10 @@ class MyFrame(wxglade_out.MyFrame):
         filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
-                filepaths, wrefindex = pickle.load(f)
+                filepaths, filepaths_wref = pickle.load(f)
             self.inputMRSfiles_dt.OnDropFiles(None, None, filepaths)
+            self.inputwref_dt.OnDropFiles(None, None, filepaths_wref)
+
             # if wrefindex is not None:
             #     self.inputMRSfiles_dt.on_water_ref(None, wrefindex)
 
@@ -228,7 +230,48 @@ class MyFrame(wxglade_out.MyFrame):
     #         self.pipeline.insert(selected_item_index+1, new_item_text)
     #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
             
+            
+    def on_plus_MRSfiles(self, event):
+        print("test")
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepaths = fileDialog.GetPaths()
+        files = []
+        for filepath in filepaths:
+            if filepath == "" or not os.path.exists(filepath):
+                print(f"File not found:\n\t{filepath}")
+            else: files.append(filepath)
+        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
+        if not all([f.endswith(ext) for f in filepaths]):
+            print("Inconsistent file types")
+            return False
+        if ext.lower().strip() not in self.supported_files:
+            print("Invalid file type")
+            return False
+        self.inputMRSfiles_dt.OnDropFiles(None, None, files)
+        event.Skip()
         
+        
+    def on_plus_wref(self, event):
+        print("test")
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="wref MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepaths = fileDialog.GetPaths()
+        files = []
+        for filepath in filepaths:
+            if filepath == "" or not os.path.exists(filepath):
+                print(f"File not found:\n\t{filepath}")
+            else: files.append(filepath)
+        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
+        if not all([f.endswith(ext) for f in filepaths]):
+            print("Inconsistent file types")
+            return False
+        if ext.lower().strip() not in self.supported_files:
+            print("Invalid file type")
+            return False
+        self.inputwref_dt.OnDropFiles(None, None, files)
+        event.Skip()
+            
 
     def on_button_step_processing(self, event):
         # if not self.processing:
@@ -462,9 +505,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_close(self, event):
         filepaths = self.inputMRSfiles_dt.dropped_file_paths
+        filepaths_wref = self.inputwref_dt.dropped_file_paths_wref
         if len(filepaths) > 0:
-            wrefindex = self.inputMRSfiles_dt.wrefindex
-            tosave = [filepaths, wrefindex]
+            # wrefindex = self.inputMRSfiles_dt.wrefindex
+            tosave = [filepaths, filepaths_wref]
             filepath = os.path.join(self.rootPath, "lastfiles.pickle")
             with open(filepath, 'wb') as f:
                 pickle.dump(tosave, f)

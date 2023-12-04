@@ -72,37 +72,54 @@ class FileDrop_MRSfiles(wx.FileDropTarget):
         self.list = listbox
         self.label = label
         self.dropped_file_paths = []
-        self.wrefindex = None
+        # self.wrefindex = None
 
     def OnDropFiles(self, x, y, filenames):
         if len(filenames) == 0:
             self.clear_button.Disable()
+            self.minus_button.Disable()
+
             # self.water_ref_button.Disable()
             return False
         prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
-        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
-        self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
+        # self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
+        self.list.Append(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
         self.clear_button.Enable()
+        self.minus_button.Enable()
+
         # if filenames[0].lower().endswith(".coord"):
-            # self.water_ref_button.Disable() # no processing for .coords
+        #     self.water_ref_button.Disable() # no processing for .coords
         # else: self.water_ref_button.Enable()
-        self.dropped_file_paths = filenames
+        self.dropped_file_paths.extend(filenames)
         self.dropped_file_paths.sort() # get correct sorting for wrefindex
+        self.label.SetLabel(str(len(self.dropped_file_paths))+" Files imported")
+        self.label.Parent.Layout()
+        
         return True
     
     def on_clear(self, event):
         self.dropped_file_paths = []
-        self.label.SetLabel("Drop Inputs Files Here")
         self.list.Set([])
         self.clear_button.Disable()
+        self.minus_button.Disable()
         # self.water_ref_button.Disable()
+        self.label.SetLabel(str(len(self.dropped_file_paths))+" Files imported")
+        self.label.Parent.Layout()
         self.parent.log_info("filepaths cleared")
         event.Skip()
         
-    def on_plus(self, event):
-        event.Skip()
         
     def on_minus(self, event):
+        
+        deleted_item = self.list.GetSelection()
+        print(self.dropped_file_paths[deleted_item])
+        self.dropped_file_paths.pop(deleted_item)
+        self.list.Delete(deleted_item)
+        self.label.SetLabel(str(len(self.dropped_file_paths))+" Files imported")
+        if len(self.dropped_file_paths)==0:
+            self.clear_button.Disable()
+            self.minus_button.Disable()
+        self.label.Parent.Layout()
         event.Skip()
 
     # def on_water_ref(self, event, index=None):
@@ -132,40 +149,61 @@ class FileDrop_wref(wx.FileDropTarget):
         self.parent = parent
         self.list = listbox
         self.label = label
-        self.dropped_file_paths = []
-        self.wrefindex = None
+        self.dropped_file_paths_wref = []
+        # self.wrefindex = None
 
     def OnDropFiles(self, x, y, filenames):
         if len(filenames) == 0:
             self.clear_button.Disable()
+            self.minus_button.Disable()
             # self.water_ref_button.Disable()
             return False
+        # if len(filenames) == 1:
+        #     self.list.Append([f for f in filenames])
+        # else:
         prefix = os.path.commonprefix([os.path.basename(f) for f in filenames])
-        self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
-        self.list.Set(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
+        # self.label.SetLabel(filenames[0].rsplit(os.path.sep, 1)[0] + "\n" + os.path.sep + prefix + "...")
+        self.list.Append(["..." + f.rsplit(os.path.sep, 1)[1][len(prefix):] for f in filenames])
         self.clear_button.Enable()
+        self.minus_button.Enable()
+
         # if filenames[0].lower().endswith(".coord"):
-            # self.water_ref_button.Disable() # no processing for .coords
+        #     self.water_ref_button.Disable() # no processing for .coords
         # else: self.water_ref_button.Enable()
-        self.dropped_file_paths = filenames
-        self.dropped_file_paths.sort() # get correct sorting for wrefindex
+        self.dropped_file_paths_wref.extend(filenames)
+        self.dropped_file_paths_wref.sort() # get correct sorting for wrefindex
+        self.label.SetLabel(str(len(self.dropped_file_paths_wref))+" Files imported")
+        self.label.Parent.Layout()
+        
         return True
     
-    def Mon_clear(self, event):
-        self.dropped_file_paths = []
-        self.label.SetLabel("Drop Inputs Files Here")
+    def on_clear(self, event):
+        self.dropped_file_paths_wref = []
         self.list.Set([])
         self.clear_button.Disable()
+        self.minus_button.Disable()
         # self.water_ref_button.Disable()
-        self.parent.log_info("filepaths cleared")
+        self.label.SetLabel(str(len(self.dropped_file_paths_wref))+" Files imported")
+        self.label.Parent.Layout()
+
+        self.parent.log_info("filepaths water reference cleared")
         event.Skip()
         
-    def on_plus(self, event):
-        event.Skip()
         
     def on_minus(self, event):
+        
+        deleted_item = self.list.GetSelection()
+        print(self.dropped_file_paths_wref[deleted_item])
+        self.dropped_file_paths_wref.pop(deleted_item)
+        self.list.Delete(deleted_item)
+        self.label.SetLabel(str(len(self.dropped_file_paths_wref))+" Files imported")
+        if len(self.dropped_file_paths_wref)==0:
+            self.clear_button.Disable()
+            self.minus_button.Disable()
+        self.label.Parent.Layout()
         event.Skip()
-
+        
+        
 class MyFrame(wx.Frame):
 
     def __init__(self, *args, **kwds):
@@ -248,17 +286,21 @@ class MyFrame(wx.Frame):
         self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
         self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
         
+        self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
+        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        # self.inputMRSfiles_number_label.SetLabel("2 Files imported")
+
+
         
-        self.inputMRSfiles_dt = FileDrop_MRSfiles(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_drag_and_drop_label)
+        self.inputMRSfiles_dt = FileDrop_MRSfiles(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_number_label)
         self.inputMRSfiles_drag_and_drop_list.SetDropTarget(self.inputMRSfiles_dt)
         self.inputMRSfiles_dt.clear_button = self.inputMRSfilesclear_button
+        self.inputMRSfiles_dt.minus_button = self.inputMRSfilesminus_button
         self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_clear, self.inputMRSfilesclear_button)
-        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_plus, self.inputMRSfilesplus_button)
+        self.Bind(wx.EVT_BUTTON, self.on_plus_MRSfiles, self.inputMRSfilesplus_button)
         self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_minus, self.inputMRSfilesminus_button)
         
         
-        self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
-        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
 
 
@@ -282,17 +324,19 @@ class MyFrame(wx.Frame):
         self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
         self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
         
-        
-        
-        self.inputwref_dt = FileDrop_MRSfiles(self, self.inputwref_drag_and_drop_list, self.inputwref_drag_and_drop_label)
-        self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
-        self.inputwref_dt.clear_button = self.inputwrefclear_button
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_clear, self.inputwrefclear_button)
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_plus, self.inputwrefplus_button)
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
-        
         self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        
+        self.inputwref_dt = FileDrop_wref(self, self.inputwref_drag_and_drop_list, self.inputwref_number_label)
+        self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
+        self.inputwref_dt.clear_button = self.inputwrefclear_button
+        self.inputwref_dt.minus_button = self.inputwrefminus_button
+
+        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_clear, self.inputwrefclear_button)
+        self.Bind(wx.EVT_BUTTON, self.on_plus_wref, self.inputwrefplus_button)
+        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
+        
+
 
         
         ###################################################
@@ -331,6 +375,8 @@ class MyFrame(wx.Frame):
         self.leftSizer.Add(self.inputMRSfiles_number_label, 0, wx.ALL | wx.EXPAND, 5)
 
         self.leftSizer.AddSpacer(20) 
+        self.leftSizer.AddSpacer(20) 
+
         
         self.leftSizer.Add(self.inputwref_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputwrefButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
@@ -615,6 +661,9 @@ class MyFrame(wx.Frame):
         # self.dt.water_ref_button = self.water_ref_button
         # self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         # self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
+        self.leftPanel.Disable()
+        self.leftPanel.Enable()
+
         
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
 

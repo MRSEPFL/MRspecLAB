@@ -45,7 +45,7 @@ def updatedropdownstep(self,current_step,current_step_index):
     
 def loadInput(self):
     self.filepaths = []
-    for f in self.dt.dropped_file_paths:
+    for f in self.inputMRSfiles_dt.dropped_file_paths:
         if not f.lower().endswith(".coord"):
             self.filepaths.append(f)
     if len(self.filepaths) == 0:
@@ -53,14 +53,25 @@ def loadInput(self):
         # return stop_processing(self)
         return False
 
-    if not self.dt.wrefindex:
-        wrefindex = None
+
+    self.originalWref = None
+    if len(self.inputwref_dt.dropped_file_paths_wref)==0:
+        self.originalWref = None
         self.log_warning("No water reference found")
+    elif len(self.inputwref_dt.dropped_file_paths_wref)>1:
+        self.log_error("Only one water reference is supported for now")
+        return False
     else:
-        wrefindex = self.dt.wrefindex
+        if self.inputwref_dt.dropped_file_paths_wref[0].lower().endswith((".ima", ".dcm")):
+            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.dropped_file_paths_wref[0])
+        elif self.inputwref_dt.dropped_file_paths_wref[0].lower().endswith(".dat"):
+            self.originalWref = suspect.io.load_twix(self.inputwref_dt.dropped_file_paths_wref[0])
+            self.originalWref = suspect.processing.channel_combination.combine_channels(data) # temporary?
+        self.log_info("Water reference loaded: " + self.inputwref_dt.dropped_file_paths_wref[0])
+
+
 
     self.originalData = []
-    self.originalWref = None
     for i in range(len(self.filepaths)):
         try:
             if self.filepaths[i].lower().endswith((".ima", ".dcm")):
@@ -72,10 +83,11 @@ def loadInput(self):
                 self.log_error("Unsupported file format: " + self.filepaths[i])
                 continue
 
-            if i == wrefindex:
-                self.originalWref = data
-                self.log_info("Water reference loaded: " + self.filepaths[i])
-            elif len(data.shape) > 1:
+            # if i == wrefindex:
+            #     self.originalWref = data
+            #     self.log_info("Water reference loaded: " + self.filepaths[i])
+            # elif len(data.shape) > 1:
+            if len(data.shape) > 1:
                 for d in data:
                     self.originalData.append(data.inherit(d))
             else:
