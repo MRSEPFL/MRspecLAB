@@ -76,7 +76,7 @@ def loadInput(self):
     base = os.path.join(self.rootPath, "output", prefix)
     i = 1
     while os.path.exists(self.outputpath):
-        self.outputpath = base + " (" + str(i) + ")"
+        self.outputpath = base + "(" + str(i) + ")"
         i += 1
     os.mkdir(self.outputpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
@@ -263,6 +263,7 @@ def processPipeline(self):
     ##### LOAD INPUT #####
     if self.current_step==0:
         self.pipeline=self.retrievePipeline()
+        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
         valid_input=loadInput(self)
         if valid_input==False:
@@ -287,9 +288,8 @@ def processPipeline(self):
     wx.CallAfter(self.PostStepProcessingGUIChanges)
 
     self.proces_completion = True
-    # print("yo")
     # self.semaphore_step_pro.release()
-    # return print("bulleeeeeeet")
+    # return 
            
 
         # nstep = 0

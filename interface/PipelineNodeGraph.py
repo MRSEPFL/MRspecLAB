@@ -250,7 +250,6 @@ class NodeGraphPanel(wx.Panel):
                                        size=wx.Size(250, self.Size[1] - 50))
         self.addnodemenu.Position(pos, (2, 2))
         self.addnodemenu.SetSize(250, 400)
-        self.addnodemenu.SetBackgroundColour(XISLAND2)
         if self.addnodemenu.IsShown() is not True:
             self.addnodemenu.Show()
 

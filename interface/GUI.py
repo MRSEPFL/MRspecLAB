@@ -248,9 +248,11 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
+            self.log_error("Autorun Paused")
         else:
             self.button_auto_processing.SetBitmap(self.bmp_pause)
             self.button_step_processing.Disable()
+            self.log_error("Autorun Activated")
             if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
                 self.button_terminate_processing.Disable()
             self.progress_bar.SetValue(0)
@@ -284,8 +286,11 @@ class MyFrame(wxglade_out.MyFrame):
     def PostStepProcessingGUIChanges(self):
         # self.semaphore_step_pro.acquire()
         if self.current_step == len(self.steps) + 1:
-            self.on_terminate_processing(None)
-            return
+            self.log_info("Processing completed, no further steps")
+            # self.on_terminate_processing(None)
+            self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
+
+        #     return
 
         if self.proces_completion:
             if self.current_step==1:
@@ -321,9 +326,11 @@ class MyFrame(wxglade_out.MyFrame):
         elif self.fast_processing==True and self.current_step==(len(self.steps)+1):#When the fast processing finish all the execution (LCMODEL)
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
             self.button_auto_processing.Disable()
+            self.button_terminate_processing.Enable()
 
     def updateprogress(self,current_step,current_step_index,totalstep):
-        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
+        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
+        # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -389,7 +396,9 @@ class MyFrame(wxglade_out.MyFrame):
             self.button_step_processing.SetBitmap(self.bmp_steppro)
 
         self.current_step=0 
-        self.progress_bar_info.SetLabel("Progress(0/0):")
+        self.progress_bar_info.SetLabel("Progress (0/0):")
+        self.progress_bar_LCModel_info.SetLabel("LCModel: (0/1)" )
+
         self.progress_bar.SetValue(0)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
         # self.matplotlib_canvas.clear()

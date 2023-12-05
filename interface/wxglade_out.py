@@ -146,7 +146,7 @@ class MyFrame(wx.Frame):
         WIDTH = 1200
         HEIGHT = 800
         
-        font1 = wx.Font(10, wx.MODERN, wx.NORMAL,wx.FONTWEIGHT_BOLD, False, u'NeverMind')
+        font1 = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False)
 
         
         self.SetSize((WIDTH, HEIGHT))
@@ -202,6 +202,8 @@ class MyFrame(wx.Frame):
         
         self.inputMRSfiles_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        self.inputMRSfiles_drag_and_drop_label.SetFont(font1)
+
         
         
         self.inputMRSfilesButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -209,16 +211,23 @@ class MyFrame(wx.Frame):
         self.inputMRSfilesplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
         self.inputMRSfilesminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
         
+        self.inputMRSfilesclear_button.SetFont(font1)
+        self.inputMRSfilesplus_button.SetFont(font1)
+        self.inputMRSfilesminus_button.SetFont(font1)
+
+        
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesplus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesminus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesclear_button, 0, wx.ALL | wx.EXPAND, 5)
 
         
         self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
-        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
+        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
         
         self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        self.inputMRSfiles_number_label.SetFont(font1)
+
         # self.inputMRSfiles_number_label.SetLabel("2 Files imported")
 
 
@@ -241,11 +250,17 @@ class MyFrame(wx.Frame):
 
         self.inputwref_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import water reference here (optional)", style=wx.ALIGN_CENTRE_VERTICAL)
         self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        self.inputwref_drag_and_drop_label.SetFont(font1)
+
         
         self.inputwrefButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.inputwrefclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
         self.inputwrefplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
         self.inputwrefminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
+        
+        self.inputwrefclear_button.SetFont(font1)
+        self.inputwrefplus_button.SetFont(font1)
+        self.inputwrefminus_button.SetFont(font1)
         
         self.inputwrefButtonSizer.Add(self.inputwrefplus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputwrefButtonSizer.Add(self.inputwrefminus_button, 0, wx.ALL | wx.EXPAND, 5)
@@ -257,6 +272,8 @@ class MyFrame(wx.Frame):
         
         self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
+        self.inputwref_number_label.SetFont(font1)
+        
         
         self.inputwref_dt = FileDrop(self, self.inputwref_drag_and_drop_list, self.inputwref_number_label)
         self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
@@ -305,7 +322,6 @@ class MyFrame(wx.Frame):
         self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputMRSfiles_number_label, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.leftSizer.AddSpacer(20) 
         self.leftSizer.AddSpacer(20) 
 
         
@@ -378,30 +394,41 @@ class MyFrame(wx.Frame):
         self.progress_bar= PG.PyGauge(self.rightPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
         self.progress_bar.SetValue(0)
         self.progress_bar.SetBorderPadding(5)
-        self.progress_bar.SetBarColor(wx.Colour(XISLAND5))
+        self.progress_bar.SetBarColor(wx.Colour(XISLAND3))
         self.progress_bar.SetBackgroundColour(wx.WHITE)
         self.progress_bar.SetBorderColor(wx.BLACK)
         
+        self.ProgressBar_text_Sizer= wx.BoxSizer(wx.VERTICAL)
         
         
-        self.progress_bar_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Progress(0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.progress_bar_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Progress (0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
         self.progress_bar_info.SetForegroundColour(wx.Colour(BLACK_WX)) 
+        self.progress_bar_info.SetFont(font1)
+        
+        self.progress_bar_LCModel_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "LCModel: (0/1)", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.progress_bar_LCModel_info.SetForegroundColour(wx.Colour(BLACK_WX)) 
+        self.progress_bar_LCModel_info.SetFont(font1)
+
+
+        self.ProgressBar_text_Sizer.Add(self.progress_bar_info, 0, wx.ALL | wx.EXPAND, 5)
+        self.ProgressBar_text_Sizer.Add(self.progress_bar_LCModel_info, 0, wx.ALL | wx.EXPAND, 5)
+
 
         self.ProgressBar_Sizer.Add(self.progress_bar, 0, wx.ALL | wx.EXPAND, 5)
-        self.ProgressBar_Sizer.Add(self.progress_bar_info, 0, wx.ALL | wx.EXPAND, 5)
+        self.ProgressBar_Sizer.Add(self.ProgressBar_text_Sizer, 0, wx.ALL | wx.EXPAND, 5)
         
         
-        self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
+        # self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
         
-        self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.textdropdown.SetForegroundColour(wx.Colour(BLACK_WX)) 
+        # self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
+        # self.textdropdown.SetForegroundColour(wx.Colour(BLACK_WX)) 
         
-        self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
-        self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
+        # self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
+        # self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
         
         
-        self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
-        self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
+        # self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
+        # self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
         
    
         # bmp= wx.Bitmap("resources/throbber1.png", wx.BITMAP_TYPE_PNG)
@@ -412,20 +439,21 @@ class MyFrame(wx.Frame):
 
         # self.processing_throbber = throbber.Throbber(self.rightPanel,-1,[bmp,bmp2,bmp3,bmp4], size=(100, 100), style=wx.NO_BORDER)
         # self.processing_throbber.Hide()
-
+        self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.AddSpacer(10)
         self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
+        # self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
         # self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
+
         self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
         # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
         
         
-        self.DDstepselection.AddMenuItem("yo" )
+        
 
 
 
@@ -434,9 +462,12 @@ class MyFrame(wx.Frame):
         
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.infotext.SetFont(font1)
         
         # self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.consoltext = wx.richtext.RichTextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        # self.infotext.SetFont(font1)
+
 
 
 
