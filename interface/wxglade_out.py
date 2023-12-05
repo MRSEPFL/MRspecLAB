@@ -344,18 +344,20 @@ class MyFrame(wx.Frame):
         self.button_terminate_processing.Disable()
 
         bmp_folder = wx.Bitmap("resources/open_folder.png", wx.BITMAP_TYPE_PNG)
-        bmp_folder.SetSize((100, 100))
-        bmp_folder.SetScaleFactor(8)
+        # bmp_folder.SetSize((100, 100))
+        # bmp_folder.SetScaleFactor(8)
         self.button_open_output_folder = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_folder)
         self.button_open_output_folder.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_open_output_folder.SetMinSize((-1, 100))
         self.button_open_output_folder.SetMaxSize((-1, 100))
 
-        self.button_toggle_save_raw = wx.ToggleButton(self.rightPanel, wx.ID_ANY, "Save Raw Data")
+        bmp_raw = wx.Bitmap("resources/save_raw_data.png", wx.BITMAP_TYPE_PNG)
+        self.button_toggle_save_raw = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp_raw)
         self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_toggle_save_raw.SetMinSize((-1, 100))
         self.button_toggle_save_raw.SetValue(False)
         self.button_toggle_save_raw.SetToolTip("Save raw data in the output folder")
+        self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)   
         
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
 

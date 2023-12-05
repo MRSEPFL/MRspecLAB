@@ -270,6 +270,10 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_toggle_save_raw(self, event):
         self.save_raw = self.button_toggle_save_raw.GetValue()
+        if(self.save_raw):
+            self.button_toggle_save_raw.SetWindowStyleFlag(wx.SIMPLE_BORDER)
+        else:
+            self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
         event.Skip()
 
     def on_open_pipeline(self, event):
