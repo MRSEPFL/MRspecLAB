@@ -350,6 +350,8 @@ class MyFrame(wx.Frame):
         self.button_open_output_folder.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_open_output_folder.SetMinSize((-1, 100))
         self.button_open_output_folder.SetMaxSize((-1, 100))
+        self.button_terminate_processing.SetToolTip("Open folder of the results figures") 
+
 
         bmp_raw = wx.Bitmap("resources/save_raw_data.png", wx.BITMAP_TYPE_PNG)
         self.button_toggle_save_raw = wx.BitmapToggleButton(self.rightPanel, wx.ID_ANY, bmp_raw)
