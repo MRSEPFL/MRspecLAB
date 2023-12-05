@@ -343,7 +343,7 @@ class MyFrame(wx.Frame):
         self.button_terminate_processing.SetMinSize((-1, 100))
         self.button_terminate_processing.Disable()
 
-        bmp_folder = wx.Bitmap("resources/folder.png", wx.BITMAP_TYPE_PNG)
+        bmp_folder = wx.Bitmap("resources/open_folder.png", wx.BITMAP_TYPE_PNG)
         bmp_folder.SetSize((100, 100))
         bmp_folder.SetScaleFactor(8)
         self.button_open_output_folder = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_folder)
