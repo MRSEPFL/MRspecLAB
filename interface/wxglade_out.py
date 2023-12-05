@@ -258,6 +258,19 @@ class MyFrame(wx.Frame):
         self.inputwrefplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
         self.inputwrefminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
         
+        # self.inputwrefclear_button.SetBackgroundColour(wx.Colour(XISLAND6))
+        # self.inputwrefplus_button.SetBackgroundColour(wx.Colour(XISLAND6))
+        # self.inputwrefminus_button.SetBackgroundColour(wx.Colour(XISLAND6))
+        
+        # self.inputwrefclear_button.SetForegroundColour(wx.Colour("#fff"))
+        # self.inputwrefplus_button.SetForegroundColour(wx.Colour("#fff"))
+        # self.inputwrefminus_button.SetForegroundColour(wx.Colour("#fff"))
+        
+        # self.inputwrefclear_button.SetWindowStyleFlag(wx.NO_BORDER)
+        # self.inputwrefplus_button.SetWindowStyleFlag(wx.NO_BORDER)
+        # self.inputwrefminus_button.SetWindowStyleFlag(wx.NO_BORDER)
+
+
         self.inputwrefclear_button.SetFont(font1)
         self.inputwrefplus_button.SetFont(font1)
         self.inputwrefminus_button.SetFont(font1)
@@ -268,7 +281,7 @@ class MyFrame(wx.Frame):
   
         
         self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
-        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX)) 
+        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
         
         self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
@@ -417,7 +430,9 @@ class MyFrame(wx.Frame):
         self.ProgressBar_Sizer.Add(self.progress_bar, 0, wx.ALL | wx.EXPAND, 5)
         self.ProgressBar_Sizer.Add(self.ProgressBar_text_Sizer, 0, wx.ALL | wx.EXPAND, 5)
         
-        
+        # bmp_logo=wx.Bitmap("resources/logobig.png", wx.BITMAP_TYPE_PNG)
+        # self.logo_image=wx.StaticBitmap(self.rightPanel, wx.ID_ANY, bitmap=bmp_logo)
+             
         # self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
         
         # self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
@@ -441,7 +456,7 @@ class MyFrame(wx.Frame):
         # self.processing_throbber.Hide()
         self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.AddSpacer(10)
+        self.Processing_Sizer.AddSpacer(20)
         self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
         # self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
@@ -450,6 +465,9 @@ class MyFrame(wx.Frame):
         # self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
 
         self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        # self.Processing_Sizer.AddSpacer(60)
+        # self.Processing_Sizer.Add(self.logo_image, 0, wx.ALL | wx.EXPAND, 5)
+
         # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
         
         
