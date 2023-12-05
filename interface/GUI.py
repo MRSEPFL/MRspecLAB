@@ -99,14 +99,6 @@ class MyFrame(wxglade_out.MyFrame):
         self.current_step=0
         # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
         self.proces_completion =False
-
-    def on_read_mrs(self, event):
-        self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
-        event.Skip()
-
-    def on_read_coord(self, event):
-        self.import_to_list("coord files (*.coord)|*.coord")
-        event.Skip()
     
     def on_save_pipeline(self, event, filepath=None):
         if self.steps == []:
@@ -170,23 +162,15 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
 
-    def import_to_list(self, wildcard):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+    def on_read_coord(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="coord files (*.coord)|*.coord", defaultDir=self.rootPath, style=wx.FD_OPEN)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepaths = fileDialog.GetPaths()
-        files = []
-        for filepath in filepaths:
-            if filepath == "" or not os.path.exists(filepath):
-                print(f"File not found:\n\t{filepath}")
-            else: files.append(filepath)
-        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
-        if not all([f.endswith(ext) for f in filepaths]):
-            print("Inconsistent file types")
-            return False
-        if ext.lower().strip() not in self.supported_files:
-            print("Invalid file type")
-            return False
-        self.inputMRSfiles_dt.OnDropFiles(None, None, files)
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            print(f"File not found:\n\t{filepath}")
+            return
+        self.read_file(None, filepath)
+        event.Skip()
         
     # def OnDeleteClick(self, event):
     #     selected_item = self.list_ctrl.GetFirstSelected()
@@ -229,50 +213,7 @@ class MyFrame(wxglade_out.MyFrame):
     #     if selected_item_index >= 0:
     #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
     #         self.pipeline.insert(selected_item_index+1, new_item_text)
-    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
-            
-            
-    def on_plus_MRSfiles(self, event):
-        print("test")
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepaths = fileDialog.GetPaths()
-        files = []
-        for filepath in filepaths:
-            if filepath == "" or not os.path.exists(filepath):
-                print(f"File not found:\n\t{filepath}")
-            else: files.append(filepath)
-        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
-        if not all([f.endswith(ext) for f in filepaths]):
-            print("Inconsistent file types")
-            return False
-        if ext.lower().strip() not in self.supported_files:
-            print("Invalid file type")
-            return False
-        self.inputMRSfiles_dt.OnDropFiles(None, None, files)
-        event.Skip()
-        
-        
-    def on_plus_wref(self, event):
-        print("test")
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="wref MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepaths = fileDialog.GetPaths()
-        files = []
-        for filepath in filepaths:
-            if filepath == "" or not os.path.exists(filepath):
-                print(f"File not found:\n\t{filepath}")
-            else: files.append(filepath)
-        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
-        if not all([f.endswith(ext) for f in filepaths]):
-            print("Inconsistent file types")
-            return False
-        if ext.lower().strip() not in self.supported_files:
-            print("Invalid file type")
-            return False
-        self.inputwref_dt.OnDropFiles(None, None, files)
-        event.Skip()
-            
+    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]()) 
 
     def on_button_step_processing(self, event):
         # if not self.processing:
@@ -338,11 +279,14 @@ class MyFrame(wxglade_out.MyFrame):
         
     def PostStepProcessingGUIChanges(self):
         # self.semaphore_step_pro.acquire()
+        if self.current_step == len(self.steps) + 1:
+            self.on_terminate_processing(None)
+            return
+
         if self.proces_completion:
             if self.current_step==1:
                 self.pipelineWindow.Hide()
                 self.button_open_pipeline.Disable()
-
 
             self.proces_completion=False
             self.progress_bar.Update(0,50)
@@ -360,7 +304,7 @@ class MyFrame(wxglade_out.MyFrame):
                 self.button_step_processing.Enable()
                 self.button_auto_processing.Enable()
                 
-        if (0<self.current_step and self.fast_processing==False) or((self.current_step )==(len(self.steps)+1)):##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
+        if 0<self.current_step and self.fast_processing==False:##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
             self.button_terminate_processing.Enable()
            
         if self.current_step==(len(self.steps)):
@@ -373,14 +317,9 @@ class MyFrame(wxglade_out.MyFrame):
         elif self.fast_processing==True and self.current_step==(len(self.steps)+1):#When the fast processing finish all the execution (LCMODEL)
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
             self.button_auto_processing.Disable()
-            
-
-            
-
 
     def updateprogress(self,current_step,current_step_index,totalstep):
         self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
-
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
@@ -447,9 +386,10 @@ class MyFrame(wxglade_out.MyFrame):
 
         self.current_step=0 
         self.progress_bar_info.SetLabel("Progress(0/0):")
+        self.progress_bar.SetValue(0)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
-        self.matplotlib_canvas.clear()
-        event.Skip()
+        # self.matplotlib_canvas.clear()
+        if event is not None: event.Skip()
         
         
     def OnDropdownProcessingStep(self, event):
@@ -510,7 +450,7 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_close(self, event):
         filepaths = self.inputMRSfiles_dt.dropped_file_paths
-        filepaths_wref = self.inputwref_dt.dropped_file_paths_wref
+        filepaths_wref = self.inputwref_dt.dropped_file_paths
         if len(filepaths) > 0:
             # wrefindex = self.inputMRSfiles_dt.wrefindex
             tosave = [filepaths, filepaths_wref]

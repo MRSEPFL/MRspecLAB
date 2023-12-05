@@ -12,36 +12,14 @@ from suspect import MRSData
 
 from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 
-def stop_processing(self):
-    self.next = False
-    self.processing = False
-    self.fast_processing = False
-    # self.button_step_processing.SetLabel("Start Processing")
-    self.button_step_processing.Enable()
-    return
+# def updateprogress(self,current_step,current_step_index,totalstep):
+#     self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
+#     self.progress_bar.SetValue(current_step_index/totalstep*100)
 
-def waitforprocessingbutton(self):
-    self.button_step_processing.Enable()
-    self.button_auto_processing.Enable()
-    # self.processing_throbber.Hide()
-
-
-    while not self.next:
-        if not self.processing: return False
-        time.sleep(0.1)
-    self.next = False
-    return True
-
-
-
-
-def updateprogress(self,current_step,current_step_index,totalstep):
-    self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
-
-def updatedropdownstep(self,current_step,current_step_index):
-    # self.DDstepselection.AddMenuItem(str(current_step_index)+" - "+current_step.__class__.__name__ )
-    print("to")
-    # self.Layout()
+# def updatedropdownstep(self,current_step,current_step_index):
+#     self.DDstepselection.AddMenuItem(str(current_step_index)+" - "+current_step.__class__.__name__ )
+#     print("to")
+#     self.Layout()
     
 def loadInput(self):
     self.filepaths = []
@@ -50,26 +28,22 @@ def loadInput(self):
             self.filepaths.append(f)
     if len(self.filepaths) == 0:
         self.log_error("No files found")
-        # return stop_processing(self)
         return False
 
-
     self.originalWref = None
-    if len(self.inputwref_dt.dropped_file_paths_wref)==0:
-        self.originalWref = None
+    if len(self.inputwref_dt.dropped_file_paths)==0:
         self.log_warning("No water reference found")
-    elif len(self.inputwref_dt.dropped_file_paths_wref)>1:
+    elif len(self.inputwref_dt.dropped_file_paths)>1:
         self.log_error("Only one water reference is supported for now")
         return False
     else:
-        if self.inputwref_dt.dropped_file_paths_wref[0].lower().endswith((".ima", ".dcm")):
-            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.dropped_file_paths_wref[0])
-        elif self.inputwref_dt.dropped_file_paths_wref[0].lower().endswith(".dat"):
-            self.originalWref = suspect.io.load_twix(self.inputwref_dt.dropped_file_paths_wref[0])
-            self.originalWref = suspect.processing.channel_combination.combine_channels(data) # temporary?
-        self.log_info("Water reference loaded: " + self.inputwref_dt.dropped_file_paths_wref[0])
-
-
+        if self.inputwref_dt.dropped_file_paths[0].lower().endswith((".ima", ".dcm")):
+            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.dropped_file_paths[0])
+        elif self.inputwref_dt.dropped_file_paths[0].lower().endswith(".dat"):
+            self.originalWref = suspect.io.load_twix(self.inputwref_dt.dropped_file_paths[0])
+            self.originalWref = suspect.processing.channel_combination.combine_channels(self.originalWref) # temporary?
+        self.log_info("Water reference loaded: " + self.inputwref_dt.dropped_file_paths[0])
+        print(self.originalWref)
 
     self.originalData = []
     for i in range(len(self.filepaths)):
@@ -82,31 +56,29 @@ def loadInput(self):
             else:
                 self.log_error("Unsupported file format: " + self.filepaths[i])
                 continue
-
-            # if i == wrefindex:
-            #     self.originalWref = data
-            #     self.log_info("Water reference loaded: " + self.filepaths[i])
-            # elif len(data.shape) > 1:
             if len(data.shape) > 1:
-                for d in data:
-                    self.originalData.append(data.inherit(d))
-            else:
-                self.originalData.append(data)
+                for d in data: self.originalData.append(data.inherit(d))
+            else: self.originalData.append(data)
         except: self.log_warning("Error loading file: " + self.filepaths[i])
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
         self.proces_completion = True
-        # return stop_processing(self)
         return False
-    self.log_info(len(self.originalData), " files loaded")
+    self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
     
     ##### OUTPUT FOLDERS #####
     self.outputpath = os.path.join(self.rootPath, "output")
     if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
-    prefix = os.path.commonprefix([os.path.basename(f) for f in self.filepaths])
+    allfiles = [os.path.basename(f) for f in self.filepaths]
+    allfiles.append(os.path.basename(self.inputwref_dt.dropped_file_paths[0]))
+    prefix = os.path.commonprefix(allfiles)
     if prefix == "": prefix = "output"
-    self.outputpath = os.path.join(self.rootPath, "output", prefix)
-    if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
+    base = os.path.join(self.rootPath, "output", prefix)
+    i = 1
+    while os.path.exists(self.outputpath):
+        self.outputpath = base + " (" + str(i) + ")"
+        i += 1
+    os.mkdir(self.outputpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
     if os.path.exists(self.lcmodelsavepath): shutil.rmtree(self.lcmodelsavepath)
     os.makedirs(self.lcmodelsavepath)
@@ -123,7 +95,7 @@ def initializeDataprocessed(self):
 def processStep(self,step,nstep):
     dataDict = {
                 "input": self.dataSteps[-1],
-                "wref": self.last_wref,
+                "wref": self.wrefSteps[-1],
                 "original": self.dataSteps[0],
                 "wref_original": self.wrefSteps[0],
                 "output": None,
@@ -135,7 +107,7 @@ def processStep(self,step,nstep):
     if not self.fast_processing:
         self.button_auto_processing.Disable()
 
-    # updateprogressbar(self,step,nstep,len(self.steps))
+    # updateprogress(self,step,nstep,len(self.steps))
     self.log_debug("Running ", step.__class__.__name__)
     start_time = time.time()
     step.process(dataDict)
@@ -149,19 +121,20 @@ def processStep(self,step,nstep):
     start_time = time.time()
     steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
     if not os.path.exists(steppath): os.mkdir(steppath)
-    figure = matplotlib.figure.Figure(figsize=(10, 10))
+    figure = matplotlib.figure.Figure(figsize=(12, 9))
     # step plot
     step.plot(figure, dataDict)
     figure.suptitle(step.__class__.__name__)
     filepath = os.path.join(steppath, "step.png")
     figure.savefig(filepath, dpi=600)
-    self.log_info("Saved "+ str(step.__class__.__name__) +" to " + filepath)
+    self.log_info("Saved "+ str(step.__class__.__name__) + " to " + filepath)
     # data plot
+    figure.clear()
     plot_ima(dataDict["output"], figure)
     figure.suptitle("Result of " + step.__class__.__name__)
     filepath = os.path.join(steppath, "result.png")
     figure.savefig(filepath, dpi=600)
-    self.log_info("Saved "+ "Result of " + step.__class__.__name__ +" to " + filepath)
+    self.log_info("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
     # raw
     if self.save_raw:
         filepath = os.path.join(steppath, "data")
@@ -178,19 +151,17 @@ def processStep(self,step,nstep):
 def saveDataPlot(self): 
     for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original", "Result"]):
         filepath = os.path.join(self.outputpath, name + ".png")
-        figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
+        figure = matplotlib.figure.Figure(figsize=(12, 9))
         plot_ima(d, figure)
         figure.suptitle(name)
         figure.savefig(filepath, dpi=600)
         self.log_info("Saved "+ str(name) +" to " + filepath)
         
 def analyseResults(self):
-    
     result = self.dataSteps[-1]
     wresult = self.wrefSteps[-1]
     if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
     else: result = result[0].inherit(np.mean(result, axis=0))
-
     controlfile = os.path.join(self.workpath, "result")
     
     # basis set
@@ -288,40 +259,37 @@ def analyseResults(self):
     
 
 def processPipeline(self):
+        
+    ##### LOAD INPUT #####
+    if self.current_step==0:
+        self.pipeline=self.retrievePipeline()
+        self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        valid_input=loadInput(self)
+        if valid_input==False:
+            # self.semaphore_step_pro.release()
+            return
+
+    ##### PROCESSING #####
+    if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
+        processStep(self,self.steps[self.current_step],self.current_step+1)
+        self.current_step+=1
+    elif self.current_step==(len(self.steps)):
+        self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
+        saveDataPlot(self)
+        valid_analysis=analyseResults(self)
+        # if valid_analysis==False:
+            # self.semaphore_step_pro.release()
+            # return
+        self.current_step+=1 ##### to change with a LCModeldone bool 
+    else:
+        print("Error  Finished, no further steps, to changes this part")
     
-        
-        ##### LOAD INPUT #####
-        if self.current_step==0:
-            self.pipeline=self.retrievePipeline()
-            self.steps = [self.processing_steps[step]() for step in self.pipeline]
-            valid_input=loadInput(self)
-            if valid_input==False:
-                # self.semaphore_step_pro.release()
-                return
-        
-        
+    wx.CallAfter(self.PostStepProcessingGUIChanges)
 
-        ##### PROCESSING #####
-        if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
-            processStep(self,self.steps[self.current_step],self.current_step+1)
-            self.current_step+=1
-        elif self.current_step==(len(self.steps)):
-            self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
-            saveDataPlot(self)
-            valid_analysis=analyseResults(self)
-            if valid_analysis==False:
-                # self.semaphore_step_pro.release()
-                return
-            self.current_step+=1 ##### to change with a LCModeldone bool 
-        else:
-            print("Error  Finished, no further steps, to changes this part")
-        
-        wx.CallAfter(self.PostStepProcessingGUIChanges)
-
-        self.proces_completion = True
-        print("yo")
-        # self.semaphore_step_pro.release()
-        return print("bulleeeeeeet")
+    self.proces_completion = True
+    # print("yo")
+    # self.semaphore_step_pro.release()
+    # return print("bulleeeeeeet")
            
 
         # nstep = 0
