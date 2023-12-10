@@ -1,7 +1,7 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 
-class RemoveBadAverages(ps.ProcessingStep):
+class RemoveBadAverages(ProcessingStep):
     def __init__(self):
         super().__init__({"stdDevThreshold": 3, "domain": "time", "tmax": 0.4})
         self.plotSpectrum = False

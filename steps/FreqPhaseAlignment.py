@@ -1,9 +1,8 @@
-import ProcessingStep as ps
-import suspect
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 import scipy
 
-class FreqPhaseAlignment(ps.ProcessingStep):
+class FreqPhaseAlignment(ProcessingStep):
     def __init__(self):
         super().__init__({"alignFreq": True, "alignPhase": True, "freqRange": (3., 3.2), "median": True, "target": 0})
     

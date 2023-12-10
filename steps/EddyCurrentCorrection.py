@@ -1,7 +1,7 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 
-class EddyCurrentCorrection(ps.ProcessingStep):
+class EddyCurrentCorrection(ProcessingStep):
     def __init__(self):
         super().__init__({ "gaussian_width": 32 })
 

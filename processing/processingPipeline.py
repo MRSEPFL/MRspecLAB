@@ -4,12 +4,12 @@ import shutil
 import zipfile
 import numpy as np
 import matplotlib
-from readcoord import ReadlcmCoord
 import time
 import wx
-from interface.plots import plot_ima, plot_coord
 from suspect import MRSData
 
+from inout.readcoord import ReadlcmCoord
+from interface.plots import plot_ima, plot_coord
 from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 
 # def updateprogress(self,current_step,current_step_index,totalstep):
@@ -23,7 +23,7 @@ from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
     
 def loadInput(self):
     self.filepaths = []
-    for f in self.inputMRSfiles_dt.dropped_file_paths:
+    for f in self.inputMRSfiles_dt.filepaths:
         if not f.lower().endswith(".coord"):
             self.filepaths.append(f)
     if len(self.filepaths) == 0:
@@ -31,18 +31,18 @@ def loadInput(self):
         return False
 
     self.originalWref = None
-    if len(self.inputwref_dt.dropped_file_paths)==0:
+    if len(self.inputwref_dt.filepaths)==0:
         self.log_warning("No water reference found")
-    elif len(self.inputwref_dt.dropped_file_paths)>1:
+    elif len(self.inputwref_dt.filepaths)>1:
         self.log_error("Only one water reference is supported for now")
         return False
     else:
-        if self.inputwref_dt.dropped_file_paths[0].lower().endswith((".ima", ".dcm")):
-            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.dropped_file_paths[0])
-        elif self.inputwref_dt.dropped_file_paths[0].lower().endswith(".dat"):
-            self.originalWref = suspect.io.load_twix(self.inputwref_dt.dropped_file_paths[0])
+        if self.inputwref_dt.filepaths[0].lower().endswith((".ima", ".dcm")):
+            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.filepaths[0])
+        elif self.inputwref_dt.filepaths[0].lower().endswith(".dat"):
+            self.originalWref = suspect.io.load_twix(self.inputwref_dt.filepaths[0])
             self.originalWref = suspect.processing.channel_combination.combine_channels(self.originalWref) # temporary?
-        self.log_info("Water reference loaded: " + self.inputwref_dt.dropped_file_paths[0])
+        self.log_info("Water reference loaded: " + self.inputwref_dt.filepaths[0])
         print(self.originalWref)
 
     self.originalData = []
@@ -70,7 +70,7 @@ def loadInput(self):
     self.outputpath = os.path.join(self.rootPath, "output")
     if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
     allfiles = [os.path.basename(f) for f in self.filepaths]
-    allfiles.append(os.path.basename(self.inputwref_dt.dropped_file_paths[0]))
+    allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
     prefix = os.path.commonprefix(allfiles)
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)

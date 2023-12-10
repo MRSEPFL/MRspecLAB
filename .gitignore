@@ -1,13 +1,7 @@
 __pycache__/
-/*/
-!interface/
-!/lcmodel/
-!/GimelStudio/
-!/processing/
-!/resources/
-!/gsnodegraph/
+output/
+temp/
 lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
 *.pickle
-*output/.png

@@ -6,15 +6,13 @@ import importlib.util
 import threading
 import suspect
 import pickle
-
-from . import wxglade_out
-from .plots import plot_ima, plot_coord
-from readcoord import ReadlcmCoord
-import processingPipeline
-
-import constants
 import time
 
+import constants
+from . import wxglade_out
+from .plots import plot_ima, plot_coord
+from inout.readcoord import ReadlcmCoord
+from processing import processingPipeline
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -53,7 +51,7 @@ class MyFrame(wxglade_out.MyFrame):
 
         self.rootPath = os.path.dirname(__file__)
         while not os.path.exists(os.path.join(self.rootPath, "lcmodel")): self.rootPath = os.path.dirname(self.rootPath)
-        processing_files = glob.glob(os.path.join(self.rootPath, "processing", "*.py"))
+        processing_files = glob.glob(os.path.join(self.rootPath, "steps", "*.py"))
         self.processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]

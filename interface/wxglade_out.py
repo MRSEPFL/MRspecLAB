@@ -5,13 +5,11 @@ import wx.lib.throbber as throbber
 
 
 # import matplotlib_canvas
-from . import matplotlib_canvas  # Use a relative import to import wxglade_out
-from . import DragList
+from . import matplotlib_canvas, DragList
 import wx.richtext
 from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
 
-from constants import(BLACK_WX,XISLAND1,ORANGE_WX,XISLAND3,XISLAND3)
-from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
+from constants import(BLACK_WX,ORANGE_WX,XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 from . import custom_wxwidgets
 # import sys
