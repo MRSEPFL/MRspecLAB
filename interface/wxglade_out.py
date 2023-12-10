@@ -71,27 +71,28 @@ class FileDrop(wx.FileDropTarget):
         self.parent = parent
         self.list = listbox
         self.label = label
-        self.dropped_file_paths = []
+        self.filepaths = []
         self.root = ""
+        self.list.Bind(wx.EVT_LISTBOX, self.on_select)
 
     def OnDropFiles(self, x, y, filenames):
         if len(filenames) == 0:
-            if len(self.dropped_file_paths) == 0:
+            if len(self.filepaths) == 0:
                 self.on_clear(wx.CommandEvent())
             return False
-        self.dropped_file_paths.extend(filenames)
-        roots = [f.rsplit(os.path.sep, 1)[0] for f in self.dropped_file_paths]
-        if len(set(roots)) == 1 and len(self.dropped_file_paths) > 1:
+        self.filepaths.extend(filenames)
+        roots = [f.rsplit(os.path.sep, 1)[0] for f in self.filepaths]
+        if len(set(roots)) == 1 and len(self.filepaths) > 1:
             self.root = roots[0]
             self.list.Append([f.rsplit(os.path.sep, 1)[1] for f in filenames])
         else:
             self.root = ""
             self.list.Append([f for f in filenames])
-        self.dropped_file_paths.sort()
+        self.filepaths.sort()
         temp = self.list.GetStrings()
         temp.sort()
         self.list.Set(temp)
-        self.label.SetLabel(str(len(self.dropped_file_paths)) +" files"
+        self.label.SetLabel(str(len(self.filepaths)) +" files"
                             + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
         self.label.Parent.Layout()
         self.clear_button.Enable()
@@ -99,7 +100,7 @@ class FileDrop(wx.FileDropTarget):
         return True
     
     def on_clear(self, event):
-        self.dropped_file_paths = []
+        self.filepaths = []
         self.list.Set([])
         self.clear_button.Disable()
         self.minus_button.Disable()
@@ -130,12 +131,17 @@ class FileDrop(wx.FileDropTarget):
 
     def on_minus(self, event):
         deleted_item = self.list.GetSelection()
-        print(self.dropped_file_paths[deleted_item])
-        new_paths = self.dropped_file_paths
+        print(self.filepaths[deleted_item])
+        new_paths = self.filepaths
         new_paths.pop(deleted_item)
-        self.dropped_file_paths = []
+        self.filepaths = []
         self.list.Set([])
         self.OnDropFiles(0, 0, new_paths)
+        event.Skip()
+
+    def on_select(self, event):
+        filename = self.filepaths[self.list.GetSelection()]
+        self.parent.read_file(event, filename)
         event.Skip()
      
 class MyFrame(wx.Frame):
@@ -653,8 +659,8 @@ class MyFrame(wx.Frame):
         # self.dt.water_ref_button = self.water_ref_button
         # self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
         # self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
-        self.leftPanel.Disable()
-        self.leftPanel.Enable()
+        # self.leftPanel.Disable()
+        # self.leftPanel.Enable()
 
         
         self.SetIcon(wx.Icon("resources/icon_32p.png"))

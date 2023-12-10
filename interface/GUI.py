@@ -462,8 +462,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_text(colour, *args)
 
     def on_close(self, event):
-        filepaths = self.inputMRSfiles_dt.dropped_file_paths
-        filepaths_wref = self.inputwref_dt.dropped_file_paths
+        filepaths = self.inputMRSfiles_dt.filepaths
+        filepaths_wref = self.inputwref_dt.filepaths
         if len(filepaths) > 0:
             # wrefindex = self.inputMRSfiles_dt.wrefindex
             tosave = [filepaths, filepaths_wref]
