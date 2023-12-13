@@ -1,0 +1,26 @@
+# ----------------------------------------------------------------------------
+# gswidgetkit Copyright 2021-2022 by Noah Rahm and contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ----------------------------------------------------------------------------
+
+
+TEXT_COLOR = "#dfdfdf"
+ACCENT_COLOR = "#3D7DC5"
+
+DROPDOWN_BG_COLOR = "#1B2226"
+NUMBERFIELD_BG_COLOR = "#1B2226"
+BUTTON_BG_COLOR = "#1B2226"
+TEXTCTRL_BG_COLOR = "#1B2226"
+TEXTCTRL_BORDER_COLOR = "#111517"
+FOLDPANEL_BG_COLOR = "#1E2429"
