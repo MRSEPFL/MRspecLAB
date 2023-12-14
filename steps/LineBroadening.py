@@ -1,7 +1,7 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 
-class LineBroadening(ps.ProcessingStep):
+class LineBroadening(ProcessingStep):
     def __init__(self):
         super().__init__({"factor": 5})
         self.plotSpectrum = False

@@ -1,7 +1,7 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 
-class Average(ps.ProcessingStep):
+class Average(ProcessingStep):
     def __init__(self):
         super().__init__()
         self.plotSpectrum = False # use plot() from ProcessingStep.py

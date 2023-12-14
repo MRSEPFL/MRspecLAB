@@ -1,11 +1,11 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 from scipy.optimize import curve_fit
 
 def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
 
-class QualityMatrix(ps.ProcessingStep):
+class QualityMatrix(ProcessingStep):
     def __init__(self):
         super().__init__()
 

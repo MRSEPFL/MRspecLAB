@@ -3,7 +3,7 @@ import numpy as np
 import suspect
 import matplotlib
 from suspect import MRSData
-from readcoord import ReadlcmCoord
+from inout.readcoord import ReadlcmCoord
 
 def plot_ima(data, figure: matplotlib.figure, title=None):
     if isinstance(data, str):

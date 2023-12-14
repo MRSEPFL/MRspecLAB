@@ -5,6 +5,8 @@ from gsnodegraph.gsnodegraph.constants import (BTN_NORMAL_COLOR, BTN_CLICKED_COL
                                    BTN_FOCUSED_COLOR)
 from gsnodegraph.gsnodegraph.assets import ICON_ADD_NODE
 
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
+
 
 class AddNodeBtn(object):
     def __init__(self, parent):

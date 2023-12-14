@@ -13,6 +13,7 @@ import constants as const
 #                                    ICON_MOUSE_LMB, ICON_KEY_CTRL, ICON_MOUSE_MMB_MOVEMENT,
 #                                    ICON_MOUSE_RMB)
 from GimelStudio.addnode_menu import AddNodeMenu
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 ID_ADDNODEMENU = wx.NewIdRef()
 
@@ -83,7 +84,7 @@ class NodeGraphPanel(wx.Panel):
         # self.registry = kwargs["registry"]
         self.parent = parent
 
-        self.SetBackgroundColour(const.AREA_BG_COLOR)
+        self.SetBackgroundColour(XISLAND1)
 
         self.BuildUI()
 
@@ -91,7 +92,7 @@ class NodeGraphPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         topbar = wx.Panel(self)
-        topbar.SetBackgroundColour(const.AREA_TOPBAR_COLOR)
+        topbar.SetBackgroundColour(XISLAND1)
 
         topbar_sizer = wx.GridBagSizer(vgap=1, hgap=1)
 

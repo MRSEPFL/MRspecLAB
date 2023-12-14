@@ -6,15 +6,13 @@ import importlib.util
 import threading
 import suspect
 import pickle
-
-from . import wxglade_out
-from .plots import plot_ima, plot_coord
-from readcoord import ReadlcmCoord
-import processingPipeline
-
-import constants
 import time
 
+import constants
+from . import wxglade_out
+from .plots import plot_ima, plot_coord
+from inout.readcoord import ReadlcmCoord
+from processing import processingPipeline
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -53,7 +51,7 @@ class MyFrame(wxglade_out.MyFrame):
 
         self.rootPath = os.path.dirname(__file__)
         while not os.path.exists(os.path.join(self.rootPath, "lcmodel")): self.rootPath = os.path.dirname(self.rootPath)
-        processing_files = glob.glob(os.path.join(self.rootPath, "processing", "*.py"))
+        processing_files = glob.glob(os.path.join(self.rootPath, "steps", "*.py"))
         self.processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
@@ -77,31 +75,28 @@ class MyFrame(wxglade_out.MyFrame):
         self.next = False
         self.show_editor = True
         self.debug = True
+        self.save_raw = False
         
         self.Bind(EVT_LOG, self.on_log)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
-                filepaths, wrefindex = pickle.load(f)
-            self.dt.OnDropFiles(None, None, filepaths)
-            if wrefindex is not None:
-                self.dt.on_water_ref(None, wrefindex)
+                filepaths, filepaths_wref = pickle.load(f)
+            self.inputMRSfiles_dt.OnDropFiles(None, None, filepaths)
+            self.inputwref_dt.OnDropFiles(None, None, filepaths_wref)
+
+            # if wrefindex is not None:
+            #     self.inputMRSfiles_dt.on_water_ref(None, wrefindex)
 
         self.on_toggle_editor(None)
         
         self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
+        self.bmpRunLCModel= wx.Bitmap("resources/run_lcmodel.png")
+
         self.current_step=0
         # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
         self.proces_completion =False
-
-    def on_read_mrs(self, event):
-        self.import_to_list("MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat")
-        event.Skip()
-
-    def on_read_coord(self, event):
-        self.import_to_list("coord files (*.coord)|*.coord")
-        event.Skip()
     
     def on_save_pipeline(self, event, filepath=None):
         if self.steps == []:
@@ -165,23 +160,15 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
 
-    def import_to_list(self, wildcard):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=wildcard, defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+    def on_read_coord(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="coord files (*.coord)|*.coord", defaultDir=self.rootPath, style=wx.FD_OPEN)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepaths = fileDialog.GetPaths()
-        files = []
-        for filepath in filepaths:
-            if filepath == "" or not os.path.exists(filepath):
-                print(f"File not found:\n\t{filepath}")
-            else: files.append(filepath)
-        ext = filepaths[0].rsplit(os.path.sep, 1)[1].rsplit(".", 1)[1]
-        if not all([f.endswith(ext) for f in filepaths]):
-            print("Inconsistent file types")
-            return False
-        if ext.lower().strip() not in self.supported_files:
-            print("Invalid file type")
-            return False
-        self.dt.OnDropFiles(None, None, files)
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            print(f"File not found:\n\t{filepath}")
+            return
+        self.read_file(None, filepath)
+        event.Skip()
         
     # def OnDeleteClick(self, event):
     #     selected_item = self.list_ctrl.GetFirstSelected()
@@ -224,9 +211,7 @@ class MyFrame(wxglade_out.MyFrame):
     #     if selected_item_index >= 0:
     #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
     #         self.pipeline.insert(selected_item_index+1, new_item_text)
-    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]())
-            
-        
+    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]()) 
 
     def on_button_step_processing(self, event):
         # if not self.processing:
@@ -261,9 +246,11 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
+            self.log_error("Autorun Paused")
         else:
             self.button_auto_processing.SetBitmap(self.bmp_pause)
             self.button_step_processing.Disable()
+            self.log_error("Autorun Activated")
             if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
                 self.button_terminate_processing.Disable()
             self.progress_bar.SetValue(0)
@@ -281,9 +268,33 @@ class MyFrame(wxglade_out.MyFrame):
         os.startfile(output_folder)
         event.Skip()        
 
+    def on_toggle_save_raw(self, event):
+        self.save_raw = self.button_toggle_save_raw.GetValue()
+        if(self.save_raw):
+            self.button_toggle_save_raw.SetWindowStyleFlag(wx.SIMPLE_BORDER)
+        else:
+            self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
+        event.Skip()
+
+    def on_open_pipeline(self, event):
+        self.pipelineWindow.Show()
+        self.Layout()
+        if event is not None: event.Skip()
+        
     def PostStepProcessingGUIChanges(self):
         # self.semaphore_step_pro.acquire()
+        if self.current_step == len(self.steps) + 1:
+            self.log_info("Processing completed, no further steps")
+            # self.on_terminate_processing(None)
+            self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
+
+        #     return
+
         if self.proces_completion:
+            if self.current_step==1:
+                self.pipelineWindow.Hide()
+                self.button_open_pipeline.Disable()
+
             self.proces_completion=False
             self.progress_bar.Update(0,50)
             time.sleep(0.100)
@@ -302,6 +313,9 @@ class MyFrame(wxglade_out.MyFrame):
                 
         if 0<self.current_step and self.fast_processing==False:##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
             self.button_terminate_processing.Enable()
+           
+        if self.current_step==(len(self.steps)):
+            self.button_step_processing.SetBitmap(self.bmpRunLCModel)
             
         #After Fast Processing update
         if self.fast_processing==True and self.current_step<=(len(self.steps)):
@@ -310,21 +324,18 @@ class MyFrame(wxglade_out.MyFrame):
         elif self.fast_processing==True and self.current_step==(len(self.steps)+1):#When the fast processing finish all the execution (LCMODEL)
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
             self.button_auto_processing.Disable()
-            
-
-            
-
+            self.button_terminate_processing.Enable()
 
     def updateprogress(self,current_step,current_step_index,totalstep):
-        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
-
+        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
+        # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
 
     def read_file(self, event, filepath=None): # file double-clicked in list
         if filepath is None:
-            index = self.drag_and_drop_list.GetSelection()
+            index = self.inputwref_drag_and_drop_list.GetSelection()
             if index == wx.NOT_FOUND:
                 return
-            filepath = self.dt.dropped_file_paths[index]
+            filepath = self.inputMRSfiles_dt.dropped_file_paths[index]
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
@@ -378,11 +389,18 @@ class MyFrame(wxglade_out.MyFrame):
         self.button_terminate_processing.Disable()
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
+        self.button_open_pipeline.Enable()
+        if self.current_step >=(len(self.steps)):
+            self.button_step_processing.SetBitmap(self.bmp_steppro)
+
         self.current_step=0 
-        self.progress_bar_info.SetLabel("Progress(0/0):")
+        self.progress_bar_info.SetLabel("Progress (0/0):")
+        self.progress_bar_LCModel_info.SetLabel("LCModel: (0/1)" )
+
+        self.progress_bar.SetValue(0)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
-        self.matplotlib_canvas.clear()
-        event.Skip()
+        # self.matplotlib_canvas.clear()
+        if event is not None: event.Skip()
         
         
     def OnDropdownProcessingStep(self, event):
@@ -442,10 +460,11 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_text(colour, *args)
 
     def on_close(self, event):
-        filepaths = self.dt.dropped_file_paths
+        filepaths = self.inputMRSfiles_dt.filepaths
+        filepaths_wref = self.inputwref_dt.filepaths
         if len(filepaths) > 0:
-            wrefindex = self.dt.wrefindex
-            tosave = [filepaths, wrefindex]
+            # wrefindex = self.inputMRSfiles_dt.wrefindex
+            tosave = [filepaths, filepaths_wref]
             filepath = os.path.join(self.rootPath, "lastfiles.pickle")
             with open(filepath, 'wb') as f:
                 pickle.dump(tosave, f)

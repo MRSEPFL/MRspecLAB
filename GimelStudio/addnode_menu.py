@@ -20,6 +20,8 @@ import wx.stc
 
 import constants as const
 
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
+
 
 class NodesVListBox(wx.VListBox):
     def __init__(self, *args, **kw):
@@ -72,7 +74,7 @@ class NodesVListBox(wx.VListBox):
         # Monkey-patch some padding for the left side
         rect[0] += 16
 
-        color = wx.Colour("#fff")
+        color = wx.Colour("#000")##Changed MRS
 
         # Draw item with node label
         if self.GetSelection() == n:
@@ -100,7 +102,7 @@ class NodesVListBox(wx.VListBox):
         if self.GetSelection() == n:
             color = wx.Colour(const.ACCENT_COLOR)
         else:
-            color = wx.Colour(const.ADD_NODE_MENU_BG)
+            color = wx.Colour(XISLAND2) #change color add node menue
 
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.SetBrush(wx.Brush(color, wx.SOLID))
@@ -151,7 +153,7 @@ class AddNodeMenu(wx.PopupTransientWindow):
         self._nodeRegistry = node_registry
         self._nodeRegistryMapping = {}
 
-        self.SetBackgroundColour(const.ADD_NODE_MENU_BG)
+        self.SetBackgroundColour(XISLAND2)
 
         self.InitRegistryMapping()
         self.InitAddNodeMenuUI()
@@ -171,7 +173,7 @@ class AddNodeMenu(wx.PopupTransientWindow):
         # Label
         main_sizer.AddSpacer(5)
         header_lbl = wx.StaticText(self, wx.ID_ANY, _("Add Node"))
-        header_lbl.SetForegroundColour(wx.Colour("#fff"))
+        header_lbl.SetForegroundColour(wx.Colour("#000")) #Changed MRS
         header_lbl.SetFont(self.GetFont().MakeBold())
         main_sizer.Add(header_lbl, flag=wx.EXPAND | wx.ALL, border=14)
         main_sizer.AddSpacer(5)
@@ -188,6 +190,9 @@ class AddNodeMenu(wx.PopupTransientWindow):
         # Nodes list box
         self.nodes_listbox = NodesVListBox(self, size=self._size,
                                            style=wx.BORDER_NONE)
+        self.nodes_listbox.SetBackgroundColour(XISLAND2)
+
+        
         self.nodes_listbox.SetItemCount(len(self._nodeRegistryMapping))
         main_sizer.Add(self.nodes_listbox, flag=wx.EXPAND | wx.ALL, border=5)
 

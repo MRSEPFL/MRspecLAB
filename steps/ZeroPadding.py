@@ -1,7 +1,7 @@
-import ProcessingStep as ps
+from processing.ProcessingStep import ProcessingStep
 import numpy as np
 
-class ZeroPadding(ps.ProcessingStep):
+class ZeroPadding(ProcessingStep):
     def __init__(self):
         super().__init__({"factor": 3})
         self.plotSpectrum = False
