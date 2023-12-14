@@ -7,7 +7,10 @@ class RemoveBadAverages(ProcessingStep):
         self.plotSpectrum = False
 
     def process(self, data):
-        if len(data["input"]) <= 2: return data["input"]
+        self.removed = []
+        if len(data["input"]) <= 2:
+            data["output"] = data["input"]
+            return
         output = []
         metric = []
         if self.parameters["domain"].lower() == "time":
@@ -20,7 +23,6 @@ class RemoveBadAverages(ProcessingStep):
             for d in specs: metric.append(np.sum((d - ref)**2))
         self.zscores = (metric - np.mean(metric)) / np.std(metric)
         mask = np.abs(self.zscores) < self.parameters["stdDevThreshold"]
-        self.removed = []
         for i, d in enumerate(data["input"]):
             if mask[i]: output.append(d)
             else: self.removed.append(i)
