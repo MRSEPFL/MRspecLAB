@@ -66,7 +66,8 @@ class MyFrame(wxglade_out.MyFrame):
         
         self.pipeline = self.retrievePipeline()
         self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        self.supported_files = ["ima", "dcm", "dat", "coord"]
+        self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
+        self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         
@@ -366,6 +367,8 @@ class MyFrame(wxglade_out.MyFrame):
             elif filepath.lower().endswith(".dat"):
                 f = suspect.io.load_twix(filepath)
                 f = suspect.processing.channel_combination.combine_channels(f)
+            elif filepath.lower().endswith(".sdat"):
+                f = suspect.io.load_sdat(filepath)
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
             self.matplotlib_canvas.clear()

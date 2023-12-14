@@ -1,4 +1,5 @@
 import os
+import sys
 import suspect
 import shutil
 import zipfile
@@ -56,26 +57,38 @@ def loadInput(self):
                 data = suspect.io.load_twix(self.filepaths[i])
                 if self.header is None: self.header, _ = DataReaders().siemens_twix(self.filepaths[i], None)
                 data = suspect.processing.channel_combination.combine_channels(data) # temporary?
+            elif self.filepaths[i].lower().endswith(".sdat"):
+                data = suspect.io.load_sdat(self.filepaths[i], None) # should find .spar
+                spar = self.filepaths[i].lower()[:-5] + ".spar"
+                if os.path.exists(spar):
+                    if self.header is None: self.header, _ = DataReaders().philips_spar(spar, None)
+                else: self.log_warning("SPAR file not found for: " + self.filepaths[i])
             else:
                 self.log_error("Unsupported file format: " + self.filepaths[i])
                 continue
             if len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
-        except: self.log_warning("Error loading file: " + self.filepaths[i])
+        except: self.log_warning("Error loading file: " + self.filepaths[i] + "\n\t" + str(sys.exc_info()[0]))
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
         self.proces_completion = True
         return False
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
     
-    self.sequence = "" # get sequence for proper raw file saving
-    if "SequenceString" in self.header.keys(): seqkey = "SequenceString"
-    else: seqkey = "Sequence"
-    for seq in ["PRESS", "STEAM", "sSPECIAL", "MEGA"]:
-        if seq.lower() in self.header[seqkey].lower():
-            self.sequence = seq
+    print(self.header)
+    seqkey = None
+    for key in ["SequenceString", "Sequence"]:
+        if key in self.header.keys():
+            seqkey = key
             break
+    self.sequence = None # get sequence for proper raw file saving
+    if seqkey is None: self.log_warning("Sequence not found in header")
+    else:
+        for seq in self.supported_sequences:
+            if seq.lower() in self.header[seqkey].lower():
+                self.sequence = seq
+                break
 
     allfiles = [os.path.basename(f) for f in self.filepaths]
     allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
@@ -172,15 +185,22 @@ def analyseResults(self):
     controlfile = os.path.join(self.workpath, "result")
 
     # basis set
-    larmor = 0
-    if self.header["Nucleus"] == "1H": larmor = 42.57747892
-    tesla = round(result.f0 / larmor, 0)
-    strte = str(result.te)
-    if strte.endswith(".0"): strte = strte[:-2]
-    basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
-    basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
+    basisfile = None
+    if self.sequence is not None:
+        larmor = 0
+        for key in ["Nucleus", "nucleus"]:
+            if key in self.header.keys():
+                if self.header[key] == "1H": larmor = 42.57747892
+                elif self.header[key] == "31P": larmor = 10.705
+                elif self.header[key] == "23Na": larmor = 11.262
+                break
+        tesla = round(result.f0 / larmor, 0)
+        strte = str(result.te)
+        if strte.endswith(".0"): strte = strte[:-2]
+        basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
+        basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
 
-    if not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+    if basisfile is None or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
         self.log_warning("Basis set not found:\n\t", basisfile, "\nRequesting user input...")
         dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if dlg.ShowModal() == wx.ID_CANCEL:
@@ -305,6 +325,7 @@ def autorun_pipeline_exe(self):
         
 # adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
 def save_raw(filename, data, seq="PRESS"):
+    if seq is None: seq = "PRESS"
     with open(filename, 'w') as fout:
         fout.write(" $SEQPAR\n")
         fout.write(" ECHOT = {}\n".format(data.te))
