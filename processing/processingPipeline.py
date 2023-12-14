@@ -77,13 +77,12 @@ def loadInput(self):
             self.sequence = seq
             break
 
-    self.outputpath = os.path.join(self.rootPath, "output")
-    if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
     allfiles = [os.path.basename(f) for f in self.filepaths]
     allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
     prefix = os.path.commonprefix(allfiles)
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)
+    self.outputpath = base
     i = 1
     while os.path.exists(self.outputpath):
         self.outputpath = base + "(" + str(i) + ")"
@@ -91,7 +90,7 @@ def loadInput(self):
     os.mkdir(self.outputpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
     if os.path.exists(self.lcmodelsavepath): shutil.rmtree(self.lcmodelsavepath)
-    os.makedirs(self.lcmodelsavepath)
+    os.mkdir(self.lcmodelsavepath)
     self.workpath = os.path.join(self.rootPath, "temp")
     if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
     os.mkdir(self.workpath)

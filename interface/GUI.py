@@ -263,9 +263,13 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def on_open_output_folder(self, event):
-        output_folder = os.path.join(self.rootPath, "output")
-        if not os.path.exists(output_folder): os.mkdir(output_folder)
-        os.startfile(output_folder)
+        # check if self has the attribute outputpath:
+        if hasattr(self, "outputpath") and os.path.exists(self.outputpath):
+            os.startfile(self.outputpath)
+        else:
+            output_folder = os.path.join(self.rootPath, "output")
+            if not os.path.exists(output_folder): os.mkdir(output_folder)
+            os.startfile(output_folder)
         event.Skip()        
 
     def on_toggle_save_raw(self, event):
