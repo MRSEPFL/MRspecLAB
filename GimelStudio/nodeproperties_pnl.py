@@ -126,25 +126,27 @@ class NodePropertiesPanel(PanelBase):
         self.menu_button.Bind(EVT_BUTTON, self.OnAreaMenuButton)
 
     def UpdatePanelContents(self, selected_node):
+        if selected_node is None or not hasattr(selected_node, "NodePanelUI"):
+            return
         # Destroy the current panels and freeze to prevent glitching
         self.props_panel.DestroyChildren()
         self.Freeze()
 
-        if selected_node is not None:
-            self.nodeinfo_pnl.node_label.SetLabel(selected_node.GetLabel())
+        # if selected_node is not None and hasattr(selected_node, "NodePanelUI"):
+        self.nodeinfo_pnl.node_label.SetLabel(selected_node.GetLabel())
 
-            # Node Properties
-            panel_bar = fpb.FoldPanelBar(self.props_panel, agwStyle=fpb.FPB_VERTICAL)
+        # Node Properties
+        panel_bar = fpb.FoldPanelBar(self.props_panel, agwStyle=fpb.FPB_VERTICAL)
 
-            selected_node.NodePanelUI(self.props_panel, panel_bar)
-            self.CreateThumbPanel(selected_node, self.props_panel, panel_bar)
-            panel_bar.ApplyCaptionStyleAll(self.caption_style)
+        selected_node.NodePanelUI(self.props_panel, panel_bar)
+        self.CreateThumbPanel(selected_node, self.props_panel, panel_bar)
+        panel_bar.ApplyCaptionStyleAll(self.caption_style)
 
-            self.props_panel_sizer.Add(panel_bar, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
-            self.props_panel_sizer.Fit(self.props_panel)
-        else:
+        self.props_panel_sizer.Add(panel_bar, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
+        self.props_panel_sizer.Fit(self.props_panel)
+        # else:
             # Delete the window if the node is not selected
-            self.props_panel_sizer.Clear(delete_windows=True)
+            # self.props_panel_sizer.Clear(delete_windows=True)
 
         # Update everything then allow refreshing
         self.Layout()
