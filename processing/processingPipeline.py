@@ -1,4 +1,5 @@
 import os
+import sys
 import suspect
 import shutil
 import zipfile
@@ -9,8 +10,9 @@ import wx
 from suspect import MRSData
 
 from inout.readcoord import ReadlcmCoord
+from inout.readheader import DataReaders
 from interface.plots import plot_ima, plot_coord
-from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
+# from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 
 # def updateprogress(self,current_step,current_step_index,totalstep):
 #     self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
@@ -43,37 +45,57 @@ def loadInput(self):
             self.originalWref = suspect.io.load_twix(self.inputwref_dt.filepaths[0])
             self.originalWref = suspect.processing.channel_combination.combine_channels(self.originalWref) # temporary?
         self.log_info("Water reference loaded: " + self.inputwref_dt.filepaths[0])
-        print(self.originalWref)
 
     self.originalData = []
+    self.header = None
     for i in range(len(self.filepaths)):
         try:
             if self.filepaths[i].lower().endswith((".ima", ".dcm")):
                 data = suspect.io.load_siemens_dicom(self.filepaths[i])
+                if self.header is None: self.header, _ = DataReaders().siemens_ima(self.filepaths[i], None)
             elif self.filepaths[i].lower().endswith(".dat"):
                 data = suspect.io.load_twix(self.filepaths[i])
+                if self.header is None: self.header, _ = DataReaders().siemens_twix(self.filepaths[i], None)
                 data = suspect.processing.channel_combination.combine_channels(data) # temporary?
+            elif self.filepaths[i].lower().endswith(".sdat"):
+                data = suspect.io.load_sdat(self.filepaths[i], None) # should find .spar
+                spar = self.filepaths[i].lower()[:-5] + ".spar"
+                if os.path.exists(spar):
+                    if self.header is None: self.header, _ = DataReaders().philips_spar(spar, None)
+                else: self.log_warning("SPAR file not found for: " + self.filepaths[i])
             else:
                 self.log_error("Unsupported file format: " + self.filepaths[i])
                 continue
             if len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
-        except: self.log_warning("Error loading file: " + self.filepaths[i])
+        except: self.log_warning("Error loading file: " + self.filepaths[i] + "\n\t" + str(sys.exc_info()[0]))
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
         self.proces_completion = True
         return False
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
     
-    ##### OUTPUT FOLDERS #####
-    self.outputpath = os.path.join(self.rootPath, "output")
-    if not os.path.exists(self.outputpath): os.mkdir(self.outputpath)
+    print(self.header)
+    seqkey = None
+    for key in ["SequenceString", "Sequence"]:
+        if key in self.header.keys():
+            seqkey = key
+            break
+    self.sequence = None # get sequence for proper raw file saving
+    if seqkey is None: self.log_warning("Sequence not found in header")
+    else:
+        for seq in self.supported_sequences:
+            if seq.lower() in self.header[seqkey].lower():
+                self.sequence = seq
+                break
+
     allfiles = [os.path.basename(f) for f in self.filepaths]
     allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
     prefix = os.path.commonprefix(allfiles)
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)
+    self.outputpath = base
     i = 1
     while os.path.exists(self.outputpath):
         self.outputpath = base + "(" + str(i) + ")"
@@ -81,7 +103,7 @@ def loadInput(self):
     os.mkdir(self.outputpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
     if os.path.exists(self.lcmodelsavepath): shutil.rmtree(self.lcmodelsavepath)
-    os.makedirs(self.lcmodelsavepath)
+    os.mkdir(self.lcmodelsavepath)
     self.workpath = os.path.join(self.rootPath, "temp")
     if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
     os.mkdir(self.workpath)
@@ -101,8 +123,6 @@ def processStep(self,step,nstep):
                 "output": None,
                 "wref_output": None
             }
-    # self.processing_throbber.Start()
-    # self.processing_throbber.Show()
     self.button_step_processing.Disable()
     if not self.fast_processing:
         self.button_auto_processing.Disable()
@@ -111,7 +131,7 @@ def processStep(self,step,nstep):
     self.log_debug("Running ", step.__class__.__name__)
     start_time = time.time()
     step.process(dataDict)
-    self.log_debug("\tTime to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
+    self.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
@@ -127,26 +147,26 @@ def processStep(self,step,nstep):
     figure.suptitle(step.__class__.__name__)
     filepath = os.path.join(steppath, "step.png")
     figure.savefig(filepath, dpi=600)
-    self.log_info("Saved "+ str(step.__class__.__name__) + " to " + filepath)
+    self.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
     # data plot
     figure.clear()
     plot_ima(dataDict["output"], figure)
     figure.suptitle("Result of " + step.__class__.__name__)
     filepath = os.path.join(steppath, "result.png")
     figure.savefig(filepath, dpi=600)
-    self.log_info("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
+    self.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
     # raw
     if self.save_raw:
         filepath = os.path.join(steppath, "data")
         if not os.path.exists(filepath): os.mkdir(filepath)
-        for i, d in enumerate(dataDict["output"]):
-            save_raw(os.path.join(filepath, str(i) + ".RAW"), d)
+        for i, d in enumerate(dataDict["output"]): save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
+        save_raw(os.path.join(filepath, "wref.RAW"), self.wrefSteps[-1], seq=self.sequence)
     # canvas plot
     if not self.fast_processing:
         self.matplotlib_canvas.clear()
         step.plot(self.matplotlib_canvas.figure, dataDict)
         self.matplotlib_canvas.draw()
-    self.log_debug("\tTime to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
+    self.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self): 
     for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original", "Result"]):
@@ -155,30 +175,46 @@ def saveDataPlot(self):
         plot_ima(d, figure)
         figure.suptitle(name)
         figure.savefig(filepath, dpi=600)
-        self.log_info("Saved "+ str(name) +" to " + filepath)
+        self.log_debug("Saved "+ str(name) +" to " + filepath)
         
 def analyseResults(self):
     result = self.dataSteps[-1]
     wresult = self.wrefSteps[-1]
-    if len(result) == 1: result = result[0] # we want a single MRSData object for analysis
+    if len(result) == 1: result = result[0]
     else: result = result[0].inherit(np.mean(result, axis=0))
     controlfile = os.path.join(self.workpath, "result")
-    
+
     # basis set
-    tesla = round(result.f0 / 42.57747892, 0) # larmor frequency in MHz
-    if result.te >= 30: sequence = "PRESS" # very advanced detection
-    else: sequence = "STEAM"
-    strte = str(result.te)
-    if strte.endswith(".0"): strte = strte[:-2]
-    basisfile = str(int(tesla)) + "T_" + sequence + "_" + str(strte) + "ms.BASIS"
+    basisfile = None
+    if self.sequence is not None:
+        larmor = 0
+        for key in ["Nucleus", "nucleus"]:
+            if key in self.header.keys():
+                if self.header[key] == "1H": larmor = 42.57747892
+                elif self.header[key] == "31P": larmor = 10.705
+                elif self.header[key] == "23Na": larmor = 11.262
+                break
+        tesla = round(result.f0 / larmor, 0)
+        strte = str(result.te)
+        if strte.endswith(".0"): strte = strte[:-2]
+        basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
+        basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
 
-    if not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-        self.log_error("Basis set not found:\n\t", basisfile)
-        # return stop_processing(self)
-        return False
+    if basisfile is None or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+        self.log_warning("Basis set not found:\n\t", basisfile, "\nRequesting user input...")
+        dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if dlg.ShowModal() == wx.ID_CANCEL:
+            dlg.Destroy()
+            return False
+        basisfile = dlg.GetPath()
+        dlg.Destroy()
+        if not os.path.exists(basisfile):
+            self.log_error("Basis set not found:\n\t", basisfile)
+            return False
 
+    # lcmodel
     params = {
-        "FILBAS": "../lcmodel/" + basisfile,
+        "FILBAS": basisfile,
         "FILCSV": "./result.csv",
         "FILCOO": "./result.coord",
         "FILPS": "./result.ps",
@@ -214,18 +250,18 @@ def analyseResults(self):
     }
     
     suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
-    save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=sequence) # overwrite raw file with correct sequence type
-
+    save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
-    self.log_info("Looking for executable here: ", lcmodelfile)
+    self.log_debug("Looking for executable here: ", lcmodelfile)
     if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
         zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
         if not os.path.exists(zippath):
             self.log_error("lcmodel executable or zip not found")
             pass
-        self.log_info("lcmodel executable not found, extracting from zip here: ", zippath)
+        self.log_info("lcmodel executable not found, extracting from zip")
+        self.log_debug("Looking for zip here: ", zippath)
         with zipfile.ZipFile(zippath, "r") as zip_ref:
             zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
@@ -253,14 +289,11 @@ def analyseResults(self):
         self.matplotlib_canvas.draw()
         filepath = os.path.join(self.lcmodelsavepath, "lcmodel.png")
         figure.savefig(filepath, dpi=600)
-    else:
-        self.log_warning("LCModel output not found")
+    else: self.log_warning("LCModel output not found")
 
     
 
 def processPipeline(self):
-        
-    ##### LOAD INPUT #####
     if self.current_step==0:
         self.pipeline,self.steps = self.retrievePipeline()
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
@@ -269,8 +302,6 @@ def processPipeline(self):
         if valid_input==False:
             # self.semaphore_step_pro.release()
             return
-
-    ##### PROCESSING #####
     if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
         processStep(self,self.steps[self.current_step],self.current_step+1)
         self.current_step+=1
@@ -282,88 +313,11 @@ def processPipeline(self):
             # self.semaphore_step_pro.release()
             # return
         self.current_step+=1 ##### to change with a LCModeldone bool 
-    else:
-        print("Error  Finished, no further steps, to changes this part")
-    
+    else: print("Error  Finished, no further steps, to changes this part")
     wx.CallAfter(self.PostStepProcessingGUIChanges)
-
     self.proces_completion = True
     # self.semaphore_step_pro.release()
     # return 
-           
-
-        # nstep = 0
-        # for step in self.steps:
-        #     nstep += 1
-            # processStep(self,self.steps[self.current_step],self.current_step+1)
-            # dataDict = {
-            #     "input": self.dataSteps[-1],
-            #     "wref": self.last_wref,
-            #     "original": self.dataSteps[0],
-            #     "wref_original": self.wrefSteps[0],
-            #     "output": None,
-            #     "wref_output": None
-            # }
-            # # self.processing_throbber.Start()
-            # # self.processing_throbber.Show()
-            # self.button_step_processing.Disable()
-            # if not self.fast_processing:
-            #     self.button_auto_processing.Disable()
-
-            # # updateprogressbar(self,step,nstep,len(self.steps))
-            # # self.button_step_processing.SetLabel("Running " + step.__class__.__name__ + "...")
-            # self.log_debug("Running ", step.__class__.__name__)
-            # step.process(dataDict)
-            # self.dataSteps.append(dataDict["output"])
-            # if dataDict["wref_output"] is not None:
-            #     self.wrefSteps.append(dataDict["wref_output"])
-            # else: self.wrefSteps.append(dataDict["wref"])
-            # # self.button_step_processing.SetLabel("Plotting " + step.__class__.__name__ + "...")
-            # self.log_debug("Plotting ", step.__class__.__name__)
-
-            # filepath = os.path.join(self.stepplotpath, str(nstep) + step.__class__.__name__ + ".png")
-            # figure = matplotlib.figure.Figure(figsize=(12, 9), dpi=600)
-            # step.plot(figure, dataDict)
-            # figure.savefig(filepath, dpi=600)
-                
-                
-            # if not self.fast_processing:
-            #     self.matplotlib_canvas.clear()
-            #     step.plot(self.matplotlib_canvas.figure, dataDict)
-            #     self.matplotlib_canvas.draw()
-                    
-
-            # updatedropdownstep(self,step,nstep)
-            
-
-
-
-            # if not self.fast_processing:
-            #     if not waitforprocessingbutton(self):
-            #         return stop_processing(self)
-                
-                
-        
-
-                
-
-        ##### SAVING DATA PLOTS #####
-        # self.button_step_processing.Disable()
-        # self.button_processing.SetLabel("Saving plots...")
-        # self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
-
-        # saveDataPlot(self)
-        
-        # if not self.fast_processing:
-        #     if not waitforprocessingbutton(self):
-        #         return stop_processing(self)
-
-
-        ##### ANALYSIS #####
-        # self.button_step_processing.Disable()        
-        # analyseResults(self)
-
-        # return stop_processing(self)
 
 def autorun_pipeline_exe(self):
     while (self.fast_processing and (self.current_step<=(len(self.steps)))):
@@ -371,6 +325,7 @@ def autorun_pipeline_exe(self):
         
 # adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
 def save_raw(filename, data, seq="PRESS"):
+    if seq is None: seq = "PRESS"
     with open(filename, 'w') as fout:
         fout.write(" $SEQPAR\n")
         fout.write(" ECHOT = {}\n".format(data.te))

@@ -66,7 +66,8 @@ class MyFrame(wxglade_out.MyFrame):
         
         self.pipeline,self.steps = self.retrievePipeline()
         # self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        self.supported_files = ["ima", "dcm", "dat", "coord"]
+        self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
+        self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         
@@ -263,9 +264,13 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def on_open_output_folder(self, event):
-        output_folder = os.path.join(self.rootPath, "output")
-        if not os.path.exists(output_folder): os.mkdir(output_folder)
-        os.startfile(output_folder)
+        # check if self has the attribute outputpath:
+        if hasattr(self, "outputpath") and os.path.exists(self.outputpath):
+            os.startfile(self.outputpath)
+        else:
+            output_folder = os.path.join(self.rootPath, "output")
+            if not os.path.exists(output_folder): os.mkdir(output_folder)
+            os.startfile(output_folder)
         event.Skip()        
 
     def on_toggle_save_raw(self, event):
@@ -335,7 +340,7 @@ class MyFrame(wxglade_out.MyFrame):
             index = self.inputwref_drag_and_drop_list.GetSelection()
             if index == wx.NOT_FOUND:
                 return
-            filepath = self.inputMRSfiles_dt.dropped_file_paths[index]
+            filepath = self.inputMRSfiles_dt.filepaths[index]
         if filepath == "" or not os.path.exists(filepath):
             print("File not found")
             return
@@ -362,16 +367,26 @@ class MyFrame(wxglade_out.MyFrame):
             elif filepath.lower().endswith(".dat"):
                 f = suspect.io.load_twix(filepath)
                 f = suspect.processing.channel_combination.combine_channels(f)
+            elif filepath.lower().endswith(".sdat"):
+                f = suspect.io.load_sdat(filepath)
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
             self.matplotlib_canvas.clear()
             plot_ima(flist, self.matplotlib_canvas.figure, title=filepath)
             self.matplotlib_canvas.draw()
             self.infotext.SetValue("")
-            self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {f.np}\n\tScanner frequency (MHz): {f.f0}\n\tDwell time (s): {f.dt}\n\tFrequency delta (Hz): {f.df}\n"
-                                + f"\tSpectral Width (Hz): {f.sw}\n\tEcho time (ms): {f.te}\n\tRepetition time (ms): {f.tr}\n"
-                                + f"\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}\n\tCentre: {f.centre}\n"
-                                + "\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()]))
+            info = f"File: {filepath}"
+            if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
+            if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
+            if hasattr(f, "dt"): info += f"\n\tDwell time (s): {f.dt}"
+            if hasattr(f, "df"): info += f"\n\tFrequency delta (Hz): {f.df}"
+            if hasattr(f, "sw"): info += f"\n\tSpectral Width (Hz): {f.sw}"
+            if hasattr(f, "te"): info += f"\n\tEcho time (ms): {f.te}"
+            if hasattr(f, "tr"): info += f"\n\tRepetition time (ms): {f.tr}"
+            info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
+            # if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+            if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
+            self.infotext.WriteText(info)
         if event is not None: event.Skip()
         return
 
