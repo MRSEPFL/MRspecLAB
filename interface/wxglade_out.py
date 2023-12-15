@@ -437,17 +437,20 @@ class MyFrame(wx.Frame):
         # bmp_logo=wx.Bitmap("resources/logobig.png", wx.BITMAP_TYPE_PNG)
         # self.logo_image=wx.StaticBitmap(self.rightPanel, wx.ID_ANY, bitmap=bmp_logo)
              
-        # self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
+        self.StepSelectionSizer= wx.BoxSizer(wx.VERTICAL)
         
-        # self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Current Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
-        # self.textdropdown.SetForegroundColour(wx.Colour(BLACK_WX)) 
+        self.textdropdown =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Show Processed Step :", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.textdropdown.SetForegroundColour(wx.Colour(BLACK_WX)) 
         
+        self.DDstepselection = wx.ComboBox(self.rightPanel,value ="", choices=[""], style=wx.CB_READONLY )
+
+        self.Bind(wx.EVT_COMBOBOX, self.on_DDstepselection_select)        
         # self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
         # self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
         
         
-        # self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
-        # self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
+        self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
+        self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
         
    
         # bmp= wx.Bitmap("resources/throbber1.png", wx.BITMAP_TYPE_PNG)
@@ -462,7 +465,7 @@ class MyFrame(wx.Frame):
         self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.AddSpacer(20)
         self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
-        # self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
