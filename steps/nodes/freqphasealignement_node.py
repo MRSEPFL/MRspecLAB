@@ -103,8 +103,13 @@ class FrequencyPhaseAlignementNode(api.Node):
     #Assume idname of propertie of the node is the same as name of the keys of the parameter dictionary   
     def EditParametersProcessing(self):
         for key, value in self.properties.items():
-            if key in self.processing_step.parameters:
+            if key == "freqRange":
+               self.processing_step.parameters[key] = self.properties[key].value[:-1]
+            elif key in self.processing_step.parameters:
                 self.processing_step.parameters[key] = self.properties[key].value
+
+            
+
 
 
 
