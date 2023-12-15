@@ -76,8 +76,8 @@ class FrequencyPhaseAlignementNode(api.Node):
         )
         target = api.IntegerProp(
             idname="target",
-            default=0,
-            min_val=0,
+            default=1,
+            min_val=1,
             max_val=1000,
             show_p=True,
             exposed=False,
