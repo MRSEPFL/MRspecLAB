@@ -17,7 +17,7 @@
 import wx
 import wx.lib.agw.flatmenu as flatmenu
 
-from .utils import ComputeMenuPosAlignedLeft
+from .utils_interface import ComputeMenuPosAlignedLeft
 
 ID_MENU_UNDOCKPANEL = wx.NewIdRef()
 ID_MENU_HIDEPANEL = wx.NewIdRef()

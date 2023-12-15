@@ -18,8 +18,8 @@ class PipelineWindow(wx.Frame):
         self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(self.mainpanel, size=(100, 100))
         self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
         
-        self.prop_pnl = NodePropertiesPanel(self.mainpanel,idname="PROPERTIES_PNL", menu_item=None,size=(360, 500))
-        
+        self.prop_pnl = NodePropertiesPanel(self.mainpanel,idname="PROPERTIES_PNL", menu_item=None,size=(600, 500))
+        self.prop_pnl.SetSizeHints( 270,100)
         
         self.pipelinesizer.Add(self.pipelinePanel, 1, wx.ALL | wx.EXPAND, 5)
         self.pipelinesizer.Add(self.prop_pnl, 0, wx.ALL | wx.EXPAND, 5)

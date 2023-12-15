@@ -7,6 +7,7 @@ class ZeroPadding(ProcessingStep):
         self.plotSpectrum = False
 
     def process(self, data):
+        print(self.parameters)
         if self.parameters["factor"] <= 0: return data
         output = []
         for d in data["input"]:
