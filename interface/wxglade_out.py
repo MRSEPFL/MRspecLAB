@@ -36,21 +36,21 @@ import gsnodegraph.nodes
 #     if obj is not None:
 #         print(repr(obj))
         
-def get_node_type(node):
-    if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
-        return "ZeroPadding"
-    elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
-        return "RemoveBadAverages"
-    elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
-        return "FreqPhaseAlignment"
-    elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
-        return "Average"
-    elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
-        return "EddyCurrentCorrection"
-    elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
-        return "LineBroadening"
-    else:
-        return "Unknown steps"
+# def get_node_type(node):
+    # if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
+    #     return "ZeroPadding"
+    # elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
+    #     return "RemoveBadAverages"
+    # elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
+    #     return "FreqPhaseAlignment"
+    # elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
+    #     return "Average"
+    # elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
+    #     return "EddyCurrentCorrection"
+    # elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
+    #     return "LineBroadening"
+    # else:
+    #     return "Unknown steps"
 
 
 # # Add translation macro to builtin similar to what gettext does.

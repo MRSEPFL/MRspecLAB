@@ -295,9 +295,9 @@ def analyseResults(self):
 
 def processPipeline(self):
     if self.current_step==0:
-        self.pipeline=self.retrievePipeline()
+        self.pipeline,self.steps = self.retrievePipeline()
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
-        self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        # self.steps = [self.processing_steps[step]() for step in self.pipeline]
         valid_input=loadInput(self)
         if valid_input==False:
             # self.semaphore_step_pro.release()

@@ -59,13 +59,13 @@ class MyFrame(wxglade_out.MyFrame):
                 spec = importlib.util.spec_from_file_location(module_name, file)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                for name, obj in inspect.getmembers(module):
-                    if inspect.isclass(obj) and obj.__module__ == module_name:
-                        obj = getattr(module, name)
-                        self.processing_steps[name] = obj
+                # for name, obj in inspect.getmembers(module):
+                #     if inspect.isclass(obj) and obj.__module__ == module_name:
+                #         obj = getattr(module, name)
+                #         self.processing_steps[name] = obj
         
-        self.pipeline = self.retrievePipeline()
-        self.steps = [self.processing_steps[step]() for step in self.pipeline]
+        self.pipeline,self.steps = self.retrievePipeline()
+        # self.steps = [self.processing_steps[step]() for step in self.pipeline]
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
@@ -424,6 +424,7 @@ class MyFrame(wxglade_out.MyFrame):
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
         pipeline =[]
+        steps=[]
         while current_node is not None:
             for socket in current_node.GetSockets():
                 if socket.direction == 1:
@@ -436,9 +437,12 @@ class MyFrame(wxglade_out.MyFrame):
                     else:
                         for wire in socket.GetWires():
                             current_node = wire.dstsocket.node
-                            pipeline.append(wxglade_out.get_node_type(wire.dstsocket.node))
-        
-        return pipeline
+                            # pipeline.append(wxglade_out.get_node_type(wire.dstsocket.node))
+                            pipeline.append(current_node.label)
+                            current_node.EditParametersProcessing()
+                            steps.append(current_node.processing_step)
+
+        return pipeline,steps
     
     def log_text(self, colour, *args):
         text = ""

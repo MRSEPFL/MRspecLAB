@@ -23,12 +23,19 @@ try:
 except Exception:
     pass
 
-# from gsnodegraph.gsnodegraph import EVT_GSNODEGRAPH_ADDNODEBTN
+from gsnodegraph.gsnodegraph import EVT_GSNODEGRAPH_ADDNODEBTN
 from gsnodegraph.nodes import OutputNode, MixNode, ImageNode, BlurNode, BlendNode, ValueNode, FrequencyPhaseAlignementNode,AverageNode,RemoveBadAveragesNode,LineBroadeningNode,ZeroPaddingNode,EddyCurrentCorrectionNode,InputNode
+from gsnodegraph.nodes import OutputNode
 from gsnodegraph.nodegraph import NodeGraph
 import gsnodegraph.nodes
-
-
+# from steps.nodes.average_node import AverageNode
+# from steps.nodes.eddycurrentcorrection_node import EddyCurrentCorrectionNode
+# from steps.nodes.freqphasealignement_node import FrequencyPhaseAlignementNode
+# from steps.nodes.linebroadening_node import LineBroadeningNode
+# from steps.nodes.qualitymatrix_node import QualityMatrixNode
+# from steps.nodes.removebadaverages_node import RemoveBadAveragesNode
+# from steps.nodes.zeropadding_node import ZeroPaddingNode
+# from GimelStudio.core import  NODE_REGISTRY
 
 def _displayHook(obj):
     """ Custom display hook to prevent Python stealing '_'. """
@@ -36,21 +43,27 @@ def _displayHook(obj):
     if obj is not None:
         print(repr(obj))
         
-def get_node_type(node):
-    if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
-        return "ZeroPadding"
-    elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
-        return "RemoveBadAverages"
-    elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
-        return "FreqPhaseAlignment"
-    elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
-        return "Average"
-    elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
-        return "EddyCurrentCorrection"
-    elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
-        return "LineBroadening"
-    else:
-        return "Unknown steps"
+# def get_node_type(node):
+#     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
+#         return "ZeroPadding"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
+#         return "RemoveBadAverages"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
+#         return "FreqPhaseAlignment"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
+#         return "Average"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
+#         return "EddyCurrentCorrection"
+#     elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
+#         return "LineBroadening"
+#     else:
+#         return "Unknown steps"
+
+# def get_node_type(node):
+#     if isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
+#         return "Average"
+#     else:
+#         return "Unknown steps"
 
 
 # Add translation macro to builtin similar to what gettext does.
@@ -63,9 +76,9 @@ builtins.__dict__['_'] = wx.GetTranslation
 
 
 
+from GimelStudio.core import NODE_REGISTRY
 
-
-
+from steps.import_node.node_importer import *
 
 # class NodeGraph(NodeGraphBase):
 #     def __init__(self, parent, registry, config, *args, **kwds):
@@ -100,34 +113,22 @@ class NodeGraphPanel(wx.Panel):
 
 
 
-
         # topbar_sizer.Add(self.zoom_field, (0, 4), flag=wx.ALL, border=3)
         topbar_sizer.Add((10, 10), (0, 5), flag=wx.ALL, border=3)
         topbar_sizer.AddGrowableCol(2)
 
         topbar.SetSizer(topbar_sizer)
 
-        # Setup the config with datatypes and node categories
-        self.registry = {
-            ##All the line below are added for MRS software
-            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
-            "average_nodeid":AverageNode,
-            "removebadaverages_nodeid":RemoveBadAveragesNode,
-            "linebroadening_nodeid":LineBroadeningNode,
-            "zeropadding_nodeid":ZeroPaddingNode,
-            "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
-            "input_nodeid":InputNode
-        }
         
-        self.available_registery_nodes= {
-            ##All the line below are added for MRS software
-            "average_nodeid":AverageNode,
-            "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
-            "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
-            "linebroadening_nodeid":LineBroadeningNode,
-            "removebadaverages_nodeid":RemoveBadAveragesNode,
-            "zeropadding_nodeid":ZeroPaddingNode,
-        }
+        self.available_registery_nodes = NODE_REGISTRY
+        
+        print(self.available_registery_nodes)
+        self.available_registery_nodes = dict(sorted(self.available_registery_nodes.items()))
+
+        # self.available_registery_nodes= NODE_REGISTRY
+        # print(NODE_REGISTRY)
+        self.registry =self.available_registery_nodes.copy()
+        self.registry["input_nodeid"] = InputNode
         # Setup the config with datatypes and node categories
         config = {
             "image_datatype": "IMAGE",
@@ -135,6 +136,7 @@ class NodeGraphPanel(wx.Panel):
                 "IMAGE": "#C6C62D",  # Yellow
                 "INTEGER": "#A0A0A0",  # Grey
                 "FLOAT": "#A0A0A0",  # Grey
+                "VECTOR":"#A0A0A0",
                 "VALUE": "#A0A0A0",  # Depreciated!
                 "TRANSIENTS": "#FFA07A", 
             },
@@ -187,7 +189,7 @@ class NodeGraphPanel(wx.Panel):
 
         self.SetSizer(main_sizer)
 
-        # self.nodegraph.Bind(EVT_GSNODEGRAPH_NODESELECT, self.UpdateNodePropertiesPnl)
+        self.nodegraph.Bind(EVT_GSNODEGRAPH_NODESELECT, self.UpdateNodePropertiesPnl)
         # self.nodegraph.Bind(EVT_GSNODEGRAPH_NODECONNECT, self.NodeConnectEvent)
         # self.nodegraph.Bind(EVT_GSNODEGRAPH_NODEDISCONNECT, self.NodeDisconnectEvent)
         # self.nodegraph.Bind(EVT_GSNODEGRAPH_MOUSEZOOM, self.ZoomNodeGraph)
@@ -209,7 +211,7 @@ class NodeGraphPanel(wx.Panel):
 
     @property
     def PropertiesPanel(self):
-        return self.parent.prop_pnl
+        return self.parent.Parent.prop_pnl ##changed for MRSoftware
 
     @property
     def GLSLRenderer(self):
@@ -225,8 +227,8 @@ class NodeGraphPanel(wx.Panel):
     def UpdateNodegraph(self):
         self.nodegraph.UpdateNodeGraph()
 
-    # def UpdateNodePropertiesPnl(self, event):
-    #     self.PropertiesPanel.UpdatePanelContents(event.value)
+    def UpdateNodePropertiesPnl(self, event):
+        self.PropertiesPanel.UpdatePanelContents(event.value)
 
     # def NodeConnectEvent(self, event):
     #     self.parent.Render()
