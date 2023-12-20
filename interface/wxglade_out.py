@@ -72,6 +72,7 @@ class FileDrop(wx.FileDropTarget):
         self.filepaths = []
         self.root = ""
         self.list.Bind(wx.EVT_LISTBOX, self.on_select)
+        self.list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_dclick)
 
     def OnDropFiles(self, x, y, filenames):
         if len(filenames) == 0:
@@ -79,13 +80,14 @@ class FileDrop(wx.FileDropTarget):
                 self.on_clear(wx.CommandEvent())
             return False
         self.filepaths.extend(filenames)
+        self.list.Set([])
         roots = [f.rsplit(os.path.sep, 1)[0] for f in self.filepaths]
         if len(set(roots)) == 1 and len(self.filepaths) > 1:
             self.root = roots[0]
-            self.list.Append([f.rsplit(os.path.sep, 1)[1] for f in filenames])
+            self.list.Append([f.rsplit(os.path.sep, 1)[1] for f in self.filepaths])
         else:
             self.root = ""
-            self.list.Append([f for f in filenames])
+            self.list.Append([f for f in self.filepaths])
         self.filepaths.sort()
         temp = self.list.GetStrings()
         temp.sort()
@@ -108,8 +110,12 @@ class FileDrop(wx.FileDropTarget):
         event.Skip()
         
     def on_plus(self, event):
-        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard="MRS files (*.ima, *.dcm, *.dat)|*.ima;*.dcm;*.dat",
-                                   defaultDir=self.parent.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        wildcard = "MRS files ("
+        for ext in self.parent.supported_files: wildcard += f"*.{ext}, "
+        wildcard = wildcard[:-2] + ")|"
+        for ext in self.parent.supported_files: wildcard += f"*.{ext};"
+        wildcard = wildcard[:-1]
+        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard=wildcard, defaultDir=self.parent.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepaths = fileDialog.GetPaths()
         files = []
@@ -129,17 +135,21 @@ class FileDrop(wx.FileDropTarget):
 
     def on_minus(self, event):
         deleted_item = self.list.GetSelection()
-        print(self.filepaths[deleted_item])
-        new_paths = self.filepaths
-        new_paths.pop(deleted_item)
-        self.filepaths = []
-        self.list.Set([])
-        self.OnDropFiles(0, 0, new_paths)
+        if deleted_item != wx.NOT_FOUND:
+            new_paths = self.filepaths
+            new_paths.pop(deleted_item)
+            self.filepaths = []
+            self.list.Set([])
+            self.OnDropFiles(0, 0, new_paths)
         event.Skip()
 
     def on_select(self, event):
         filename = self.filepaths[self.list.GetSelection()]
         self.parent.read_file(event, filename)
+        event.Skip()
+
+    def on_dclick(self, event):
+        self.list.Deselect(self.list.GetSelection())
         event.Skip()
      
 class MyFrame(wx.Frame):
