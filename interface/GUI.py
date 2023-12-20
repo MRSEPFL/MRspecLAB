@@ -479,21 +479,24 @@ class MyFrame(wxglade_out.MyFrame):
             img = mpimg.imread(stepplot_path)
             self.matplotlib_canvas.clear()
             plt.rcParams["figure.autolayout"] = True
-            im = plt.imread(folderpath_selectedstep)
+            im = plt.imread(stepplot_path)
             # fig, ax = plt.subplots()
             figure =matplotlib.figure.Figure(figsize=(12, 9))
-            self.matplotlib_canvas.figure.add_subplot(img)
+            fig, ax = plt.subplots()
+            test=ax.imshow(img)
+            self.matplotlib_canvas.figure.add_subplot(test)
+            
             # imgplot = plt.imshow(img)
             self.matplotlib_canvas.draw()
             
-            matplotlib.figure.rcParams["figure.figsize"] = [12, 9]
-            matplotlib.figure.rcParams["figure.autolayout"] = True
-            im = matplotlib.figure.imread("bird.jpg")
-            fig, ax = matplotlib.figure.subplots()
-            im = matplotlib.figure.ax.imshow(im, extent=[0, 300, 0, 300])
+            # matplotlib.figure.rcParams["figure.figsize"] = [12, 9]
+            # matplotlib.figure.rcParams["figure.autolayout"] = True
+            # im = matplotlib.figure.imread("bird.jpg")
+            # fig, ax = matplotlib.figure.subplots()
+            # im = matplotlib.figure.ax.imshow(im, extent=[0, 300, 0, 300])
             # x = np.array(range(300))
             # ax.plot(x, x, ls='dotted', linewidth=2, color='red')
-            plt.show()
+            # plt.show()
             # # self.matplotlib_canvas.title('Step Image')
             # # self.matplotlib_canvas.show()
             # self.matplotlib_canvas.draw()

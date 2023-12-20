@@ -16,6 +16,7 @@
 
 import wx
 ##Changed the imports to adapt them to MrSoftware repository
+
 import gswidgetkit.foldpanelbar as fpb
 from gswidgetkit.buttons import Button
 from gswidgetkit.label import  Label
@@ -87,19 +88,35 @@ class NodePropertiesPanel(PanelBase):
         topbar = wx.Panel(self)
         topbar.SetBackgroundColour(AREA_TOPBAR_COLOR)
 
-        topbar_sizer = wx.GridBagSizer(vgap=1, hgap=1)
 
-        self.area_icon = wx.StaticBitmap(topbar,
-                                         bitmap=ICON_NODEPROPERTIES_PANEL.GetBitmap())
-        self.area_label = Label(topbar, label="", color="#ccc", font_bold=False)
+        #Removed following lines for MRS Software:
+        # self.area_icon = wx.StaticBitmap(topbar,
+        #                                  bitmap=ICON_NODEPROPERTIES_PANEL.GetBitmap())
+        # self.area_label = Label(topbar, label="", color="#ccc", font_bold=False)
 
-        self.menu_button = Button(topbar, label="", flat=True,
-                                  bmp=(ICON_MORE_MENU_SMALL.GetBitmap(), 'left'))
+        # self.menu_button = Button(topbar, label="", flat=True,
+        #                           bmp=(ICON_MORE_MENU_SMALL.GetBitmap(), 'left'))
 
-        topbar_sizer.Add(self.area_icon, (0, 0), flag=wx.LEFT | wx.TOP | wx.BOTTOM, border=8)
-        topbar_sizer.Add(self.area_label, (0, 1), flag=wx.ALL, border=8)
-        topbar_sizer.Add(self.menu_button, (0, 4), flag=wx.ALL, border=3)
-        topbar_sizer.AddGrowableCol(2)
+        # topbar_sizer.Add(self.area_icon, (0, 0), flag=wx.LEFT | wx.TOP | wx.BOTTOM, border=8)
+        # topbar_sizer.Add(self.area_label, (0, 1), flag=wx.ALL, border=8)
+        # topbar_sizer.Add(self.menu_button, (0, 4), flag=wx.ALL, border=3)
+        # topbar_sizer.AddGrowableCol(2)
+        
+        #Added button for MRSoftware
+        topbar_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        
+        bmp_reset= wx.Bitmap("resources/reset_parameters_btn.png", wx.BITMAP_TYPE_PNG) 
+        
+        # self.resetParameters_button = custom_wxwidgets.BtmButtonNoBorder(topbar, wx.ID_ANY, bmp_reset)
+        # self.resetParameters_button.SetBackgroundColour(wx.Colour(AREA_TOPBAR_COLOR)) 
+        
+        self.resetParameters_button = Button(topbar, label="", flat=True,
+                                  bmp=(bmp_reset, 'left'))
+
+        
+        topbar_sizer.Add(self.resetParameters_button, 0, wx.ALL | wx.EXPAND, 5)
+
         topbar.SetSizer(topbar_sizer)
 
         # Main panel
@@ -123,7 +140,7 @@ class NodePropertiesPanel(PanelBase):
 
         self.SetSizer(primary_sizer)
 
-        self.menu_button.Bind(EVT_BUTTON, self.OnAreaMenuButton)
+        # self.menu_button.Bind(EVT_BUTTON, self.OnAreaMenuButton)
 
     def UpdatePanelContents(self, selected_node):
         if selected_node is None or not hasattr(selected_node, "NodePanelUI"):
