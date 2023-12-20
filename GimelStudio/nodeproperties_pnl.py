@@ -27,6 +27,7 @@ from GimelStudio.constants import (PROP_BG_COLOR, AREA_BG_COLOR,
 from GimelStudio.icons import (ICON_HELP, ICON_NODEPROPERTIES_PANEL,
                                    ICON_MORE_MENU_SMALL) #changed for MRSoftware
 #from gimelstudio.core.node.property import ThumbProp
+from GimelStudio.core.node.property import VectorProp
 from .message_dlgs import ShowNotImplementedDialog
 from .panel_base import PanelBase
 
@@ -65,6 +66,9 @@ class NodePropertiesPanel(PanelBase):
         self.caption_style.SetCaptionColour(wx.Colour(TEXT_COLOR))
         self.caption_style.SetFirstColour(wx.Colour(PROP_BG_COLOR))
         self.caption_style.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
+        
+        ##Added for MRSoftware to control the help button and reset parameter
+        self.selected_node=None
 
         self.BuildUI()
         self.SetBackgroundColour(AREA_BG_COLOR)
@@ -140,7 +144,7 @@ class NodePropertiesPanel(PanelBase):
 
         self.SetSizer(primary_sizer)
 
-        # self.menu_button.Bind(EVT_BUTTON, self.OnAreaMenuButton)
+        self.resetParameters_button.Bind(EVT_BUTTON, self.reset_parameter)
 
     def UpdatePanelContents(self, selected_node):
         if selected_node is None or not hasattr(selected_node, "NodePanelUI"):
@@ -149,21 +153,23 @@ class NodePropertiesPanel(PanelBase):
         self.props_panel.DestroyChildren()
         self.Freeze()
 
-        # if selected_node is not None and hasattr(selected_node, "NodePanelUI"):
-        self.nodeinfo_pnl.node_label.SetLabel(selected_node.GetLabel())
+        if selected_node is not None and hasattr(selected_node, "NodePanelUI"):
+            self.nodeinfo_pnl.node_label.SetLabel(selected_node.GetLabel())
 
-        # Node Properties
-        panel_bar = fpb.FoldPanelBar(self.props_panel, agwStyle=fpb.FPB_VERTICAL)
+            # Node Properties
+            panel_bar = fpb.FoldPanelBar(self.props_panel, agwStyle=fpb.FPB_VERTICAL)
 
-        selected_node.NodePanelUI(self.props_panel, panel_bar)
-        self.CreateThumbPanel(selected_node, self.props_panel, panel_bar)
-        panel_bar.ApplyCaptionStyleAll(self.caption_style)
+            selected_node.NodePanelUI(self.props_panel, panel_bar)
+            self.CreateThumbPanel(selected_node, self.props_panel, panel_bar)
+            panel_bar.ApplyCaptionStyleAll(self.caption_style)
 
-        self.props_panel_sizer.Add(panel_bar, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
-        self.props_panel_sizer.Fit(self.props_panel)
-        # else:
+            self.props_panel_sizer.Add(panel_bar, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, border=6)
+            self.props_panel_sizer.Fit(self.props_panel)
+            self.selected_node=selected_node#Added for MRSoftware
+        else:
             # Delete the window if the node is not selected
-            # self.props_panel_sizer.Clear(delete_windows=True)
+            self.props_panel_sizer.Clear(delete_windows=True)
+            self.selected_node=None#Added for MRSoftware
 
         # Update everything then allow refreshing
         self.Layout()
@@ -177,3 +183,30 @@ class NodePropertiesPanel(PanelBase):
         #                  thumb_img=node.thumbnail)
         # prop.CreateUI(panel, panel_bar)
         
+    def reset_parameter(self,event):
+        if self.selected_node is not None:
+
+            self.selected_node.processing_step.resetParameters()
+            for key in self.selected_node.processing_step.parameters:
+
+        
+                if key in self.selected_node.properties:
+                    if isinstance(self.selected_node.properties[key], VectorProp):
+                        self.selected_node.properties[key].value=(self.selected_node.processing_step.parameters[key][0],self.selected_node.processing_step.parameters[key][1],0)
+                    else:
+                        self.selected_node.properties[key].value=self.selected_node.processing_step.parameters[key]
+
+            self.UpdatePanelContents(self.selected_node)
+            # Update everything then allow refreshing
+
+
+            
+            
+        # def EditParametersProcessing(self):
+        # for key, value in self.properties.items():
+        #     if key == "freqRange":
+        #        self.processing_step.parameters[key] = self.properties[key].value[:-1]
+        #     elif key in self.processing_step.parameters:
+        #         self.processing_step.parameters[key] = self.properties[key].value
+
+            
