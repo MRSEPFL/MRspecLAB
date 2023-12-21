@@ -82,8 +82,7 @@ class FileDrop(wx.FileDropTarget):
         self.filepaths.extend(filenames)
         self.list.Set([])
         if len(self.filepaths) > 1: # find common root folder
-            root = self.filepaths[0].rsplit(os.path.sep, 1)[0] + os.path.sep
-            while root != "" and not all([f.startswith(root) for f in self.filepaths]): root = root[:-1]
+            root = os.path.commonpath(self.filepaths)
             if root != "": self.list.Append([f.replace(root, "") for f in self.filepaths])
             else: self.list.Append([f for f in self.filepaths])
         else: self.list.Append([f for f in self.filepaths])
