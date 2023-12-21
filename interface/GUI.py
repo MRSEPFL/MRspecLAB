@@ -384,7 +384,9 @@ class MyFrame(wxglade_out.MyFrame):
             if hasattr(f, "te"): info += f"\n\tEcho time (ms): {f.te}"
             if hasattr(f, "tr"): info += f"\n\tRepetition time (ms): {f.tr}"
             info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
-            # if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+            try:
+                if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+            except: pass
             if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
             self.infotext.WriteText(info)
         if event is not None: event.Skip()
