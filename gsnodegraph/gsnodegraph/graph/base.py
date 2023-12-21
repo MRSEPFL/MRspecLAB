@@ -30,6 +30,9 @@ from gsnodegraph.gsnodegraph.assets import ICON_ADD_NODE
 from .utils.z_matrix import ZMatrix
 from .btn import AddNodeBtn
 
+#Added for MRS software to fix a bug in the UI (disable connection from input to output)
+from gsnodegraph.gsnodegraph.constants import SOCKET_INPUT
+
 gsnodegraph_nodeselect_cmd_event, EVT_GSNODEGRAPH_NODESELECT = NewCommandEvent()
 gsnodegraph_nodeconnect_cmd_event, EVT_GSNODEGRAPH_NODECONNECT = NewCommandEvent()
 gsnodegraph_nodedisconnect_cmd_event, EVT_GSNODEGRAPH_NODEDISCONNECT = NewCommandEvent()
@@ -243,7 +246,10 @@ class NodeGraphBase(wx.ScrolledCanvas):
 
                         # Only allow a single wire to be connected to any one input.
                         if self.SocketHasWire(dst_socket) is not True:
-                            self.ConnectNodes(self.src_socket, dst_socket)
+                            #Added for MRS software to fix a bug in the UI (disable connection from input to output)
+
+                            if dst_socket.direction is SOCKET_INPUT:
+                                self.ConnectNodes(self.src_socket, dst_socket)
 
                         # If there is already a connection,
                         # but a wire is "dropped" into the socket
