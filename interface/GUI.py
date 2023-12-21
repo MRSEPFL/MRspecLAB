@@ -66,13 +66,12 @@ class MyFrame(wxglade_out.MyFrame):
                 spec = importlib.util.spec_from_file_location(module_name, file)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                # for name, obj in inspect.getmembers(module):
-                #     if inspect.isclass(obj) and obj.__module__ == module_name:
-                #         obj = getattr(module, name)
-                #         self.processing_steps[name] = obj
+                for name, obj in inspect.getmembers(module):
+                    if inspect.isclass(obj) and obj.__module__ == module_name:
+                        obj = getattr(module, name)
+                        self.processing_steps[name] = obj
         
         self.pipeline,self.steps = self.retrievePipeline()
-        # self.steps = [self.processing_steps[step]() for step in self.pipeline]
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
@@ -93,17 +92,12 @@ class MyFrame(wxglade_out.MyFrame):
                 filepaths, filepaths_wref = pickle.load(f)
             self.inputMRSfiles_dt.OnDropFiles(None, None, filepaths)
             self.inputwref_dt.OnDropFiles(None, None, filepaths_wref)
-
-            # if wrefindex is not None:
-            #     self.inputMRSfiles_dt.on_water_ref(None, wrefindex)
-
         self.on_toggle_editor(None)
         
         self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
         self.bmpRunLCModel= wx.Bitmap("resources/run_lcmodel.png")
 
         self.current_step=0
-        # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
         self.proces_completion =False
     
     def on_save_pipeline(self, event, filepath=None):
@@ -157,12 +151,8 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_toggle_editor(self, event):
         self.show_editor = not self.show_editor
-        if self.show_editor:
-            # self.pipelineplotSplitter.SplitVertically(self.pipelineWindow.pipelinePanel, self.rightPanel)
-            self.pipelineWindow.Show()
-        else:
-            self.pipelineWindow.Hide()
-            # self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
+        if self.show_editor: self.pipelineWindow.Show()
+        else: self.pipelineWindow.Hide()
         self.Layout()
         if event is not None: event.Skip()
 
@@ -175,14 +165,7 @@ class MyFrame(wxglade_out.MyFrame):
             return
         self.read_file(None, filepath)
         event.Skip()
-        
-    # def OnDeleteClick(self, event):
-    #     selected_item = self.list_ctrl.GetFirstSelected()
-    #     if selected_item >= 0:
-    #         self.list_ctrl.DeleteItem(selected_item)
-    #         self.pipeline.pop(selected_item)
-    #         self.steps.pop(selected_item)
-            
+
     def OnPlotClick(self, event):
         if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
             self.consoltext.AppendText("Need to process the data before plotting the results\n")
@@ -194,31 +177,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.matplotlib_canvas.clear()
         plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
         event.Skip()
-        
     
-    
-    
-
-        
-    # def OnRightClickList(self, event):
-    #     pos = event.GetPosition()
-    #     pos = self.list_ctrl.ScreenToClient(pos)
-    #     item, flags = self.list_ctrl.HitTest(pos)
-        
-    #     if item != -1:
-    #         self.list_ctrl.Select(item)  # Select the item that was right-clicked
-    #         self.PopupMenu(self.context_menu_pipeline)
-            
-    # def OnAddStep(self, event):
-    #     # Get the label text to add it to the list
-    #     label = event.GetEventObject()
-    #     new_item_text = label.GetLabel()
-    #     selected_item_index = self.list_ctrl.GetFirstSelected()
-    #     if selected_item_index >= 0:
-    #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-    #         self.pipeline.insert(selected_item_index+1, new_item_text)
-    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]()) 
-
     def on_button_step_processing(self, event):
         # if not self.processing:
         #     self.pipeline=self.retrievePipeline()
@@ -241,12 +200,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar.SetValue(0)
         self.progress_bar.Update(100, 15000)
         thread_processing = threading.Thread(target=self.processPipeline, args=())
-        # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
-
         thread_processing.start()
-        # thread_post_processing.start()
-        
-        # event.Skip()
+        event.Skip()
         
     def on_autorun_processing(self, event):
         self.fast_processing = not self.fast_processing
@@ -262,14 +217,10 @@ class MyFrame(wxglade_out.MyFrame):
             self.progress_bar.SetValue(0)
             self.progress_bar.Update(100, 15000)
             thread_processing = threading.Thread(target=self.autorun_pipeline_exe, args=())
-            # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
-
             thread_processing.start()
-
         event.Skip()
 
     def on_open_output_folder(self, event):
-        # check if self has the attribute outputpath:
         if hasattr(self, "outputpath") and os.path.exists(self.outputpath):
             os.startfile(self.outputpath)
         else:
@@ -288,7 +239,6 @@ class MyFrame(wxglade_out.MyFrame):
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
             self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
             self.log_info("Saving Raw data Disabled")
-
         event.Skip()
 
     def on_open_pipeline(self, event):
@@ -297,13 +247,9 @@ class MyFrame(wxglade_out.MyFrame):
         if event is not None: event.Skip()
         
     def PostStepProcessingGUIChanges(self):
-        # self.semaphore_step_pro.acquire()
         if self.current_step == len(self.steps) + 1:
             self.log_info("Processing completed, no further steps")
-            # self.on_terminate_processing(None)
             self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
-
-        #     return
 
         if self.proces_completion:
             # output_folder = os.path.join(self.rootPath, "output")
@@ -426,8 +372,6 @@ class MyFrame(wxglade_out.MyFrame):
     def autorun_pipeline_exe(self):
         return processingPipeline.autorun_pipeline_exe(self)
     
-
-    
     def on_terminate_processing(self, event):
         # self.processing = False
         self.fast_processing = False
@@ -546,7 +490,6 @@ class MyFrame(wxglade_out.MyFrame):
         filepaths = self.inputMRSfiles_dt.filepaths
         filepaths_wref = self.inputwref_dt.filepaths
         if len(filepaths) > 0:
-            # wrefindex = self.inputMRSfiles_dt.wrefindex
             tosave = [filepaths, filepaths_wref]
             filepath = os.path.join(self.rootPath, "lastfiles.pickle")
             with open(filepath, 'wb') as f:
