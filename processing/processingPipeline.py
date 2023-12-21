@@ -8,6 +8,9 @@ import matplotlib
 import time
 import wx
 from suspect import MRSData
+from spec2nii.other_formats import lcm_raw
+import nibabel
+import ants
 
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders
@@ -182,19 +185,20 @@ def analyseResults(self):
     wresult = self.wrefSteps[-1]
     if len(result) == 1: result = result[0]
     else: result = result[0].inherit(np.mean(result, axis=0))
-    controlfile = os.path.join(self.workpath, "result")
 
     # basis set
     basisfile = None
+    larmor = 0
+    nucleus = None
+    for key in ["Nucleus", "nucleus"]:
+        if key in self.header.keys():
+            nucleus = self.header[key]
+            if self.header[key] == "1H": larmor = 42.57747892
+            elif self.header[key] == "31P": larmor = 10.705
+            elif self.header[key] == "23Na": larmor = 11.262
+            break
+    tesla = round(result.f0 / larmor, 0)
     if self.sequence is not None:
-        larmor = 0
-        for key in ["Nucleus", "nucleus"]:
-            if key in self.header.keys():
-                if self.header[key] == "1H": larmor = 42.57747892
-                elif self.header[key] == "31P": larmor = 10.705
-                elif self.header[key] == "23Na": larmor = 11.262
-                break
-        tesla = round(result.f0 / larmor, 0)
         strte = str(result.te)
         if strte.endswith(".0"): strte = strte[:-2]
         basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
@@ -249,6 +253,7 @@ def analyseResults(self):
         "PGNORM": "US"
     }
     
+    controlfile = os.path.join(self.workpath, "result")
     suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
     save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
@@ -277,7 +282,6 @@ def analyseResults(self):
     command = command[3:]
     self.log_debug("Moving files...\n\t", command)
     os.system(command)
-    shutil.rmtree(self.workpath) # delete work folder
 
     filepath = os.path.join(self.lcmodelsavepath, "result.coord")
     if os.path.exists(filepath):
@@ -290,8 +294,43 @@ def analyseResults(self):
         filepath = os.path.join(self.lcmodelsavepath, "lcmodel.png")
         figure.savefig(filepath, dpi=600)
     else: self.log_warning("LCModel output not found")
-
     
+    # save nifti
+    rawpath = os.path.join(self.workpath, "result.RAW")
+    niftipath = os.path.join(self.workpath, "result.nii.gz")
+    save_raw(rawpath, result, seq=self.sequence)
+    class Args:
+        pass
+    args = Args()
+    args.file = rawpath
+    args.fileout = niftipath
+    args.bandwidth = 1 / result.dt
+    args.nucleus = nucleus
+    args.imagingfreq = result.f0
+    args.affine = None
+    imageOut, _ = lcm_raw(args)
+    imageOut[0].save(niftipath) # nifti
+    
+    # # segmentation
+    # nib_image = nibabel.loadsave.load(niftipath)
+    # fi = ants.from_nibabel(nib_image)
+    # # seg = ants.kmeans_segmentation(fi,3)
+    # mask = ants.get_mask(fi)
+    # print(fi.shape)
+    # # mask = ants.threshold_image(seg['segmentation'], 1, 1e15)
+    # # priorseg = ants.prior_based_segmentation(fi, seg['probabilityimages'], mask, 0.25, 0.1, 3)
+    # seg = ants.atropos(a=fi, m='[0.1,1x1x1]', c='[2,0]', i='kmeans[3]', x=mask)
+    # CSF = seg['probabilityimages'][0]
+    # GM = seg['probabilityimages'][1]
+    # WM = seg['probabilityimages'][2]
+    # try: centre = result.centre
+    # except: centre = None
+    # if centre is not None:
+    #     print(CSF[centre[0], centre[1], centre[2]])
+    #     print(GM[centre[0], centre[1], centre[2]])
+    #     print(WM[centre[0], centre[1], centre[2]])
+
+    shutil.rmtree(self.workpath) # delete work folder
 
 def processPipeline(self):
     if self.current_step==0:
