@@ -358,10 +358,16 @@ class MyFrame(wx.Frame):
         ### RIGHT PANEL ###
         self.Processing_Sizer= wx.BoxSizer(wx.HORIZONTAL)
         
+        self.playerPanel = wx.Panel(self.rightPanel, wx.ID_ANY)
+        self.playerPanel.SetBackgroundColour(wx.Colour(XISLAND2)) 
+        self.player_Sizer= wx.BoxSizer(wx.HORIZONTAL)
+        self.playerPanel.SetSizer(self.player_Sizer)
+        
+        
         self.bmp_steppro = wx.Bitmap("resources/run.png", wx.BITMAP_TYPE_PNG)  
         self.bmp_steppro_greyed= wx.Bitmap("resources/run_greyed.png", wx.BITMAP_TYPE_PNG) 
-        self.button_step_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_steppro)
-        self.button_step_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_step_processing = custom_wxwidgets.BtmButtonNoBorder(self.playerPanel, wx.ID_ANY, self.bmp_steppro)
+        self.button_step_processing.SetBackgroundColour(wx.Colour(XISLAND2))  # Set the background color (RGB values)
         self.button_step_processing.SetMinSize((-1, 100))
         self.button_step_processing.SetToolTip("Run next step of the pipeline \nand show its results plot") 
         
@@ -369,16 +375,16 @@ class MyFrame(wx.Frame):
         self.bmp_autopro_greyed = wx.Bitmap("resources/autorun_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
         self.bmp_pause = wx.Bitmap("resources/pause.png", wx.BITMAP_TYPE_PNG) 
 
-        self.button_auto_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_autopro)
-        self.button_auto_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_auto_processing = custom_wxwidgets.BtmButtonNoBorder(self.playerPanel, wx.ID_ANY, self.bmp_autopro)
+        self.button_auto_processing.SetBackgroundColour(wx.Colour(XISLAND2))  # Set the background color (RGB values)
         self.button_auto_processing.SetMinSize((-1, 100))
         self.button_auto_processing.SetToolTip("Run all the steps after one another until desactivation, \nshow only plot of the last step processed") 
 
         
         self.bmp_terminate= wx.Bitmap("resources/terminate.png", wx.BITMAP_TYPE_PNG)
         self.bmp_terminate_greyed = wx.Bitmap("resources/terminate_greyed.png", wx.BITMAP_TYPE_PNG)  # Replace with your image path
-        self.button_terminate_processing = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_terminate)
-        self.button_terminate_processing.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_terminate_processing = custom_wxwidgets.BtmButtonNoBorder(self.playerPanel, wx.ID_ANY, self.bmp_terminate)
+        self.button_terminate_processing.SetBackgroundColour(wx.Colour(XISLAND2))  # Set the background color (RGB values)
         self.button_terminate_processing.SetMinSize((-1, 100))
         self.button_terminate_processing.Disable()
 
@@ -403,6 +409,12 @@ class MyFrame(wx.Frame):
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
 
 
+        bmp_control= wx.Bitmap("resources/open_ctrl_file.png", wx.BITMAP_TYPE_PNG)
+        self.button_open_control = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_control)
+        self.button_open_control.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_open_control.SetMinSize((-1, 100))
+        self.button_open_control.SetToolTip("Open control file in an editor of the \nto be able to modify it and load it\nas wanted") 
+
 
         self.bmp_pipeline= wx.Bitmap("resources/Open_Pipeline.png", wx.BITMAP_TYPE_PNG)
         self.button_open_pipeline = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, self.bmp_pipeline)
@@ -414,7 +426,7 @@ class MyFrame(wx.Frame):
         
         self.ProgressBar_Sizer= wx.BoxSizer(wx.VERTICAL)
 
-        self.progress_bar= PG.PyGauge(self.rightPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
+        self.progress_bar= PG.PyGauge(self.playerPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
         self.progress_bar.SetValue(0)
         self.progress_bar.SetBorderPadding(5)
         self.progress_bar.SetBarColor(wx.Colour(XISLAND3))
@@ -424,11 +436,11 @@ class MyFrame(wx.Frame):
         self.ProgressBar_text_Sizer= wx.BoxSizer(wx.VERTICAL)
         
         
-        self.progress_bar_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "Progress (0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.progress_bar_info =  wx.StaticText(self.playerPanel, wx.ID_ANY, "Progress (0/0):", style=wx.ALIGN_CENTRE_VERTICAL)
         self.progress_bar_info.SetForegroundColour(wx.Colour(BLACK_WX)) 
         self.progress_bar_info.SetFont(font1)
         
-        self.progress_bar_LCModel_info =  wx.StaticText(self.rightPanel, wx.ID_ANY, "LCModel: (0/1)", style=wx.ALIGN_CENTRE_VERTICAL)
+        self.progress_bar_LCModel_info =  wx.StaticText(self.playerPanel, wx.ID_ANY, "LCModel: (0/1)", style=wx.ALIGN_CENTRE_VERTICAL)
         self.progress_bar_LCModel_info.SetForegroundColour(wx.Colour(BLACK_WX)) 
         self.progress_bar_LCModel_info.SetFont(font1)
 
@@ -469,15 +481,22 @@ class MyFrame(wx.Frame):
         # self.processing_throbber.Hide()
         self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.AddSpacer(20)
-        self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
-        # self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_open_control, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.AddSpacer(20)
+
+        self.Processing_Sizer.Add(self.StepSelectionSizer, 0, wx.ALL | wx.EXPAND, 5)
+        
+        
+        self.player_Sizer.Add(self.button_step_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.player_Sizer.Add(self.button_auto_processing, 0, wx.ALL | wx.EXPAND, 5)
+        self.player_Sizer.Add(self.button_terminate_processing, 0, wx.ALL | wx.EXPAND, 5)
+        # self.Processing_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        self.player_Sizer.Add(self.ProgressBar_Sizer, 0, wx.ALL | wx.EXPAND, 5)
+        
+        self.Processing_Sizer.Add(self.playerPanel, 0, wx.ALL | wx.EXPAND, 5)
+
         # self.Processing_Sizer.AddSpacer(60)
         # self.Processing_Sizer.Add(self.logo_image, 0, wx.ALL | wx.EXPAND, 5)
 
