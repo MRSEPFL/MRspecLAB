@@ -11,9 +11,10 @@ from suspect import MRSData
 from spec2nii.other_formats import lcm_raw
 import nibabel
 import ants
+import pandas as pd
 
 from inout.readcoord import ReadlcmCoord
-from inout.readheader import DataReaders
+from inout.readheader import DataReaders, Table
 from interface.plots import plot_ima, plot_coord
 # from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 
@@ -51,24 +52,30 @@ def loadInput(self):
 
     self.originalData = []
     self.header = None
+    vendor = None
+    dtype = None
     for i in range(len(self.filepaths)):
         try:
             if self.filepaths[i].lower().endswith((".ima", ".dcm")):
                 data = suspect.io.load_siemens_dicom(self.filepaths[i])
+                if vendor is None: vendor = "siemens"
                 if self.header is None: self.header, _ = DataReaders().siemens_ima(self.filepaths[i], None)
             elif self.filepaths[i].lower().endswith(".dat"):
                 data = suspect.io.load_twix(self.filepaths[i])
+                if vendor is None: vendor = "siemens"
                 if self.header is None: self.header, _ = DataReaders().siemens_twix(self.filepaths[i], None)
                 data = suspect.processing.channel_combination.combine_channels(data) # temporary?
             elif self.filepaths[i].lower().endswith(".sdat"):
                 data = suspect.io.load_sdat(self.filepaths[i], None) # should find .spar
                 spar = self.filepaths[i].lower()[:-5] + ".spar"
+                if vendor is None: vendor = "philips"
                 if os.path.exists(spar):
                     if self.header is None: self.header, _ = DataReaders().philips_spar(spar, None)
                 else: self.log_warning("SPAR file not found for: " + self.filepaths[i])
             else:
                 self.log_error("Unsupported file format: " + self.filepaths[i])
                 continue
+            if dtype is None: dtype = os.path.splitext(self.filepaths[i])[1][1:].lower() # [1:] to remove .
             if len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
@@ -77,9 +84,9 @@ def loadInput(self):
         self.log_error("No files loaded")
         self.proces_completion = True
         return False
+    if self.header is None: self.log_warning("Header not found, crashes impending")
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
-    
-    print(self.header)
+
     seqkey = None
     for key in ["SequenceString", "Sequence"]:
         if key in self.header.keys():
@@ -110,12 +117,16 @@ def loadInput(self):
     self.workpath = os.path.join(self.rootPath, "temp")
     if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
     os.mkdir(self.workpath)
-    initializeDataprocessed(self)
-    
-def initializeDataprocessed(self):
     self.dataSteps: list[MRSData] = [self.originalData]
     self.wrefSteps: list[MRSData] = [self.originalWref]
     self.last_wref = None
+
+    # save header.csv
+    table = Table()
+    self.header = table.table_clean(vendor, dtype, self.header)
+    table.populate(vendor, dtype, self.header)
+    csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
+    table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
 
 def processStep(self,step,nstep):
     dataDict = {
