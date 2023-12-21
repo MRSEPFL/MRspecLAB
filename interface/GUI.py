@@ -19,6 +19,7 @@ from processing import processingPipeline
 
 from datetime import datetime
 
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -159,11 +160,9 @@ class MyFrame(wxglade_out.MyFrame):
         if self.show_editor:
             # self.pipelineplotSplitter.SplitVertically(self.pipelineWindow.pipelinePanel, self.rightPanel)
             self.pipelineWindow.Show()
-            self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineWindow.Hide()
             # self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
-            self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
         if event is not None: event.Skip()
 
@@ -283,8 +282,13 @@ class MyFrame(wxglade_out.MyFrame):
         self.save_raw = self.button_toggle_save_raw.GetValue()
         if(self.save_raw):
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.SIMPLE_BORDER)
+            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND2))
+            self.log_info("Saving Raw data Enabled")
         else:
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
+            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
+            self.log_info("Saving Raw data Disabled")
+
         event.Skip()
 
     def on_open_pipeline(self, event):

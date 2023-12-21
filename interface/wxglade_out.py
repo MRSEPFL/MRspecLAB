@@ -92,8 +92,8 @@ class FileDrop(wx.FileDropTarget):
         temp = self.list.GetStrings()
         temp.sort()
         self.list.Set(temp)
-        self.label.SetLabel(str(len(self.filepaths)) +" files"
-                            + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
+        self.label.SetLabel(str(len(self.filepaths)) +" files")
+        #                     + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
         self.label.Parent.Layout()
         self.clear_button.Enable()
         self.minus_button.Enable()
@@ -167,11 +167,9 @@ class MyFrame(wx.Frame):
         self.SetTitle("MRSprocessing")
 
         fileMenu = wx.Menu()
-        viewMenu = wx.Menu()
         menuBar = wx.MenuBar()
         menuBar.SetBackgroundColour(wx.Colour(XISLAND1))
         menuBar.Append(fileMenu, "&File")
-        menuBar.Append(viewMenu, "&View")
         self.SetMenuBar(menuBar)
 
         open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open COORD file", "Open .coord file")
@@ -185,9 +183,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
         self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
 
-        self.toggle_editor = wx.MenuItem(viewMenu, wx.ID_ANY, "&Hide Editor", "Toggle Editor")
-        viewMenu.Append(self.toggle_editor)
-        self.Bind(wx.EVT_MENU, self.on_toggle_editor, self.toggle_editor)
+
         
         
 
@@ -401,7 +397,7 @@ class MyFrame(wx.Frame):
         self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_toggle_save_raw.SetMinSize((-1, 100))
         self.button_toggle_save_raw.SetValue(False)
-        self.button_toggle_save_raw.SetToolTip("Save raw data in the output folder")
+        self.button_toggle_save_raw.SetToolTip("Enable/Disable saving raw data\nin the output folder")
         self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)   
         
         self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
