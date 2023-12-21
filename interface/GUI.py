@@ -478,7 +478,9 @@ class MyFrame(wxglade_out.MyFrame):
                     self.matplotlib_canvas.clear()
                     step.plot(self.matplotlib_canvas.figure, dataDict)
                     self.matplotlib_canvas.draw()
-                    break
+                    event.Skip()
+                    return
+            self.log_warning("Step not found")
 
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
