@@ -16,6 +16,7 @@ from . import wxglade_out
 from .plots import plot_ima, plot_coord
 from inout.readcoord import ReadlcmCoord
 from processing import processingPipeline
+from .wxglade_out import PlotFrame
 
 from datetime import datetime
 
@@ -321,7 +322,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
         # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
 
-    def read_file(self, event, filepath=None): # file double-clicked in list
+    def read_file(self, event, filepath=None, new_window=False):
         if filepath is None:
             index = self.inputwref_drag_and_drop_list.GetSelection()
             if index == wx.NOT_FOUND:
@@ -333,14 +334,23 @@ class MyFrame(wxglade_out.MyFrame):
         if not any([filepath.lower().endswith(ext) for ext in self.supported_files]):
             self.log_error("Invalid file type")
             return
+        
+        if new_window:
+            child = PlotFrame(os.path.basename(filepath))
+            canvas = child.canvas
+            text = child.text
+        else:
+            canvas = self.matplotlib_canvas
+            text = self.infotext
+        
         if filepath.lower().endswith(".coord"):
             f = ReadlcmCoord(filepath)
-            self.matplotlib_canvas.clear()
-            plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
-            self.matplotlib_canvas.draw()
+            canvas.clear()
+            plot_coord(f, canvas.figure, title=filepath)
+            canvas.draw()
             dtab = '\n\t\t'
-            self.infotext.SetValue("")
-            self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
+            text.SetValue("")
+            text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
             if event is not None: event.Skip()
@@ -357,10 +367,10 @@ class MyFrame(wxglade_out.MyFrame):
                 f = suspect.io.load_sdat(filepath)
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
-            self.matplotlib_canvas.clear()
-            plot_ima(flist, self.matplotlib_canvas.figure, title=filepath)
-            self.matplotlib_canvas.draw()
-            self.infotext.SetValue("")
+            canvas.clear()
+            plot_ima(flist, canvas.figure, title=filepath)
+            canvas.draw()
+            text.SetValue("")
             info = f"File: {filepath}"
             if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
             if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
@@ -374,7 +384,7 @@ class MyFrame(wxglade_out.MyFrame):
                 if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
             except: pass
             if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
-            self.infotext.WriteText(info)
+            text.WriteText(info)
         if event is not None: event.Skip()
         return
 
