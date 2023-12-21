@@ -81,19 +81,18 @@ class FileDrop(wx.FileDropTarget):
             return False
         self.filepaths.extend(filenames)
         self.list.Set([])
-        roots = [f.rsplit(os.path.sep, 1)[0] for f in self.filepaths]
-        if len(set(roots)) == 1 and len(self.filepaths) > 1:
-            self.root = roots[0]
-            self.list.Append([f.rsplit(os.path.sep, 1)[1] for f in self.filepaths])
-        else:
-            self.root = ""
-            self.list.Append([f for f in self.filepaths])
-        self.filepaths.sort()
+        if len(self.filepaths) > 1: # find common root folder
+            root = self.filepaths[0].rsplit(os.path.sep, 1)[0] + os.path.sep
+            while root != "" and not all([f.startswith(root) for f in self.filepaths]): root = root[:-1]
+            if root != "": self.list.Append([f.replace(root, "") for f in self.filepaths])
+            else: self.list.Append([f for f in self.filepaths])
+        else: self.list.Append([f for f in self.filepaths])
+        _sorted = sorted(enumerate(self.filepaths), key=lambda x: x[1])
+        self.filepaths = [f[1] for f in _sorted]
+        order = [f[0] for f in _sorted]
         temp = self.list.GetStrings()
-        temp.sort()
-        self.list.Set(temp)
-        self.label.SetLabel(str(len(self.filepaths)) +" files")
-        #                     + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
+        self.list.Set([temp[i] for i in order])  # sort filepaths and list in the same order
+        self.label.SetLabel(str(len(self.filepaths)) +" files") # + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
         self.label.Parent.Layout()
         self.clear_button.Enable()
         self.minus_button.Enable()
@@ -115,9 +114,13 @@ class FileDrop(wx.FileDropTarget):
         wildcard = wildcard[:-2] + ")|"
         for ext in self.parent.supported_files: wildcard += f"*.{ext};"
         wildcard = wildcard[:-1]
-        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard=wildcard, defaultDir=self.parent.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        if hasattr(self.parent, "last_directory") and os.path.exists(self.parent.last_directory):
+            defaultDir = self.parent.last_directory
+        else: defaultDir = self.parent.rootPath
+        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard=wildcard, defaultDir=defaultDir, style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepaths = fileDialog.GetPaths()
+        self.parent.last_directory = fileDialog.GetDirectory()
         files = []
         for filepath in filepaths:
             if filepath == "" or not os.path.exists(filepath):
