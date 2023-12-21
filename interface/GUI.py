@@ -7,12 +7,19 @@ import threading
 import suspect
 import pickle
 import time
+import matplotlib
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 
 import constants
 from . import wxglade_out
 from .plots import plot_ima, plot_coord
 from inout.readcoord import ReadlcmCoord
 from processing import processingPipeline
+
+from datetime import datetime
+
+from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 # def get_node_type(node):
 #     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
@@ -153,11 +160,9 @@ class MyFrame(wxglade_out.MyFrame):
         if self.show_editor:
             # self.pipelineplotSplitter.SplitVertically(self.pipelineWindow.pipelinePanel, self.rightPanel)
             self.pipelineWindow.Show()
-            self.toggle_editor.SetItemLabel("Hide Editor")
         else:
             self.pipelineWindow.Hide()
             # self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
-            self.toggle_editor.SetItemLabel("Show Editor")
         self.Layout()
         if event is not None: event.Skip()
 
@@ -277,8 +282,13 @@ class MyFrame(wxglade_out.MyFrame):
         self.save_raw = self.button_toggle_save_raw.GetValue()
         if(self.save_raw):
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.SIMPLE_BORDER)
+            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND2))
+            self.log_info("Saving Raw data Enabled")
         else:
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
+            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
+            self.log_info("Saving Raw data Disabled")
+
         event.Skip()
 
     def on_open_pipeline(self, event):
@@ -296,6 +306,24 @@ class MyFrame(wxglade_out.MyFrame):
         #     return
 
         if self.proces_completion:
+            # output_folder = os.path.join(self.rootPath, "output")
+            # dirs = [d for d in os.listdir("output") if os.path.isdir(os.path.join("output", d))]
+            # last_modified_folder = max(dirs, key=lambda d: os.path.getmtime(os.path.join("output", d)))
+            # last_modified_folder_path = os.path.join("output", last_modified_folder)
+            if self.current_step == len(self.steps) + 1:
+                self.DDstepselection.AppendItems("lcmodel")
+            else:
+                self.DDstepselection.AppendItems(str(self.current_step) + self.steps[self.current_step-1].__class__.__name__)
+            self.DDstepselection.SetSelection(self.current_step)
+            
+            # steppath = os.path.join(self.outputpath, str(self.current_step) + self.steps[self.current_step-1].__class__.__name__)
+            # print(steppath)
+            # dirs_steps_proc= [d for d in os.listdir(last_modified_folder_path) if os.path.isdir(os.path.join(last_modified_folder_path, d))]
+            # last_modified_dir_steps_proc = max(dirs_steps_proc, key=lambda d: os.path.getmtime(os.path.join(last_modified_folder_path, d)))
+            # print(last_modified_dir_steps_proc)
+            # latest_file = max(list_of_files, key=os.path.getctime)
+            # print(latest_file)
+
             if self.current_step==1:
                 self.pipelineWindow.Hide()
                 self.button_open_pipeline.Disable()
@@ -407,6 +435,9 @@ class MyFrame(wxglade_out.MyFrame):
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
         self.button_open_pipeline.Enable()
+        self.DDstepselection.Clear()
+        self.DDstepselection.AppendItems("")
+        self.DDstepselection
         if self.current_step >=(len(self.steps)):
             self.button_step_processing.SetBitmap(self.bmp_steppro)
 
@@ -417,11 +448,72 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar.SetValue(0)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
         # self.matplotlib_canvas.clear()
+        self.Layout()
         if event is not None: event.Skip()
         
         
-    def OnDropdownProcessingStep(self, event):
-        print("->", event.value)
+    # def OnDropdownProcessingStep(self, event):
+    #     print("->", event.value)
+    
+    def on_DDstepselection_select(self, event):
+        print("yo")
+        selected_item = self.DDstepselection.GetValue()
+        if(selected_item==""):
+            self.matplotlib_canvas.clear()
+        elif(selected_item=="lcmodel"):
+            filepath = os.path.join(self.lcmodelsavepath, "result.coord")
+            if os.path.exists(filepath):
+                f = ReadlcmCoord(filepath)
+                figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
+                plot_coord(f, figure, title=filepath)
+                self.matplotlib_canvas.clear()
+                self.read_file(None, filepath) # also fills info panel
+                self.matplotlib_canvas.draw()
+            else:
+                self.log_warning("LCModel output not found")
+        else:
+            dirs = [d for d in os.listdir("output") if os.path.isdir(os.path.join("output", d))]
+            last_modified_output_folder = max(dirs, key=lambda d: os.path.getmtime(os.path.join("output", d)))
+            print(last_modified_output_folder)
+            print(selected_item)
+            folderpath_selectedstep = os.path.join(last_modified_output_folder, selected_item)
+            print(folderpath_selectedstep)
+            file_name = 'step.png'
+            # stepplot_path = f"{folderpath_selectedstep}/{file_name}"
+            stepplot_path= os.path.join(folderpath_selectedstep, file_name)
+            stepplot_path= os.path.join("output", stepplot_path)
+            stepplot_path= os.path.join(self.rootPath, stepplot_path)
+
+            print(stepplot_path)
+            img = mpimg.imread(stepplot_path)
+            self.matplotlib_canvas.clear()
+            plt.rcParams["figure.autolayout"] = True
+            im = plt.imread(stepplot_path)
+            # fig, ax = plt.subplots()
+            figure =matplotlib.figure.Figure(figsize=(12, 9))
+            fig, ax = plt.subplots()
+            test=ax.imshow(img)
+            self.matplotlib_canvas.figure.add_subplot(test)
+            
+            # imgplot = plt.imshow(img)
+            self.matplotlib_canvas.draw()
+            
+            # matplotlib.figure.rcParams["figure.figsize"] = [12, 9]
+            # matplotlib.figure.rcParams["figure.autolayout"] = True
+            # im = matplotlib.figure.imread("bird.jpg")
+            # fig, ax = matplotlib.figure.subplots()
+            # im = matplotlib.figure.ax.imshow(im, extent=[0, 300, 0, 300])
+            # x = np.array(range(300))
+            # ax.plot(x, x, ls='dotted', linewidth=2, color='red')
+            # plt.show()
+            # # self.matplotlib_canvas.title('Step Image')
+            # # self.matplotlib_canvas.show()
+            # self.matplotlib_canvas.draw()
+            # print(folderpath_selectedstep)
+            # self.matplotlib_canvas.clear()
+            # self.steps[self.current_step-1].plot(self.matplotlib_canvas.figure, dataDict)
+            # self.matplotlib_canvas.draw()
+
 
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
@@ -454,6 +546,9 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_log(self, event):
         text = event.GetText()
+        current_datetime = datetime.now()
+        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H-%M-%S")+": "+text
+        text=formatted_datetime+""
         colour = event.GetColour()
         self.consoltext.BeginTextColour(colour)
         self.consoltext.WriteText(text)

@@ -30,3 +30,5 @@ class PipelineWindow(wx.Frame):
 
     def on_close(self, event):
         self.Hide()
+        
+        
