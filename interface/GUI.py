@@ -451,69 +451,34 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
         
-        
-    # def OnDropdownProcessingStep(self, event):
-    #     print("->", event.value)
-    
     def on_DDstepselection_select(self, event):
-        print("yo")
         selected_item = self.DDstepselection.GetValue()
         if(selected_item==""):
             self.matplotlib_canvas.clear()
         elif(selected_item=="lcmodel"):
             filepath = os.path.join(self.lcmodelsavepath, "result.coord")
             if os.path.exists(filepath):
-                f = ReadlcmCoord(filepath)
-                figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
-                plot_coord(f, figure, title=filepath)
                 self.matplotlib_canvas.clear()
-                self.read_file(None, filepath) # also fills info panel
+                self.read_file(None, filepath)
                 self.matplotlib_canvas.draw()
             else:
                 self.log_warning("LCModel output not found")
         else:
-            dirs = [d for d in os.listdir("output") if os.path.isdir(os.path.join("output", d))]
-            last_modified_output_folder = max(dirs, key=lambda d: os.path.getmtime(os.path.join("output", d)))
-            print(last_modified_output_folder)
-            print(selected_item)
-            folderpath_selectedstep = os.path.join(last_modified_output_folder, selected_item)
-            print(folderpath_selectedstep)
-            file_name = 'step.png'
-            # stepplot_path = f"{folderpath_selectedstep}/{file_name}"
-            stepplot_path= os.path.join(folderpath_selectedstep, file_name)
-            stepplot_path= os.path.join("output", stepplot_path)
-            stepplot_path= os.path.join(self.rootPath, stepplot_path)
-
-            print(stepplot_path)
-            img = mpimg.imread(stepplot_path)
-            self.matplotlib_canvas.clear()
-            plt.rcParams["figure.autolayout"] = True
-            im = plt.imread(stepplot_path)
-            # fig, ax = plt.subplots()
-            figure =matplotlib.figure.Figure(figsize=(12, 9))
-            fig, ax = plt.subplots()
-            test=ax.imshow(img)
-            self.matplotlib_canvas.figure.add_subplot(test)
-            
-            # imgplot = plt.imshow(img)
-            self.matplotlib_canvas.draw()
-            
-            # matplotlib.figure.rcParams["figure.figsize"] = [12, 9]
-            # matplotlib.figure.rcParams["figure.autolayout"] = True
-            # im = matplotlib.figure.imread("bird.jpg")
-            # fig, ax = matplotlib.figure.subplots()
-            # im = matplotlib.figure.ax.imshow(im, extent=[0, 300, 0, 300])
-            # x = np.array(range(300))
-            # ax.plot(x, x, ls='dotted', linewidth=2, color='red')
-            # plt.show()
-            # # self.matplotlib_canvas.title('Step Image')
-            # # self.matplotlib_canvas.show()
-            # self.matplotlib_canvas.draw()
-            # print(folderpath_selectedstep)
-            # self.matplotlib_canvas.clear()
-            # self.steps[self.current_step-1].plot(self.matplotlib_canvas.figure, dataDict)
-            # self.matplotlib_canvas.draw()
-
+            index = self.DDstepselection.GetSelection()
+            for step in self.steps:
+                if step.__class__.__name__ in selected_item:
+                    dataDict = {
+                        "input": self.dataSteps[index-1],
+                        "wref": self.wrefSteps[index-1],
+                        "original": self.dataSteps[0],
+                        "wref_original": self.wrefSteps[0],
+                        "output": self.dataSteps[index],
+                        "wref_output": self.wrefSteps[index]
+                    }
+                    self.matplotlib_canvas.clear()
+                    step.plot(self.matplotlib_canvas.figure, dataDict)
+                    self.matplotlib_canvas.draw()
+                    break
 
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
