@@ -83,6 +83,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = True
         self.debug = True
         self.save_raw = False
+        self.controlfile = None
         
         self.Bind(EVT_LOG, self.on_log)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
@@ -246,6 +247,17 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
         
+    def on_set_control(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            self.log_error(f"File not found:\n\t{filepath}")
+            return
+        self.controlfile = filepath
+        self.log_info(f"Control file set to:\n\t{filepath}")
+        event.Skip()
+
     def PostStepProcessingGUIChanges(self):
         if self.current_step == len(self.steps) + 1:
             self.log_info("Processing completed, no further steps")

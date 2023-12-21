@@ -15,6 +15,7 @@ import pandas as pd
 
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders, Table
+from inout.readcontrol import readControl
 from interface.plots import plot_ima, plot_coord
 # from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
 
@@ -228,44 +229,61 @@ def analyseResults(self):
             return False
 
     # lcmodel
-    params = {
-        "FILBAS": basisfile,
-        "FILCSV": "./result.csv",
-        "FILCOO": "./result.coord",
-        "FILPS": "./result.ps",
-        "LCSV": 11,
-        "LCOORD": 9,
-        "LPS": 8,
-        "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline,
-        "DOWS": wresult is not None,
-        "NUNFIL": result.np,
-        "DELTAT": result.dt,
-        "ECHOT": result.te,
-        "HZPPPM": result.f0,
-        "DOREFS": True,
-        "VITRO": False,
-        "NUSE1": 4,
-        "CHUSE1(1)": "NAA",
-        "CHUSE1(2)": "Cr",
-        "CHUSE1(3)": "Glu",
-        "CHUSE1(4)": "Ins",
-        "PPMST": 4.2,
-        "PPMEND": 0.2,
-        "RFWHM": 1.8,
-        "ATTH2O": 0.8187,
-        "ATTMET": 0.8521,
-        "NCOMBI": 0,
-        "CONREL": 8.0,
-        "DKNTMN": 0.25,
-        "WCONC": 44444,
-        "NEACH": 999,
-        "NSIMUL": 0,
-        "NCALIB": 0,
-        "PGNORM": "US"
-    }
+    if self.controlfile is not None and os.path.exists(self.controlfile):
+        params = readControl(self.controlfile)
+        if params is None:
+            self.log_error("Control file not found:\n\t", self.controlfile)
+            return False
+        params.update({
+            "FILBAS": basisfile,
+            "FILCSV": "./result.csv",
+            "FILCOO": "./result.coord",
+            "FILPS": "./result.ps",
+            "DOWS": wresult is not None,
+            "NUNFIL": result.np,
+            "DELTAT": result.dt,
+            "ECHOT": result.te,
+            "HZPPPM": result.f0
+        })
+    else:
+        params = {
+            "FILBAS": basisfile,
+            "FILCSV": "./result.csv",
+            "FILCOO": "./result.coord",
+            "FILPS": "./result.ps",
+            "LCSV": 11,
+            "LCOORD": 9,
+            "LPS": 8,
+            "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline,
+            "DOWS": wresult is not None,
+            "NUNFIL": result.np,
+            "DELTAT": result.dt,
+            "ECHOT": result.te,
+            "HZPPPM": result.f0,
+            "DOREFS": True,
+            "VITRO": False,
+            "NUSE1": 4,
+            "CHUSE1(1)": "NAA",
+            "CHUSE1(2)": "Cr",
+            "CHUSE1(3)": "Glu",
+            "CHUSE1(4)": "Ins",
+            "PPMST": 4.2,
+            "PPMEND": 0.2,
+            "RFWHM": 1.8,
+            "ATTH2O": 0.8187,
+            "ATTMET": 0.8521,
+            "NCOMBI": 0,
+            "CONREL": 8.0,
+            "DKNTMN": 0.25,
+            "WCONC": 44444,
+            "NEACH": 999,
+            "NSIMUL": 0,
+            "NCALIB": 0,
+            "PGNORM": "US"
+        }
     
-    controlfile = os.path.join(self.workpath, "result")
-    suspect.io.lcmodel.write_all_files(controlfile, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
+    controlfilepath = os.path.join(self.workpath, "result")
+    suspect.io.lcmodel.write_all_files(controlfilepath, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
     save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
