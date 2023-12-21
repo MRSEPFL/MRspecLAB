@@ -35,7 +35,8 @@ from .panel_base import PanelBase
 class NodeInfoPanel(wx.Panel):
     def __init__(self, parent, *args, **kwds):
         wx.Panel.__init__(self, parent, *args, **kwds)
-
+        #Added for MRSoftware
+        self.parent=parent
         self.SetBackgroundColour(AREA_BG_COLOR)
 
         nodeinfo_pnl_sizer = wx.GridBagSizer(vgap=1, hgap=1)
@@ -52,8 +53,30 @@ class NodeInfoPanel(wx.Panel):
 
         self.help_button.Bind(EVT_BUTTON, self.OnHelpButton)
 
+    #Adapted for MRSoftware
     def OnHelpButton(self, event):
-        ShowNotImplementedDialog()
+        print(type(self.parent.Parent))
+        if self.parent.Parent.selected_node is not None:
+            properties_description=""
+            for key in self.parent.Parent.selected_node.processing_step.parameters:
+                if key in self.parent.Parent.selected_node.properties:
+                    properties_description=  insert_newlines(key +": "+self.parent.Parent.selected_node.properties[key].description,90) +"\n"
+                    
+                
+            dlg = wx.MessageDialog(None,
+                            "Description :" +  "\n"+self.parent.Parent.selected_node.NodeMeta["description"] +"\n \n"+"Parameters: \n"+properties_description,
+                            _(self.parent.Parent.selected_node.NodeMeta["label"] + " by " + self.parent.Parent.selected_node.NodeMeta["author"]), style=wx.ICON_INFORMATION)
+            dlg.ShowModal()  
+
+
+           
+                
+#added for MRSoftware         
+def insert_newlines(input_string, interval):
+    result = ""
+    for i in range(0, len(input_string), interval):
+        result += input_string[i:i+interval] + '\n'
+    return result
 
 
 class NodePropertiesPanel(PanelBase):
@@ -210,3 +233,4 @@ class NodePropertiesPanel(PanelBase):
         #         self.processing_step.parameters[key] = self.properties[key].value
 
             
+        

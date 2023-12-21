@@ -33,7 +33,7 @@ from GimelStudio.datafiles import ICON_ARROW_DOWN, ICON_ARROW_RIGHT
 
 class Property(object):
     def __init__(self, idname, default, fpb_label, exposed=True, 
-                 can_be_exposed=True, expanded=True, visible=False):
+                 can_be_exposed=True, expanded=True, visible=False,description=""):
         # Property identifier 
         self.idname = idname
 
@@ -48,7 +48,7 @@ class Property(object):
         # Labels for the foldpanelbar and node socket
         self.fpb_label = fpb_label
         self.label = fpb_label
-
+        
         # Whether this property is exposed as a node socket. If it is, the property
         # widget will be replaced with a label stating the node connection.
         self.exposed = exposed 
@@ -65,6 +65,10 @@ class Property(object):
 
         # Variable to hold the eventhook method
         self.widget_eventhook = None
+        
+        ##Added for MRSoftware
+        #Description of the propertie
+        self.description=description
 
     def GetIdname(self):
         return self.idname
@@ -143,9 +147,9 @@ class Property(object):
 class ActionProp(Property):
     """ Allows the user to click a button to perform an action. """
     def __init__(self, idname, default="", btn_label="", action=None, fpb_label="", 
-                 exposed=True, can_be_exposed=True, expanded=True, visible=True):
+                 exposed=True, can_be_exposed=True, expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.value = default
         self.datatype = "STRING"
         self.label = ""
@@ -183,9 +187,9 @@ class ChoiceProp(Property):
     Allows the user to select from a list of choices via a Drop-down widget. 
     """
     def __init__(self, idname, default="", choices=[], fpb_label="", 
-                 exposed=False, can_be_exposed=False, expanded=True, visible=True):
+                 exposed=False, can_be_exposed=False, expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.choices = choices
 
         self.datatype = "INTEGER"
@@ -218,9 +222,9 @@ class ColorProp(Property):
     Allows the user to select a color.
     """
     def __init__(self, idname, default=(255, 255, 255, 255), label="", fpb_label="", 
-                 exposed=True, can_be_exposed=True, expanded=True, visible=True):
+                 exposed=True, can_be_exposed=True, expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.label = label
 
         self.datatype = "COLOR"
@@ -250,9 +254,9 @@ class FileProp(Property):
     def __init__(self, idname, default="", dlg_msg="Choose file...",
                  wildcard="All files (*.*)|*.*", btn_lbl="Choose...",
                  fpb_label="", exposed=True, can_be_exposed=True, 
-                 expanded=True, visible=True):
+                 expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.dlg_msg = dlg_msg
         self.wildcard = wildcard
         self.btn_lbl = btn_lbl
@@ -322,9 +326,9 @@ class StringProp(Property):
     Allows the user to type text. 
     """
     def __init__(self, idname, default="", fpb_label="", exposed=True, 
-                 can_be_exposed=True,expanded=True, visible=True):
+                 can_be_exposed=True,expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
 
         self.datatype = "STRING"
         self.label = fpb_label
@@ -348,9 +352,9 @@ class VectorProp(Property):
     def __init__(self, idname, default=(0, 0, 0), labels=("X", "Y", "Z"),
                  min_vals=(0, 0, 0), max_vals=(10, 10, 10), lbl_suffix="", show_p=False, 
                  enable_z=False, fpb_label="", exposed=True, can_be_exposed=True,
-                 expanded=True, visible=True):
+                 expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.min_values = min_vals
         self.max_values = max_vals
         self.lbl_suffix = lbl_suffix
@@ -428,9 +432,9 @@ class IntegerProp(Property):
     """
     def __init__(self, idname, default=0, lbl_suffix="", min_val=0, max_val=10, 
                  show_p=False, fpb_label="", exposed=True, can_be_exposed=True,
-                 expanded=True, visible=True):
+                 expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.min_value = min_val
         self.max_value = max_val
         self.lbl_suffix = lbl_suffix
@@ -484,9 +488,9 @@ class FloatProp(Property):
     """
     def __init__(self, idname, default=0.0, lbl_suffix="", min_val=0.0, max_val=10.0,
                  step_size=0.5, show_p=False, fpb_label="", exposed=True,
-                 can_be_exposed=True, expanded=True, visible=True):
+                 can_be_exposed=True, expanded=True, visible=True,description=""):
         Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
+                          can_be_exposed, expanded, visible,description)
         self.min_value = min_val
         self.max_value = max_val
         self.step_size = step_size
