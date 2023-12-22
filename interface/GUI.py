@@ -322,6 +322,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
         # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
 
+
+
     def read_file(self, event, filepath=None, new_window=False):
         if filepath is None:
             index = self.inputwref_drag_and_drop_list.GetSelection()
@@ -352,7 +354,7 @@ class MyFrame(wxglade_out.MyFrame):
             text.SetValue("")
             text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
-                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
+                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{pad_string(c['name'], 4)}: (±{pad_string(str(c['SD']) + '%', 3)}, Cr: {str(c['c_cr'])})" for c in f['conc']])}\n""")
             if event is not None: event.Skip()
             return
         
@@ -524,3 +526,9 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
         return True
+    
+    
+def pad_string(input_str, desired_length):
+
+    desired_length = int(desired_length)    
+    return input_str.ljust(desired_length)
