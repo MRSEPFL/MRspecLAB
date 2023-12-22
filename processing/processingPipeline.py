@@ -381,6 +381,7 @@ def processPipeline(self):
         if valid_input==False:
             # self.semaphore_step_pro.release()
             wx.CallAfter(self.PostStepProcessingGUIChanges)
+            self.fast_processing = False
             return
     if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
         processStep(self,self.steps[self.current_step],self.current_step+1)
