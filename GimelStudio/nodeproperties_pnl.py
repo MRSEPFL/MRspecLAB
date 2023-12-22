@@ -140,7 +140,7 @@ class NodePropertiesPanel(PanelBase):
         
         self.resetParameters_button = Button(topbar, label="", flat=True,
                                   bmp=(bmp_reset, 'left'))
-
+        self.resetParameters_button.SetToolTip("Reset parameters of the selctioned node \nto their default value")
         
         topbar_sizer.Add(self.resetParameters_button, 0, wx.ALL | wx.EXPAND, 5)
 
