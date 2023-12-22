@@ -227,6 +227,7 @@ def analyseResults(self):
         if not os.path.exists(basisfile):
             self.log_error("Basis set not found:\n\t", basisfile)
             return False
+    
 
     # lcmodel
     if self.controlfile is not None and os.path.exists(self.controlfile):

@@ -482,7 +482,7 @@ class MyFrame(wxglade_out.MyFrame):
     def on_log(self, event):
         text = event.GetText()
         current_datetime = datetime.now()
-        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H-%M-%S")+": "+text
+        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")+": "+text
         text=formatted_datetime+""
         colour = event.GetColour()
         self.consoltext.BeginTextColour(colour)
