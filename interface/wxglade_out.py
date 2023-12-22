@@ -81,19 +81,17 @@ class FileDrop(wx.FileDropTarget):
             return False
         self.filepaths.extend(filenames)
         self.list.Set([])
-        roots = [f.rsplit(os.path.sep, 1)[0] for f in self.filepaths]
-        if len(set(roots)) == 1 and len(self.filepaths) > 1:
-            self.root = roots[0]
-            self.list.Append([f.rsplit(os.path.sep, 1)[1] for f in self.filepaths])
-        else:
-            self.root = ""
-            self.list.Append([f for f in self.filepaths])
-        self.filepaths.sort()
+        if len(self.filepaths) > 1: # find common root folder
+            root = os.path.commonpath(self.filepaths)
+            if root != "": self.list.Append([f.replace(root, "") for f in self.filepaths])
+            else: self.list.Append([f for f in self.filepaths])
+        else: self.list.Append([f for f in self.filepaths])
+        _sorted = sorted(enumerate(self.filepaths), key=lambda x: x[1])
+        self.filepaths = [f[1] for f in _sorted]
+        order = [f[0] for f in _sorted]
         temp = self.list.GetStrings()
-        temp.sort()
-        self.list.Set(temp)
-        self.label.SetLabel(str(len(self.filepaths)) +" files")
-        #                     + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
+        self.list.Set([temp[i] for i in order])  # sort filepaths and list in the same order
+        self.label.SetLabel(str(len(self.filepaths)) +" files") # + (("\n" + "Root folder: " + self.root) if len(self.root) > 0 else ""))
         self.label.Parent.Layout()
         self.clear_button.Enable()
         self.minus_button.Enable()
@@ -115,9 +113,13 @@ class FileDrop(wx.FileDropTarget):
         wildcard = wildcard[:-2] + ")|"
         for ext in self.parent.supported_files: wildcard += f"*.{ext};"
         wildcard = wildcard[:-1]
-        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard=wildcard, defaultDir=self.parent.rootPath, style=wx.FD_OPEN | wx.FD_MULTIPLE)
+        if hasattr(self.parent, "last_directory") and os.path.exists(self.parent.last_directory):
+            defaultDir = self.parent.last_directory
+        else: defaultDir = self.parent.rootPath
+        fileDialog = wx.FileDialog(self.parent, "Choose a file", wildcard=wildcard, defaultDir=defaultDir, style=wx.FD_OPEN | wx.FD_MULTIPLE)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepaths = fileDialog.GetPaths()
+        self.parent.last_directory = fileDialog.GetDirectory()
         files = []
         for filepath in filepaths:
             if filepath == "" or not os.path.exists(filepath):
@@ -145,7 +147,7 @@ class FileDrop(wx.FileDropTarget):
 
     def on_select(self, event):
         filename = self.filepaths[self.list.GetSelection()]
-        self.parent.read_file(event, filename)
+        self.parent.read_file(event, filename, new_window=True)
         event.Skip()
 
     def on_dclick(self, event):
@@ -410,10 +412,10 @@ class MyFrame(wx.Frame):
 
 
         bmp_control= wx.Bitmap("resources/open_ctrl_file.png", wx.BITMAP_TYPE_PNG)
-        self.button_open_control = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_control)
-        self.button_open_control.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
-        self.button_open_control.SetMinSize((-1, 100))
-        self.button_open_control.SetToolTip("Open control file in an editor of the \nto be able to modify it and load it\nas wanted") 
+        self.button_set_control = custom_wxwidgets.BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_control)
+        self.button_set_control.SetBackgroundColour(wx.Colour(XISLAND1))  # Set the background color (RGB values)
+        self.button_set_control.SetMinSize((-1, 100))
+        self.button_set_control.SetToolTip("Open control file in an editor of the \nto be able to modify it and load it\nas wanted") 
 
 
         self.bmp_pipeline= wx.Bitmap("resources/Open_Pipeline.png", wx.BITMAP_TYPE_PNG)
@@ -481,7 +483,7 @@ class MyFrame(wx.Frame):
         # self.processing_throbber.Hide()
         self.Processing_Sizer.Add(self.button_open_output_folder, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.Add(self.button_toggle_save_raw, 0, wx.ALL | wx.EXPAND, 5)
-        self.Processing_Sizer.Add(self.button_open_control, 0, wx.ALL | wx.EXPAND, 5)
+        self.Processing_Sizer.Add(self.button_set_control, 0, wx.ALL | wx.EXPAND, 5)
 
         self.Processing_Sizer.Add(self.button_open_pipeline, 0, wx.ALL | wx.EXPAND, 5)
         self.Processing_Sizer.AddSpacer(20)
@@ -526,6 +528,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.button_open_output_folder)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_save_raw, self.button_toggle_save_raw)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.button_open_pipeline)
+        self.Bind(wx.EVT_BUTTON, self.on_set_control, self.button_set_control)
 
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
@@ -721,7 +724,31 @@ class MyFrame(wx.Frame):
         # print(self.ng.nodes['lol'].GetSockets()[0].GetWires()[0].dstsocket.node)
         # print(len(self.ng.nodes['lol'].GetSockets()[1].GetWires()))
 
+class PlotFrame(wx.Frame):
+    def __init__(self, title):
+        super().__init__(None)
+        self.SetTitle(title)
+        self.SetIcon(wx.Icon("resources/icon_32p.png"))
+        self.SetBackgroundColour(wx.Colour(XISLAND1)) 
+        self.SetSize((1200, 800))
+        self.Show(True)
+
+        self.splitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
+        self.panel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.canvas = matplotlib_canvas.MatplotlibCanvas(self.panel, wx.ID_ANY)
+        self.text = wx.TextCtrl(self.splitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.text.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False))
         
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.canvas, 1, wx.EXPAND, 0)
+        self.sizer.Add(self.canvas.toolbar, 0, wx.EXPAND, 0)
+        self.panel.SetSizer(self.sizer)
+        
+        self.splitter.SetMinimumPaneSize(200)
+        self.splitter.SplitVertically(self.panel, self.text, -150)
+        self.splitter.SetSashGravity(1.)
+
+        self.Layout()
 
 
 

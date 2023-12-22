@@ -16,6 +16,7 @@ from . import wxglade_out
 from .plots import plot_ima, plot_coord
 from inout.readcoord import ReadlcmCoord
 from processing import processingPipeline
+from .wxglade_out import PlotFrame
 
 from datetime import datetime
 
@@ -66,13 +67,12 @@ class MyFrame(wxglade_out.MyFrame):
                 spec = importlib.util.spec_from_file_location(module_name, file)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                # for name, obj in inspect.getmembers(module):
-                #     if inspect.isclass(obj) and obj.__module__ == module_name:
-                #         obj = getattr(module, name)
-                #         self.processing_steps[name] = obj
+                for name, obj in inspect.getmembers(module):
+                    if inspect.isclass(obj) and obj.__module__ == module_name:
+                        obj = getattr(module, name)
+                        self.processing_steps[name] = obj
         
         self.pipeline,self.steps = self.retrievePipeline()
-        # self.steps = [self.processing_steps[step]() for step in self.pipeline]
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
@@ -84,6 +84,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.show_editor = True
         self.debug = True
         self.save_raw = False
+        self.controlfile = None
         
         self.Bind(EVT_LOG, self.on_log)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
@@ -93,17 +94,12 @@ class MyFrame(wxglade_out.MyFrame):
                 filepaths, filepaths_wref = pickle.load(f)
             self.inputMRSfiles_dt.OnDropFiles(None, None, filepaths)
             self.inputwref_dt.OnDropFiles(None, None, filepaths_wref)
-
-            # if wrefindex is not None:
-            #     self.inputMRSfiles_dt.on_water_ref(None, wrefindex)
-
         self.on_toggle_editor(None)
         
         self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
         self.bmpRunLCModel= wx.Bitmap("resources/run_lcmodel.png")
 
         self.current_step=0
-        # self.semaphore_auto_pro = threading.Semaphore(0) #use semaphore to execute one thread after one another
         self.proces_completion =False
     
     def on_save_pipeline(self, event, filepath=None):
@@ -157,12 +153,8 @@ class MyFrame(wxglade_out.MyFrame):
 
     def on_toggle_editor(self, event):
         self.show_editor = not self.show_editor
-        if self.show_editor:
-            # self.pipelineplotSplitter.SplitVertically(self.pipelineWindow.pipelinePanel, self.rightPanel)
-            self.pipelineWindow.Show()
-        else:
-            self.pipelineWindow.Hide()
-            # self.pipelineplotSplitter.Unsplit(self.pipelineplotSplitter.GetWindow1())
+        if self.show_editor: self.pipelineWindow.Show()
+        else: self.pipelineWindow.Hide()
         self.Layout()
         if event is not None: event.Skip()
 
@@ -175,14 +167,7 @@ class MyFrame(wxglade_out.MyFrame):
             return
         self.read_file(None, filepath)
         event.Skip()
-        
-    # def OnDeleteClick(self, event):
-    #     selected_item = self.list_ctrl.GetFirstSelected()
-    #     if selected_item >= 0:
-    #         self.list_ctrl.DeleteItem(selected_item)
-    #         self.pipeline.pop(selected_item)
-    #         self.steps.pop(selected_item)
-            
+
     def OnPlotClick(self, event):
         if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
             self.consoltext.AppendText("Need to process the data before plotting the results\n")
@@ -194,31 +179,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.matplotlib_canvas.clear()
         plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
         event.Skip()
-        
     
-    
-    
-
-        
-    # def OnRightClickList(self, event):
-    #     pos = event.GetPosition()
-    #     pos = self.list_ctrl.ScreenToClient(pos)
-    #     item, flags = self.list_ctrl.HitTest(pos)
-        
-    #     if item != -1:
-    #         self.list_ctrl.Select(item)  # Select the item that was right-clicked
-    #         self.PopupMenu(self.context_menu_pipeline)
-            
-    # def OnAddStep(self, event):
-    #     # Get the label text to add it to the list
-    #     label = event.GetEventObject()
-    #     new_item_text = label.GetLabel()
-    #     selected_item_index = self.list_ctrl.GetFirstSelected()
-    #     if selected_item_index >= 0:
-    #         self.list_ctrl.InsertItem(selected_item_index+1, new_item_text)
-    #         self.pipeline.insert(selected_item_index+1, new_item_text)
-    #         self.steps.insert(selected_item_index+1, self.processing_steps[new_item_text]()) 
-
     def on_button_step_processing(self, event):
         # if not self.processing:
         #     self.pipeline=self.retrievePipeline()
@@ -241,12 +202,8 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar.SetValue(0)
         self.progress_bar.Update(100, 15000)
         thread_processing = threading.Thread(target=self.processPipeline, args=())
-        # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
-
         thread_processing.start()
-        # thread_post_processing.start()
-        
-        # event.Skip()
+        event.Skip()
         
     def on_autorun_processing(self, event):
         self.fast_processing = not self.fast_processing
@@ -262,14 +219,10 @@ class MyFrame(wxglade_out.MyFrame):
             self.progress_bar.SetValue(0)
             self.progress_bar.Update(100, 15000)
             thread_processing = threading.Thread(target=self.autorun_pipeline_exe, args=())
-            # thread_post_processing = threading.Thread(target=self.PostStepProcessingGUIChanges, args=())
-
             thread_processing.start()
-
         event.Skip()
 
     def on_open_output_folder(self, event):
-        # check if self has the attribute outputpath:
         if hasattr(self, "outputpath") and os.path.exists(self.outputpath):
             os.startfile(self.outputpath)
         else:
@@ -288,7 +241,6 @@ class MyFrame(wxglade_out.MyFrame):
             self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
             self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
             self.log_info("Saving Raw data Disabled")
-
         event.Skip()
 
     def on_open_pipeline(self, event):
@@ -296,14 +248,21 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
         
+    def on_set_control(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            self.log_error(f"File not found:\n\t{filepath}")
+            return
+        self.controlfile = filepath
+        self.log_info(f"Control file set to:\n\t{filepath}")
+        event.Skip()
+
     def PostStepProcessingGUIChanges(self):
-        # self.semaphore_step_pro.acquire()
         if self.current_step == len(self.steps) + 1:
             self.log_info("Processing completed, no further steps")
-            # self.on_terminate_processing(None)
             self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
-
-        #     return
 
         if self.proces_completion:
             # output_folder = os.path.join(self.rootPath, "output")
@@ -363,7 +322,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
         # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
 
-    def read_file(self, event, filepath=None): # file double-clicked in list
+    def read_file(self, event, filepath=None, new_window=False):
         if filepath is None:
             index = self.inputwref_drag_and_drop_list.GetSelection()
             if index == wx.NOT_FOUND:
@@ -375,14 +334,23 @@ class MyFrame(wxglade_out.MyFrame):
         if not any([filepath.lower().endswith(ext) for ext in self.supported_files]):
             self.log_error("Invalid file type")
             return
+        
+        if new_window:
+            child = PlotFrame(os.path.basename(filepath))
+            canvas = child.canvas
+            text = child.text
+        else:
+            canvas = self.matplotlib_canvas
+            text = self.infotext
+        
         if filepath.lower().endswith(".coord"):
             f = ReadlcmCoord(filepath)
-            self.matplotlib_canvas.clear()
-            plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
-            self.matplotlib_canvas.draw()
+            canvas.clear()
+            plot_coord(f, canvas.figure, title=filepath)
+            canvas.draw()
             dtab = '\n\t\t'
-            self.infotext.SetValue("")
-            self.infotext.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
+            text.SetValue("")
+            text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
             if event is not None: event.Skip()
@@ -399,10 +367,10 @@ class MyFrame(wxglade_out.MyFrame):
                 f = suspect.io.load_sdat(filepath)
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
-            self.matplotlib_canvas.clear()
-            plot_ima(flist, self.matplotlib_canvas.figure, title=filepath)
-            self.matplotlib_canvas.draw()
-            self.infotext.SetValue("")
+            canvas.clear()
+            plot_ima(flist, canvas.figure, title=filepath)
+            canvas.draw()
+            text.SetValue("")
             info = f"File: {filepath}"
             if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
             if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
@@ -412,9 +380,11 @@ class MyFrame(wxglade_out.MyFrame):
             if hasattr(f, "te"): info += f"\n\tEcho time (ms): {f.te}"
             if hasattr(f, "tr"): info += f"\n\tRepetition time (ms): {f.tr}"
             info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
-            # if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+            try:
+                if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+            except: pass
             if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
-            self.infotext.WriteText(info)
+            text.WriteText(info)
         if event is not None: event.Skip()
         return
 
@@ -423,8 +393,6 @@ class MyFrame(wxglade_out.MyFrame):
     
     def autorun_pipeline_exe(self):
         return processingPipeline.autorun_pipeline_exe(self)
-    
-
     
     def on_terminate_processing(self, event):
         # self.processing = False
@@ -449,69 +417,36 @@ class MyFrame(wxglade_out.MyFrame):
         self.Layout()
         if event is not None: event.Skip()
         
-        
-    # def OnDropdownProcessingStep(self, event):
-    #     print("->", event.value)
-    
     def on_DDstepselection_select(self, event):
-        print("yo")
         selected_item = self.DDstepselection.GetValue()
         if(selected_item==""):
             self.matplotlib_canvas.clear()
         elif(selected_item=="lcmodel"):
             filepath = os.path.join(self.lcmodelsavepath, "result.coord")
             if os.path.exists(filepath):
-                f = ReadlcmCoord(filepath)
-                figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
-                plot_coord(f, figure, title=filepath)
                 self.matplotlib_canvas.clear()
-                self.read_file(None, filepath) # also fills info panel
+                self.read_file(None, filepath)
                 self.matplotlib_canvas.draw()
             else:
                 self.log_warning("LCModel output not found")
         else:
-            dirs = [d for d in os.listdir("output") if os.path.isdir(os.path.join("output", d))]
-            last_modified_output_folder = max(dirs, key=lambda d: os.path.getmtime(os.path.join("output", d)))
-            print(last_modified_output_folder)
-            print(selected_item)
-            folderpath_selectedstep = os.path.join(last_modified_output_folder, selected_item)
-            print(folderpath_selectedstep)
-            file_name = 'step.png'
-            # stepplot_path = f"{folderpath_selectedstep}/{file_name}"
-            stepplot_path= os.path.join(folderpath_selectedstep, file_name)
-            stepplot_path= os.path.join("output", stepplot_path)
-            stepplot_path= os.path.join(self.rootPath, stepplot_path)
-
-            print(stepplot_path)
-            img = mpimg.imread(stepplot_path)
-            self.matplotlib_canvas.clear()
-            plt.rcParams["figure.autolayout"] = True
-            im = plt.imread(stepplot_path)
-            # fig, ax = plt.subplots()
-            figure =matplotlib.figure.Figure(figsize=(12, 9))
-            fig, ax = plt.subplots()
-            test=ax.imshow(img)
-            self.matplotlib_canvas.figure.add_subplot(test)
-            
-            # imgplot = plt.imshow(img)
-            self.matplotlib_canvas.draw()
-            
-            # matplotlib.figure.rcParams["figure.figsize"] = [12, 9]
-            # matplotlib.figure.rcParams["figure.autolayout"] = True
-            # im = matplotlib.figure.imread("bird.jpg")
-            # fig, ax = matplotlib.figure.subplots()
-            # im = matplotlib.figure.ax.imshow(im, extent=[0, 300, 0, 300])
-            # x = np.array(range(300))
-            # ax.plot(x, x, ls='dotted', linewidth=2, color='red')
-            # plt.show()
-            # # self.matplotlib_canvas.title('Step Image')
-            # # self.matplotlib_canvas.show()
-            # self.matplotlib_canvas.draw()
-            # print(folderpath_selectedstep)
-            # self.matplotlib_canvas.clear()
-            # self.steps[self.current_step-1].plot(self.matplotlib_canvas.figure, dataDict)
-            # self.matplotlib_canvas.draw()
-
+            index = self.DDstepselection.GetSelection()
+            for step in self.steps:
+                if step.__class__.__name__ in selected_item:
+                    dataDict = {
+                        "input": self.dataSteps[index-1],
+                        "wref": self.wrefSteps[index-1],
+                        "original": self.dataSteps[0],
+                        "wref_original": self.wrefSteps[0],
+                        "output": self.dataSteps[index],
+                        "wref_output": self.wrefSteps[index]
+                    }
+                    self.matplotlib_canvas.clear()
+                    step.plot(self.matplotlib_canvas.figure, dataDict)
+                    self.matplotlib_canvas.draw()
+                    event.Skip()
+                    return
+            self.log_warning("Step not found")
 
     def retrievePipeline(self):
         current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
@@ -577,7 +512,6 @@ class MyFrame(wxglade_out.MyFrame):
         filepaths = self.inputMRSfiles_dt.filepaths
         filepaths_wref = self.inputwref_dt.filepaths
         if len(filepaths) > 0:
-            # wrefindex = self.inputMRSfiles_dt.wrefindex
             tosave = [filepaths, filepaths_wref]
             filepath = os.path.join(self.rootPath, "lastfiles.pickle")
             with open(filepath, 'wb') as f:
