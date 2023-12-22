@@ -525,6 +525,10 @@ class MyFrame(wxglade_out.MyFrame):
             with open(filepath, 'wb') as f:
                 pickle.dump(tosave, f)
         self.Destroy()
+        
+    def OnResize(self,event):
+        self.Layout()
+        self.Refresh()
 
 class MyApp(wx.App):
     def OnInit(self):
