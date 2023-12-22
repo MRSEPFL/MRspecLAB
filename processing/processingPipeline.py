@@ -83,7 +83,6 @@ def loadInput(self):
         except: self.log_warning("Error loading file: " + self.filepaths[i] + "\n\t" + str(sys.exc_info()[0]))
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
-        self.proces_completion = True
         return False
     if self.header is None: self.log_warning("Header not found, crashes impending")
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
@@ -381,6 +380,7 @@ def processPipeline(self):
         valid_input=loadInput(self)
         if valid_input==False:
             # self.semaphore_step_pro.release()
+            wx.CallAfter(self.PostStepProcessingGUIChanges)
             return
     if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
         processStep(self,self.steps[self.current_step],self.current_step+1)
