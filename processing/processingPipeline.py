@@ -227,6 +227,17 @@ def analyseResults(self):
         if not os.path.exists(basisfile):
             self.log_error("Basis set not found:\n\t", basisfile)
             return False
+    else:
+        file_data = read_data_from_file(basisfile)
+        basisset = extract_sections(file_data)
+        dlg = wx.MessageDialog(None,
+                            basisset,
+                            "Basis set found, is it the right one?", wx.YES_NO| wx.CANCEL | wx.ICON_INFORMATION)
+        dlg.SetYesNoCancelLabels("Yes", "No", "I don't know")
+        button_clicked = dlg.ShowModal()  
+        if button_clicked == wx.ID_NO:
+            return False
+            
     
 
     # lcmodel
@@ -408,3 +419,22 @@ def save_raw(filename, data, seq="PRESS"):
         fout.write(" $END\n")
         for point in np.nditer(data, order='C'):
             fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))
+            
+            
+            
+def read_data_from_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+    return content
+
+def extract_sections(data):
+    sections = ['$SEQPAR', '$BASIS1', '$NMUSED', '$BASIS']
+    extracted_data = []
+
+    for section in sections:
+        start_index = data.find(section)
+        if start_index != -1:
+            end_index = data.find('$END', start_index)
+            extracted_data.append(data[start_index:end_index + len('$END')].strip())
+
+    return '\n'.join(extracted_data)
