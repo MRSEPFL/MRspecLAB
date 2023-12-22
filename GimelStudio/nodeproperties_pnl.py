@@ -55,12 +55,11 @@ class NodeInfoPanel(wx.Panel):
 
     #Adapted for MRSoftware
     def OnHelpButton(self, event):
-        print(type(self.parent.Parent))
         if self.parent.Parent.selected_node is not None:
             properties_description=""
             for key in self.parent.Parent.selected_node.processing_step.parameters:
                 if key in self.parent.Parent.selected_node.properties:
-                    properties_description=  insert_newlines(key +": "+self.parent.Parent.selected_node.properties[key].description,90) +"\n"
+                    properties_description= properties_description+ insert_newlines(self.parent.Parent.selected_node.properties[key].label +": "+self.parent.Parent.selected_node.properties[key].description,90) +"\n"
                     
                 
             dlg = wx.MessageDialog(None,
