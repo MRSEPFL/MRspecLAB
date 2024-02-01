@@ -201,6 +201,15 @@ class MyFrame(wxglade_out.MyFrame):
             self.button_terminate_processing.Disable()
         self.progress_bar.SetValue(0)
         self.progress_bar.Update(100, 15000)
+        for filepath in self.inputMRSfiles_dt.filepaths:
+            if not os.path.exists(filepath):
+                self.log_error(f"File not found:\n\t{filepath}")
+                return
+        for filepath in self.inputwref_dt.filepaths:
+            if not os.path.exists(filepath):
+                self.log_error(f"File not found:\n\t{filepath}")
+                return
+
         thread_processing = threading.Thread(target=self.processPipeline, args=())
         thread_processing.start()
         event.Skip()
