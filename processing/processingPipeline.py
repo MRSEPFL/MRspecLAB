@@ -83,7 +83,6 @@ def loadInput(self):
         except: self.log_warning("Error loading file: " + self.filepaths[i] + "\n\t" + str(sys.exc_info()[0]))
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
-        self.proces_completion = True
         return False
     if self.header is None: self.log_warning("Header not found, crashes impending")
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
@@ -227,6 +226,18 @@ def analyseResults(self):
         if not os.path.exists(basisfile):
             self.log_error("Basis set not found:\n\t", basisfile)
             return False
+    else:
+        file_data = read_data_from_file(basisfile)
+        basisset = extract_sections(file_data)
+        dlg = wx.MessageDialog(None,
+                            basisset,
+                            "Basis set found, is it the right one?", wx.YES_NO| wx.CANCEL | wx.ICON_INFORMATION)
+        dlg.SetYesNoCancelLabels("Yes", "No", "I don't know")
+        button_clicked = dlg.ShowModal()  
+        if button_clicked == wx.ID_NO:
+            return False
+            
+    
 
     # lcmodel
     if self.controlfile is not None and os.path.exists(self.controlfile):
@@ -369,6 +380,8 @@ def processPipeline(self):
         valid_input=loadInput(self)
         if valid_input==False:
             # self.semaphore_step_pro.release()
+            wx.CallAfter(self.PostStepProcessingGUIChanges)
+            self.fast_processing = False
             return
     if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
         processStep(self,self.steps[self.current_step],self.current_step+1)
@@ -407,3 +420,22 @@ def save_raw(filename, data, seq="PRESS"):
         fout.write(" $END\n")
         for point in np.nditer(data, order='C'):
             fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))
+            
+            
+            
+def read_data_from_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+    return content
+
+def extract_sections(data):
+    sections = ['$SEQPAR', '$BASIS1', '$NMUSED', '$BASIS']
+    extracted_data = []
+
+    for section in sections:
+        start_index = data.find(section)
+        if start_index != -1:
+            end_index = data.find('$END', start_index)
+            extracted_data.append(data[start_index:end_index + len('$END')].strip())
+
+    return '\n'.join(extracted_data)

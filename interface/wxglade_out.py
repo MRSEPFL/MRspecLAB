@@ -468,7 +468,7 @@ class MyFrame(wx.Frame):
         # self.DDstepselection =custom_wxwidgets.DropDown(self.rightPanel,items=["0-Initial state"],default="0-Initial state")
         # self.Bind(custom_wxwidgets.EVT_DROPDOWN, self.OnDropdownProcessingStep, self.DDstepselection)
         
-        
+        self.StepSelectionSizer.AddSpacer(16)
         self.StepSelectionSizer.Add(self.textdropdown, 0, wx.ALL | wx.EXPAND, 5)
         self.StepSelectionSizer.Add(self.DDstepselection, 0, wx.ALL | wx.EXPAND, 5)
         
@@ -514,8 +514,12 @@ class MyFrame(wx.Frame):
         
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
         self.infotext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
-        self.infotext.SetFont(font1)
+        # self.infotext.SetFont(font1)
+        font_fixed_width = wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        self.infotext.SetFont(font_fixed_width)
         
+  
+
         # self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.consoltext = wx.richtext.RichTextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         # self.infotext.SetFont(font1)
@@ -680,6 +684,10 @@ class MyFrame(wx.Frame):
 
 
         self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
+        
+        
+        self.Bind(wx.EVT_SIZE,self.OnResize)
+        
         self.Layout()
         self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
         # self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
@@ -690,14 +698,15 @@ class MyFrame(wx.Frame):
         # self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
         # self.leftPanel.Disable()
         # self.leftPanel.Enable()
+    
 
         
-        self.SetIcon(wx.Icon("resources/icon_32p.png"))
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
         event.Skip()
         
+
     # def OnAddNodeMenuBtn(self, event):
     #     # print(self.ng.nodes['lol'].GetSockets().GetWires())
     #     current_node= self.pipelinePanel.nodegraph.GetInputNode()

@@ -287,16 +287,20 @@ class MyFrame(wxglade_out.MyFrame):
                 self.pipelineWindow.Hide()
                 self.button_open_pipeline.Disable()
 
-            self.proces_completion=False
+            
             self.progress_bar.Update(0,50)
             time.sleep(0.100)
             self.progress_bar.Update(100-self.progress_bar.GetValue(),200)
             if 0<=self.current_step and self.current_step<=(len(self.steps)):
                 self.updateprogress(self.steps[self.current_step-1],self.current_step,len(self.steps))
         else:
-            self.progress_bar.Update(0,50)
-            time.sleep(0.050)
+            self.progress_bar.Update(1,50)
+            time.sleep(0.100)
             self.progress_bar.SetValue(0)
+            if 0==self.current_step:
+                self.on_terminate_processing(None)
+
+            
             
             
         if 0<=self.current_step and self.current_step<=(len(self.steps)) and self.fast_processing==False:
@@ -317,10 +321,14 @@ class MyFrame(wxglade_out.MyFrame):
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
             self.button_auto_processing.Disable()
             self.button_terminate_processing.Enable()
+            
+        self.proces_completion=False
 
     def updateprogress(self,current_step,current_step_index,totalstep):
         self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
         # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
+
+
 
     def read_file(self, event, filepath=None, new_window=False):
         if filepath is None:
@@ -352,7 +360,7 @@ class MyFrame(wxglade_out.MyFrame):
             text.SetValue("")
             text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
-                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {c['c']} (±{c['SD']}%, Cr: {c['c_cr']})" for c in f['conc']])}\n""")
+                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{pad_string(c['name'], 4)}: (±{pad_string(str(c['SD']) + '%', 3)}, Cr: {str(c['c_cr'])})" for c in f['conc']])}\n""")
             if event is not None: event.Skip()
             return
         
@@ -480,7 +488,7 @@ class MyFrame(wxglade_out.MyFrame):
     def on_log(self, event):
         text = event.GetText()
         current_datetime = datetime.now()
-        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H-%M-%S")+": "+text
+        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")+": "+text
         text=formatted_datetime+""
         colour = event.GetColour()
         self.consoltext.BeginTextColour(colour)
@@ -517,6 +525,10 @@ class MyFrame(wxglade_out.MyFrame):
             with open(filepath, 'wb') as f:
                 pickle.dump(tosave, f)
         self.Destroy()
+        
+    def OnResize(self,event):
+        self.Layout()
+        self.Refresh()
 
 class MyApp(wx.App):
     def OnInit(self):
@@ -524,3 +536,9 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
         return True
+    
+    
+def pad_string(input_str, desired_length):
+
+    desired_length = int(desired_length)    
+    return input_str.ljust(desired_length)

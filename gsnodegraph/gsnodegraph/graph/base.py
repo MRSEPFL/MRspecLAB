@@ -47,8 +47,6 @@ ID_CONTEXTMENU_DUPLICATENODE = wx.NewIdRef()
 ID_CONTEXTMENU_DESELECTALLNODES = wx.NewIdRef()
 ID_CONTEXTMENU_SELECTALLNODES = wx.NewIdRef()
 
-ID_CONTEXTMENU_PLOTNODE  = wx.NewIdRef() ##added MRSoftware
-
 from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
 
@@ -122,8 +120,7 @@ class NodeGraphBase(wx.ScrolledCanvas):
                           id=ID_CONTEXTMENU_DESELECTALLNODES)
         self.Bind(wx.EVT_MENU, self.OnDuplicateNode,
                           id=ID_CONTEXTMENU_DUPLICATENODE)
-        self.Bind(wx.EVT_MENU, self.OnPlotNode,
-                          id=ID_CONTEXTMENU_PLOTNODE)
+
 
         # Keyboard shortcut bindings
         self.accel_tbl = wx.AcceleratorTable([(wx.ACCEL_SHIFT, ord('D'),
@@ -388,8 +385,6 @@ class NodeGraphBase(wx.ScrolledCanvas):
         """ Event that duplicates the currently selected node. """
         self.DuplicateNode(self.active_node)
         
-    def OnPlotNode(self, event): ##Added Mrsoftware
-        """ Event that Plot the currently selected node. """
 
 
     def OnContextMenu(self, event):
@@ -421,13 +416,7 @@ class NodeGraphBase(wx.ScrolledCanvas):
                                                         "{0}{1}".format(_("Delete"), "\tDel"), "",
                                                         wx.ITEM_NORMAL)
                 self.context_menu.AppendItem(delete_menuitem)
-                
-                plot_menuitem = flatmenu.FlatMenuItem(self.context_menu,
-                                                        ID_CONTEXTMENU_PLOTNODE,
-                                                        _("Plot"), "",
-                                                        wx.ITEM_NORMAL)
-                self.context_menu.AppendItem(plot_menuitem)
-                    
+                                    
 
                 if self.IsInputNode(self.active_node) is not True:
                     if self.active_node.IsMuted() is not True:
