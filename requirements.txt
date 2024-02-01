@@ -1,5 +1,6 @@
 wxpython
 suspect
+spec2nii
 matplotlib
 numpy<=1.23.5 # compatibility with suspect's import functions
 antspyx
