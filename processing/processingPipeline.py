@@ -9,9 +9,9 @@ import time
 import wx
 from suspect import MRSData
 from spec2nii.other_formats import lcm_raw
-import nibabel
-import ants
-import pandas as pd
+# import nibabel
+# import ants
+# import pandas as pd
 
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders, Table
@@ -227,10 +227,10 @@ def analyseResults(self):
             self.log_error("Basis set not found:\n\t", basisfile)
             return False
     else:
-        file_data = read_data_from_file(basisfile)
-        basisset = extract_sections(file_data)
+        # file_data = read_data_from_file(basisfile)
+        # basisset = extract_sections(file_data)
         dlg = wx.MessageDialog(None,
-                            basisset,
+                            basisfile,
                             "Basis set found, is it the right one?", wx.YES_NO| wx.CANCEL | wx.ICON_INFORMATION)
         dlg.SetYesNoCancelLabels("Yes", "No", "I don't know")
         button_clicked = dlg.ShowModal()  
@@ -423,19 +423,19 @@ def save_raw(filename, data, seq="PRESS"):
             
             
             
-def read_data_from_file(file_path):
-    with open(file_path, 'r') as file:
-        content = file.read()
-    return content
+# def read_data_from_file(file_path):
+#     with open(file_path, 'r') as file:
+#         content = file.read()
+#     return content
 
-def extract_sections(data):
-    sections = ['$SEQPAR', '$BASIS1', '$NMUSED', '$BASIS']
-    extracted_data = []
+# def extract_sections(data):
+#     sections = ['$SEQPAR', '$BASIS1', '$NMUSED', '$BASIS']
+#     extracted_data = []
 
-    for section in sections:
-        start_index = data.find(section)
-        if start_index != -1:
-            end_index = data.find('$END', start_index)
-            extracted_data.append(data[start_index:end_index + len('$END')].strip())
+#     for section in sections:
+#         start_index = data.find(section)
+#         if start_index != -1:
+#             end_index = data.find('$END', start_index)
+#             extracted_data.append(data[start_index:end_index + len('$END')].strip())
 
-    return '\n'.join(extracted_data)
+#     return '\n'.join(extracted_data)
