@@ -6,7 +6,7 @@ In order to use this application, download and extract this repository. Required
 
 ```pip install -r requirements.txt```
 
-The GUI is started by running `MRSprocessing.py` with Python and is hoped to be self-explanatory. Compatibility was tested with Python versions `3.9` and above.
+The GUI is started by running `MRSprocessing.py` with Python and is hoped to be self-explanatory. The program currently runs on Python versions 3.9, 3.10 and 3.11.
 
 The application detects any processing steps placed in the `processing` folder. The creation of custom processing steps is detailed in the read-me file in that folder. A similar function might be planned for reading custom data types.
 
