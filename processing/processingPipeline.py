@@ -17,16 +17,6 @@ from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders, Table
 from inout.readcontrol import readControl
 from interface.plots import plot_ima, plot_coord
-# from interface.custom_wxwidgets import DROPDOWNMENU_ITEM_IDS
-
-# def updateprogress(self,current_step,current_step_index,totalstep):
-#     self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
-#     self.progress_bar.SetValue(current_step_index/totalstep*100)
-
-# def updatedropdownstep(self,current_step,current_step_index):
-#     self.DDstepselection.AddMenuItem(str(current_step_index)+" - "+current_step.__class__.__name__ )
-#     print("to")
-#     self.Layout()
     
 def loadInput(self):
     self.filepaths = []
@@ -392,22 +382,3 @@ def save_raw(filename, data, seq="PRESS"):
         fout.write(" $END\n")
         for point in np.nditer(data, order='C'):
             fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))
-            
-            
-            
-# def read_data_from_file(file_path):
-#     with open(file_path, 'r') as file:
-#         content = file.read()
-#     return content
-
-# def extract_sections(data):
-#     sections = ['$SEQPAR', '$BASIS1', '$NMUSED', '$BASIS']
-#     extracted_data = []
-
-#     for section in sections:
-#         start_index = data.find(section)
-#         if start_index != -1:
-#             end_index = data.find('$END', start_index)
-#             extracted_data.append(data[start_index:end_index + len('$END')].strip())
-
-#     return '\n'.join(extracted_data)
