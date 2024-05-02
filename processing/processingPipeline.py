@@ -128,7 +128,7 @@ def loadInput(self):
     csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
     table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
 
-def processStep(self,step,nstep):
+def processStep(self, step, nstep):
     dataDict = {
                 "input": self.dataSteps[-1],
                 "wref": self.wrefSteps[-1],
@@ -197,8 +197,7 @@ def analyseResults(self):
     if len(result) == 1: result = result[0]
     else: result = result[0].inherit(np.mean(result, axis=0))
 
-    # basis set
-    basisfile = None
+    # basis file
     larmor = 0
     nucleus = None
     for key in ["Nucleus", "nucleus"]:
@@ -209,89 +208,62 @@ def analyseResults(self):
             elif self.header[key] == "23Na": larmor = 11.262
             break
     tesla = round(result.f0 / larmor, 0)
+    basisfile = None
     if self.sequence is not None:
         strte = str(result.te)
         if strte.endswith(".0"): strte = strte[:-2]
         basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
         basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
+    else: self.log_warning("Sequence not found, basis file not generated")
 
-    if basisfile is None or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-        self.log_warning("Basis set not found:\n\t", basisfile, "\nRequesting user input...")
-        dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_CANCEL:
+    def request_basisfile():
+        basisfile = ""
+        self.log_info("Requesting basisfile from user...")
+        while basisfile is "" or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+            self.log_warning("Basis set not found:\n\t", basisfile)
+            dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+            if dlg.ShowModal() == wx.ID_CANCEL:
+                dlg.Destroy()
+                return None
+            basisfile = dlg.GetPath()
             dlg.Destroy()
-            return False
-        basisfile = dlg.GetPath()
-        dlg.Destroy()
-        if not os.path.exists(basisfile):
-            self.log_error("Basis set not found:\n\t", basisfile)
-            return False
+        return basisfile
+
+    if basisfile is not None and os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+        dlg = wx.MessageDialog(None, basisfile, "Basis set found, is it the right one?\n" + basisfile, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
+        button_clicked = dlg.ShowModal()
+        if button_clicked == wx.ID_NO: basisfile = request_basisfile()
+        elif button_clicked == wx.ID_CANCEL: return False
     else:
-        # file_data = read_data_from_file(basisfile)
-        # basisset = extract_sections(file_data)
-        dlg = wx.MessageDialog(None,
-                            basisfile,
-                            "Basis set found, is it the right one?", wx.YES_NO| wx.CANCEL | wx.ICON_INFORMATION)
-        dlg.SetYesNoCancelLabels("Yes", "No", "I don't know")
-        button_clicked = dlg.ShowModal()  
-        if button_clicked == wx.ID_NO:
-            return False
-            
-    
+        self.log_warning("Basis set not found:\n\t", basisfile)
+        basisfile = request_basisfile()
+    if basisfile is None:
+        self.log_error("No basis file specified")
+        return False
 
     # lcmodel
     if self.controlfile is not None and os.path.exists(self.controlfile):
         params = readControl(self.controlfile)
-        if params is None:
-            self.log_error("Control file not found:\n\t", self.controlfile)
-            return False
-        params.update({
-            "FILBAS": basisfile,
-            "FILCSV": "./result.csv",
-            "FILCOO": "./result.coord",
-            "FILPS": "./result.ps",
-            "DOWS": wresult is not None,
-            "NUNFIL": result.np,
-            "DELTAT": result.dt,
-            "ECHOT": result.te,
-            "HZPPPM": result.f0
-        })
     else:
-        params = {
-            "FILBAS": basisfile,
-            "FILCSV": "./result.csv",
-            "FILCOO": "./result.coord",
-            "FILPS": "./result.ps",
-            "LCSV": 11,
-            "LCOORD": 9,
-            "LPS": 8,
-            "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline,
-            "DOWS": wresult is not None,
-            "NUNFIL": result.np,
-            "DELTAT": result.dt,
-            "ECHOT": result.te,
-            "HZPPPM": result.f0,
-            "DOREFS": True,
-            "VITRO": False,
-            "NUSE1": 4,
-            "CHUSE1(1)": "NAA",
-            "CHUSE1(2)": "Cr",
-            "CHUSE1(3)": "Glu",
-            "CHUSE1(4)": "Ins",
-            "PPMST": 4.2,
-            "PPMEND": 0.2,
-            "RFWHM": 1.8,
-            "ATTH2O": 0.8187,
-            "ATTMET": 0.8521,
-            "NCOMBI": 0,
-            "CONREL": 8.0,
-            "DKNTMN": 0.25,
-            "WCONC": 44444,
-            "NEACH": 999,
-            "NSIMUL": 0,
-            "NCALIB": 0,
-            "PGNORM": "US"
-        }
+        self.controlfile = os.path.join(self.rootPath, "lcmodel", "default.CONTROL")
+        params = readControl(self.controlfile)
+        params.update({
+            "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline # not good very bad code
+        })
+    if params is None:
+        self.log_error("Control file not found:\n\t", self.controlfile)
+        return False
+    params.update({
+        "FILBAS": basisfile,
+        "FILCSV": "./result.csv",
+        "FILCOO": "./result.coord",
+        "FILPS": "./result.ps",
+        "DOWS": wresult is not None,
+        "NUNFIL": result.np,
+        "DELTAT": result.dt,
+        "ECHOT": result.te,
+        "HZPPPM": result.f0
+    })
     
     controlfilepath = os.path.join(self.workpath, "result")
     suspect.io.lcmodel.write_all_files(controlfilepath, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
