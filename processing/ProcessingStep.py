@@ -8,16 +8,17 @@ class ProcessingStep(api.Node):
             api.Node.__init__(self, nodegraph, id)
         self.label = self.__class__.__name__
         self.defaultParameters = {}
-        for p in self.parameters: self.defaultParameters[p.idname] = p.value
+        if hasattr(self, "parameters"):
+            for p in self.parameters: self.defaultParameters[p.idname] = p.value
         self.plotTime = True # set these if you don't override plot()
         self.plotSpectrum = True
         self.plotPPM = True
 
     def __str__(self) -> str:
-        output = self.__name__ + ":\n"
-        if self.parameters:
-            for key, value in self.parameters:
-                output += "- " + key + ": " + value + "\n"
+        output = self.__class__.__name__ + ":\n"
+        if not hasattr(self, "parameters"): return output
+        for p in self.parameters:
+            output += "- " + p.idname + ": " + str(p.value) + "\n"
         return output
     
     @property
@@ -29,6 +30,7 @@ class ProcessingStep(api.Node):
             idname="in_transients",
         )
         self.NodeAddProp(transients)
+        if not hasattr(self, "parameters"): return
         for p in self.parameters: self.NodeAddProp(p)
 
     def NodeInitOutputs(self):
@@ -40,6 +42,7 @@ class ProcessingStep(api.Node):
         return self.properties[key].value
     
     def resetParameters(self):
+        if not hasattr(self, "parameters"): return
         for k in self.defaultParameters.keys():
             self.properties[k].value = self.defaultParameters[k]
     

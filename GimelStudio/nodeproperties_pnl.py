@@ -28,7 +28,6 @@ from GimelStudio.icons import (ICON_HELP, ICON_NODEPROPERTIES_PANEL,
                                    ICON_MORE_MENU_SMALL) #changed for MRSoftware
 #from gimelstudio.core.node.property import ThumbProp
 from GimelStudio.core.node.property import VectorProp
-from .message_dlgs import ShowNotImplementedDialog
 from .panel_base import PanelBase
 
 
@@ -57,11 +56,11 @@ class NodeInfoPanel(wx.Panel):
     def OnHelpButton(self, event):
         if self.parent.Parent.selected_node is not None:
             properties_description=""
-            for key in self.parent.Parent.selected_node.processing_step.parameters:
-                if key in self.parent.Parent.selected_node.properties:
-                    properties_description= properties_description+ insert_newlines(self.parent.Parent.selected_node.properties[key].label +": "+self.parent.Parent.selected_node.properties[key].description,90) +"\n"
-                    
-                
+            # for key in self.parent.Parent.selected_node.parameters:
+            #     if key in self.parent.Parent.selected_node.properties:
+            #         properties_description = properties_description
+            #         + insert_newlines(self.parent.Parent.selected_node.properties[key].label + ": "
+            #                           + self.parent.Parent.selected_node.properties[key].description,90) +"\n"
             dlg = wx.MessageDialog(None,
                             "Description :" +  "\n"+self.parent.Parent.selected_node.NodeMeta["description"] +"\n \n"+"Parameters: \n"+properties_description,
                             _(self.parent.Parent.selected_node.NodeMeta["label"] + " by " + self.parent.Parent.selected_node.NodeMeta["author"]), style=wx.ICON_INFORMATION)

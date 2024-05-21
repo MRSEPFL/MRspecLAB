@@ -168,21 +168,19 @@ class NodeGraphPanel(wx.Panel):
         # For testing during development
         # Add nodes to the node graph
         node1 = self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(200, 100))
-        # node2 = self.nodegraph.AddNode("zeropadding_nodeid",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
-        # node3 = self.nodegraph.AddNode("linebroadening_nodeid", nodeid='linebroadening0',pos=wx.Point(600, 100))
-        # node4 = self.nodegraph.AddNode("freqphasealignement_nodeid",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
-        # node5 = self.nodegraph.AddNode("eddyccurentcorrection_nodeid",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
-        # node6 = self.nodegraph.AddNode("removebadaverages_nodeid",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
-        # node7 = self.nodegraph.AddNode("average_nodeid", nodeid='average0', pos=wx.Point(1400, 100))
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['zeropadding_node0'].GetSockets()[0],self.nodegraph.nodes['linebroadening0'].GetSockets()[1])
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['linebroadening0'].GetSockets()[0],self.nodegraph.nodes['freqphasealignement0'].GetSockets()[1])
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['freqphasealignement0'].GetSockets()[0],self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[1])
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[0],self.nodegraph.nodes['removebadaverages0'].GetSockets()[1])
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['removebadaverages0'].GetSockets()[0],self.nodegraph.nodes['average0'].GetSockets()[1])
-
+        node2 = self.nodegraph.AddNode("ZeroPadding",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
+        node3 = self.nodegraph.AddNode("LineBroadening", nodeid='linebroadening0',pos=wx.Point(600, 100))
+        node4 = self.nodegraph.AddNode("FreqPhaseAlignment",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
+        node5 = self.nodegraph.AddNode("EddyCurrentCorrection",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
+        node6 = self.nodegraph.AddNode("RemoveBadAverages",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
+        node7 = self.nodegraph.AddNode("Average", nodeid='average0', pos=wx.Point(1400, 100))
         # Connect the nodes by default
-
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['zeropadding_node0'].GetSockets()[0],self.nodegraph.nodes['linebroadening0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['linebroadening0'].GetSockets()[0],self.nodegraph.nodes['freqphasealignement0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['freqphasealignement0'].GetSockets()[0],self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[0],self.nodegraph.nodes['removebadaverages0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['removebadaverages0'].GetSockets()[0],self.nodegraph.nodes['average0'].GetSockets()[1])
 
         main_sizer.Add(topbar, flag=wx.EXPAND | wx.LEFT | wx.RIGHT)
         main_sizer.Add(self.nodegraph, 1, flag=wx.EXPAND | wx.BOTH)

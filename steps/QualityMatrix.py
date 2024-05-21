@@ -1,4 +1,5 @@
 from processing.ProcessingStep import ProcessingStep
+import api
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -6,8 +7,15 @@ def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
 
 class QualityMatrix(ProcessingStep):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, nodegraph, id):
+        self.meta_info = {
+            "label": "Quality Matrix",
+            "author": "MRSoftware",
+            "version": (0, 0, 0),
+            "category": "QUALITY CONTROL",
+            "description": "Shows SNR and water reference quality metrics",
+        }
+        super().__init__(nodegraph, id)
 
     def process(self, data):
         self.snr = []
@@ -57,3 +65,5 @@ class QualityMatrix(ProcessingStep):
         ax.set_xlim(self.gaussparams[1] + 5 * self.gaussparams[2], self.gaussparams[1] - 5 * self.gaussparams[2])
         ax.set_title("Water reference")
         figure.tight_layout()
+
+api.RegisterNode(QualityMatrix, "QualityMatrix")

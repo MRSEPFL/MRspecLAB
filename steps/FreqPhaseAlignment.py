@@ -9,7 +9,7 @@ class FreqPhaseAlignment(ProcessingStep):
             "label": "Frequency and Phase Alignment",
             "author": "CIBM",
             "version": (0, 0, 0),
-            "category": "DEFAULT",
+            "category": "QUALITY CONTROL",
             "description": "Performs frequency and phase alignment"
         }
         self.parameters = [
@@ -124,15 +124,12 @@ class FreqPhaseAlignment(ProcessingStep):
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Frequency shift (Hz)')
-        ax.set_title("Frequency shifts" + (" (not used)" if not self.get_parameter("alignFreq") else ""))
+        ax.set_title("Frequency shifts" + (" (not used)" if self.get_parameter("alignFreq") is False else ""))
         ax = figure.add_subplot(2, 6, (11, 12))
         ax.plot(self.phaseShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Phase shift (rad)')
-        ax.set_title("Phase shifts" + (" (not used)" if not self.get_parameter("alignPhase") else ""))
+        ax.set_title("Phase shifts" + (" (not used)" if self.get_parameter("alignPhase") is False else ""))
         figure.tight_layout()
 
-try:
-    api.RegisterNode(FreqPhaseAlignment, "FreqPhaseAlignment")
-    print("Registered node 'FreqPhaseAlignment'")
-except: print("Failed to register node 'FreqPhaseAlignment'")
+api.RegisterNode(FreqPhaseAlignment, "FreqPhaseAlignment")
