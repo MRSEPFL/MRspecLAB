@@ -10,6 +10,7 @@ class ProcessingStep(api.Node):
         self.defaultParameters = {}
         if hasattr(self, "parameters"):
             for p in self.parameters: self.defaultParameters[p.idname] = p.value
+        else: self.parameters = []
         self.plotTime = True # set these if you don't override plot()
         self.plotSpectrum = True
         self.plotPPM = True
