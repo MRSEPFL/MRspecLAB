@@ -76,4 +76,4 @@ class AverageNode(api.Node):
 
 
 
-api.RegisterNode(AverageNode, "average_nodeid")
+# api.RegisterNode(AverageNode, "average_nodeid")

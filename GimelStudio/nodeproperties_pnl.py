@@ -205,31 +205,10 @@ class NodePropertiesPanel(PanelBase):
         #                  thumb_img=node.thumbnail)
         # prop.CreateUI(panel, panel_bar)
         
-    def reset_parameter(self,event):
-        if self.selected_node is not None:
-
-            self.selected_node.processing_step.resetParameters()
-            for key in self.selected_node.processing_step.parameters:
-
-        
-                if key in self.selected_node.properties:
-                    if isinstance(self.selected_node.properties[key], VectorProp):
-                        self.selected_node.properties[key].value=(self.selected_node.processing_step.parameters[key][0],self.selected_node.processing_step.parameters[key][1],0)
-                    else:
-                        self.selected_node.properties[key].value=self.selected_node.processing_step.parameters[key]
-
-            self.UpdatePanelContents(self.selected_node)
-            # Update everything then allow refreshing
-
-
-            
-            
-        # def EditParametersProcessing(self):
-        # for key, value in self.properties.items():
-        #     if key == "freqRange":
-        #        self.processing_step.parameters[key] = self.properties[key].value[:-1]
-        #     elif key in self.processing_step.parameters:
-        #         self.processing_step.parameters[key] = self.properties[key].value
+    def reset_parameter(self, event):
+        if self.selected_node is None: return
+        self.selected_node.resetParameters()
+        self.UpdatePanelContents(self.selected_node)
 
             
         

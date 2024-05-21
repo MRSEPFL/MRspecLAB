@@ -72,4 +72,4 @@ class LineBroadeningNode(api.Node):
 
 
 
-api.RegisterNode(LineBroadeningNode, "linebroadening_nodeid")
+# api.RegisterNode(LineBroadeningNode, "linebroadening_nodeid")

@@ -1,43 +1,88 @@
 from processing.ProcessingStep import ProcessingStep
+import api
 import numpy as np
 import scipy
 
 class FreqPhaseAlignment(ProcessingStep):
-    def __init__(self):
-        super().__init__({"alignFreq": True, "alignPhase": True, "freqRange": (3., 3.2), "median": True, "target": 0})
+    def __init__(self, nodegraph, id):
+        self.meta_info = {
+            "label": "Frequency and Phase Alignment",
+            "author": "CIBM",
+            "version": (0, 0, 0),
+            "category": "DEFAULT",
+            "description": "Performs frequency and phase alignment"
+        }
+        self.parameters = [
+            api.ChoiceProp(
+                idname="alignFreq",
+                default="True",
+                choices=["True", "False"],
+                exposed=False,
+                fpb_label="Perform frequency alignment"
+            ),
+            api.ChoiceProp(
+                idname="alignPhase",
+                default="True",
+                choices=["True", "False"],
+                exposed=False,
+                fpb_label="Perform phase alignment"
+            ),
+            api.VectorProp( # tuple of length 3
+                idname="freqRange", 
+                default=(3, 3.2, 0), 
+                labels=("Lower Bound", "Higher Bound"),
+                min_vals=(0, 0, 0), 
+                max_vals=(6, 6, 0),
+                exposed=False,
+                show_p=False, 
+                fpb_label="Frequency range to optimise alignment on (in ppm)"
+            ),
+            api.ChoiceProp(
+                idname="median",
+                default="True",
+                choices=["True", "False"],
+                exposed=False,
+                fpb_label="Set target to median of input data"
+            ),
+            api.IntegerProp(
+                idname="target",
+                default=0,
+                min_val=0,
+                max_val=1000,
+                show_p=True,
+                exposed=False,
+                fpb_label="Set target to index of input data (if not median)"
+            )
+        ]
+        super().__init__(nodegraph, id)
     
     def process(self, data):
-        if not self.parameters["alignFreq"] and not self.parameters["alignPhase"]:
+        if not self.get_parameter("alignFreq") and not self.get_parameter("alignPhase"):
             data["output"] = data["input"]
             return
-        if not isinstance(self.parameters["freqRange"], tuple) or len(self.parameters["freqRange"]) != 2:
-            freqRange = None
-        else:
-            freqRange = [data["input"][0].ppm_to_hertz(f) for f in self.parameters["freqRange"]]
-            freqRange.sort()
-            freqRange = tuple(freqRange)
-        if self.parameters["median"]: target = data["input"][0].inherit(np.median(data["input"], axis=0))
-        elif self.parameters["target"] in range(len(data["input"])): target = data["input"][self.parameters["target"]]
+        freqRange = self.get_parameter("freqRange")[:-1]
+        freqRange = [data["input"][0].ppm_to_hertz(f) for f in freqRange]
+        freqRange.sort()
+        freqRange = tuple(freqRange)
+        if self.get_parameter("median"): target = data["input"][0].inherit(np.median(data["input"], axis=0))
+        elif self.get_parameter("target") in range(len(data["input"])): target = data["input"][self.get_parameter("target")]
         else: target = data["input"][0]
         self.freqShifts = []
         self.phaseShifts = []
         output = []
         for i in range(len(data["input"])):
             # adapted from suspect.processing.frequency_correction.spectral_registration
-            if type(freqRange) is not None:
-                spectral_weights = np.logical_and(freqRange[0] < data["input"][i].frequency_axis(), freqRange[1] > data["input"][i].frequency_axis())
-            else: spectral_weights = freqRange
+            spectral_weights = np.logical_and(freqRange[0] < data["input"][i].frequency_axis(), freqRange[1] > data["input"][i].frequency_axis())
 
             def residual(input_vector):
                 transformed_data = data["input"][i]
-                if self.parameters["alignFreq"]: transformed_data = transformed_data.adjust_frequency(-input_vector[0])
-                if self.parameters["alignPhase"]: transformed_data = transformed_data.adjust_phase(-input_vector[1])
+                if self.get_parameter("alignFreq"): transformed_data = transformed_data.adjust_frequency(-input_vector[0])
+                if self.get_parameter("alignPhase"): transformed_data = transformed_data.adjust_phase(-input_vector[1])
                 residual_data = transformed_data - target
-                if freqRange is not None:
-                    spectrum = residual_data.spectrum()
-                    weighted_spectrum = spectrum * spectral_weights
-                    weighted_spectrum = weighted_spectrum[weighted_spectrum != 0]
-                    residual_data = np.fft.ifft(np.fft.ifftshift(weighted_spectrum))
+                spectrum = residual_data.spectrum()
+                weighted_spectrum = spectrum * spectral_weights
+                weighted_spectrum = weighted_spectrum[weighted_spectrum != 0]
+                residual_data = np.fft.ifft(np.fft.ifftshift(weighted_spectrum))
                 return_vector = np.zeros(len(residual_data) * 2)
                 return_vector[:len(residual_data)] = residual_data.real
                 return_vector[len(residual_data):] = residual_data.imag
@@ -79,10 +124,15 @@ class FreqPhaseAlignment(ProcessingStep):
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Frequency shift (Hz)')
-        ax.set_title("Frequency shifts")
+        ax.set_title("Frequency shifts" + (" (not used)" if not self.get_parameter("alignFreq") else ""))
         ax = figure.add_subplot(2, 6, (11, 12))
         ax.plot(self.phaseShifts)
         ax.set_xlabel('Index')
         ax.set_ylabel('Phase shift (rad)')
-        ax.set_title("Phase shifts")
+        ax.set_title("Phase shifts" + (" (not used)" if not self.get_parameter("alignPhase") else ""))
         figure.tight_layout()
+
+try:
+    api.RegisterNode(FreqPhaseAlignment, "FreqPhaseAlignment")
+    print("Registered node 'FreqPhaseAlignment'")
+except: print("Failed to register node 'FreqPhaseAlignment'")

@@ -62,4 +62,4 @@ class QualityMatrixNode(api.Node):
 
 
 
-api.RegisterNode(QualityMatrixNode, "qualitymatrix_nodeid")
+# api.RegisterNode(QualityMatrixNode, "qualitymatrix_nodeid")

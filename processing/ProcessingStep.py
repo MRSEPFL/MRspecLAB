@@ -1,10 +1,14 @@
 import numpy as np
 import matplotlib
+import api
 
-class ProcessingStep:
-    def __init__(self, parameters = {}):
-        self.parameters = parameters
-        self.defaultParameters = parameters
+class ProcessingStep(api.Node):
+    def __init__(self, nodegraph, id):
+        if nodegraph is not None:
+            api.Node.__init__(self, nodegraph, id)
+        self.label = self.__class__.__name__
+        self.defaultParameters = {}
+        for p in self.parameters: self.defaultParameters[p.idname] = p.value
         self.plotTime = True # set these if you don't override plot()
         self.plotSpectrum = True
         self.plotPPM = True
@@ -16,12 +20,32 @@ class ProcessingStep:
                 output += "- " + key + ": " + value + "\n"
         return output
     
+    @property
+    def NodeMeta(self):
+        return self.meta_info
+
+    def NodeInitProps(self):
+        transients = api.TransientsProp(
+            idname="in_transients",
+        )
+        self.NodeAddProp(transients)
+        for p in self.parameters: self.NodeAddProp(p)
+
+    def NodeInitOutputs(self):
+        self.outputs = {
+            "transients": api.Output(idname="transients", datatype="TRANSIENTS", label="Transients")
+        }
+
+    def get_parameter(self, key: str):
+        return self.properties[key].value
+    
+    def resetParameters(self):
+        for k in self.defaultParameters.keys():
+            self.properties[k].value = self.defaultParameters[k]
+    
     def process(self, data: dict) -> None: # to override
         data["output"] = data["input"]
         data["wref"] = None # already was None
-    
-    def resetParameters(self):
-        self.parameters = self.defaultParameters
     
     def plot(self, figure: matplotlib.figure, data: dict) -> None: # can be overridden
         if not self.plotTime and not self.plotSpectrum: return

@@ -7,9 +7,6 @@ import threading
 import suspect
 import pickle
 import time
-import matplotlib
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
 
 import constants
 from . import wxglade_out
@@ -17,26 +14,11 @@ from .plots import plot_ima, plot_coord
 from inout.readcoord import ReadlcmCoord
 from processing import processingPipeline
 from .wxglade_out import PlotFrame
+from . import pipeline_window
 
 from datetime import datetime
 
 from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
-
-# def get_node_type(node):
-#     if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
-#         return "ZeroPadding"
-#     elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
-#         return "RemoveBadAverages"
-#     elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
-#         return "FreqPhaseAlignment"
-#     elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
-#         return "Average"
-#     elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
-#         return "EddyCurrentCorrection"
-#     elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
-#         return "LineBroadening"
-#     else:
-#         return "Unknown steps"
 
 myEVT_LOG = wx.NewEventType()
 EVT_LOG = wx.PyEventBinder(myEVT_LOG, 1)
@@ -46,33 +28,18 @@ class LogEvent(wx.PyCommandEvent):
         self.text = text
         self.colour = colour
 
-    def GetText(self):
-        return self.text
-    
-    def GetColour(self):
-        return self.colour
+    def GetText(self): return self.text
+    def GetColour(self): return self.colour
     
 class MyFrame(wxglade_out.MyFrame):
 
     def __init__(self, *args, **kwds):
         wxglade_out.MyFrame.__init__(self, *args, **kwds)
 
-        self.rootPath = os.path.dirname(__file__)
-        while not os.path.exists(os.path.join(self.rootPath, "lcmodel")): self.rootPath = os.path.dirname(self.rootPath)
-        processing_files = glob.glob(os.path.join(self.rootPath, "steps", "*.py"))
-        self.processing_steps = {}
-        for file in processing_files:
-            module_name = os.path.basename(file)[:-3]
-            if module_name != "__init__":
-                spec = importlib.util.spec_from_file_location(module_name, file)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                for name, obj in inspect.getmembers(module):
-                    if inspect.isclass(obj) and obj.__module__ == module_name:
-                        obj = getattr(module, name)
-                        self.processing_steps[name] = obj
-        
-        self.pipeline,self.steps = self.retrievePipeline()
+        self.processing_steps, self.rootPath = self.retrieve_steps() # dictionary of processing steps definitions
+        self.pipelineWindow = pipeline_window.PipelineWindow(parent=self) # /!\ put this after retrieve_steps
+        self.pipeline, self.steps = self.retrievePipeline() # list of processing step instances in pipeline, should be changed to strings only
+
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
@@ -102,6 +69,27 @@ class MyFrame(wxglade_out.MyFrame):
         self.current_step=0
         self.proces_completion =False
     
+    def retrieve_steps(self):
+        rootPath = os.path.dirname(__file__)
+        while not os.path.exists(os.path.join(rootPath, "lcmodel")):
+            if rootPath == "":
+                self.log_error("Steps folder not found")
+                return
+            rootPath = os.path.dirname(rootPath)
+        processing_files = glob.glob(os.path.join(rootPath, "steps", "*.py"))
+        processing_steps = {}
+        for file in processing_files:
+            module_name = os.path.basename(file)[:-3]
+            if module_name != "__init__":
+                spec = importlib.util.spec_from_file_location(module_name, file)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                for name, obj in inspect.getmembers(module):
+                    if inspect.isclass(obj) and obj.__module__ == module_name:
+                        obj = getattr(module, name)
+                        processing_steps[name] = obj
+        return processing_steps, rootPath
+
     def on_save_pipeline(self, event, filepath=None):
         if self.steps == []:
             print("No pipeline to save")
@@ -274,23 +262,11 @@ class MyFrame(wxglade_out.MyFrame):
             self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
 
         if self.proces_completion:
-            # output_folder = os.path.join(self.rootPath, "output")
-            # dirs = [d for d in os.listdir("output") if os.path.isdir(os.path.join("output", d))]
-            # last_modified_folder = max(dirs, key=lambda d: os.path.getmtime(os.path.join("output", d)))
-            # last_modified_folder_path = os.path.join("output", last_modified_folder)
             if self.current_step == len(self.steps) + 1:
                 self.DDstepselection.AppendItems("lcmodel")
             else:
                 self.DDstepselection.AppendItems(str(self.current_step) + self.steps[self.current_step-1].__class__.__name__)
             self.DDstepselection.SetSelection(self.current_step)
-            
-            # steppath = os.path.join(self.outputpath, str(self.current_step) + self.steps[self.current_step-1].__class__.__name__)
-            # print(steppath)
-            # dirs_steps_proc= [d for d in os.listdir(last_modified_folder_path) if os.path.isdir(os.path.join(last_modified_folder_path, d))]
-            # last_modified_dir_steps_proc = max(dirs_steps_proc, key=lambda d: os.path.getmtime(os.path.join(last_modified_folder_path, d)))
-            # print(last_modified_dir_steps_proc)
-            # latest_file = max(list_of_files, key=os.path.getctime)
-            # print(latest_file)
 
             if self.current_step==1:
                 self.pipelineWindow.Hide()
@@ -466,27 +442,24 @@ class MyFrame(wxglade_out.MyFrame):
             self.log_warning("Step not found")
 
     def retrievePipeline(self):
-        current_node= self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
-        pipeline =[]
-        steps=[]
+        current_node = self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
+        pipeline = []
+        steps = []
         while current_node is not None:
             for socket in current_node.GetSockets():
                 if socket.direction == 1:
-                    if len(socket.GetWires())==0:
-                        current_node=None
-                    elif len(socket.GetWires())>1:
-                        print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
-                        current_node=None
-
-                    else:
-                        for wire in socket.GetWires():
-                            current_node = wire.dstsocket.node
-                            # pipeline.append(wxglade_out.get_node_type(wire.dstsocket.node))
-                            pipeline.append(current_node.label)
-                            current_node.EditParametersProcessing()
-                            steps.append(current_node.processing_step)
-
-        return pipeline,steps
+                    if len(socket.GetWires()) == 0:
+                        current_node = None
+                        continue
+                    if len(socket.GetWires()) > 1:
+                        self.log_error("Only serial pipelines are allowed for now")
+                        return pipeline, steps
+                    for wire in socket.GetWires():
+                        current_node = wire.dstsocket.node
+                        pipeline.append(current_node.label)
+                        # current_node.EditParametersProcessing()
+                        steps.append(current_node)
+        return pipeline, steps
     
     def log_text(self, colour, *args):
         text = ""

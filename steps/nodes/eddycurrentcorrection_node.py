@@ -70,4 +70,4 @@ class EddyCurrentCorrectionNode(api.Node):
 
 
 
-api.RegisterNode(EddyCurrentCorrectionNode, "eddyccurentcorrection_nodeid")
+# api.RegisterNode(EddyCurrentCorrectionNode, "eddyccurentcorrection_nodeid")

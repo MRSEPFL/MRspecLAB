@@ -1,69 +1,12 @@
-import wx
 import os
-import wx.lib.agw.pygauge as PG
-import wx.lib.throbber as throbber
-
-
-# import matplotlib_canvas
-from . import matplotlib_canvas, DragList
+import wx
 import wx.richtext
-from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
-
+import wx.lib.agw.pygauge as pygauge
+# import wx.lib.throbber as throbber
+from . import matplotlib_canvas, custom_wxwidgets
 from constants import(BLACK_WX,ORANGE_WX,XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
-from . import custom_wxwidgets
-# import sys
-# import wx
-# import ctypes
-# try:
-#     ctypes.windll.shcore.SetProcessDpiAwareness(True)
-# except Exception:
-#     pass
-
-from gsnodegraph.gsnodegraph import EVT_GSNODEGRAPH_ADDNODEBTN
-# from gsnodegraph.nodes import OutputNode, MixNode, ImageNode, BlurNode, BlendNode, ValueNode, FrequencyPhaseAlignementNode,AverageNode,RemoveBadAveragesNode,LineBroadeningNode,ZeroPaddingNode,EddyCurrentCorrectionNode,InputNode
-# from gsnodegraph.nodegraph import NodeGraph
-import gsnodegraph.nodes
-
-
-# # Install a custom displayhook to keep Python from setting the global
-# # _ (underscore) to the value of the last evaluated expression.
-# # If we don't do this, our mapping of _ to gettext can get overwritten.
-# # This is useful/needed in interactive debugging with PyShell.
-# def _displayHook(obj):
-#     """ Custom display hook to prevent Python stealing '_'. """
-
-#     if obj is not None:
-#         print(repr(obj))
-        
-# def get_node_type(node):
-    # if isinstance(node, gsnodegraph.nodes.nodes.ZeroPaddingNode):
-    #     return "ZeroPadding"
-    # elif isinstance(node, gsnodegraph.nodes.nodes.RemoveBadAveragesNode):
-    #     return "RemoveBadAverages"
-    # elif isinstance(node, gsnodegraph.nodes.nodes.FrequencyPhaseAlignementNode):
-    #     return "FreqPhaseAlignment"
-    # elif isinstance(node, gsnodegraph.nodes.nodes.AverageNode):
-    #     return "Average"
-    # elif isinstance(node, gsnodegraph.nodes.nodes.EddyCurrentCorrectionNode):
-    #     return "EddyCurrentCorrection"
-    # elif isinstance(node, gsnodegraph.nodes.nodes.LineBroadeningNode):
-    #     return "LineBroadening"
-    # else:
-    #     return "Unknown steps"
-
-
-# # Add translation macro to builtin similar to what gettext does.
-# import builtins
-# builtins.__dict__['_'] = wx.GetTranslation
-
-from . import PipelineNodeGraph
-
-from . import pipeline_window
-
-
 class FileDrop(wx.FileDropTarget):
-
     def __init__(self, parent, listbox: wx.ListBox, label):
         wx.FileDropTarget.__init__(self)
         self.parent = parent
@@ -82,7 +25,9 @@ class FileDrop(wx.FileDropTarget):
         self.filepaths.extend(filenames)
         self.list.Set([])
         if len(self.filepaths) > 1: # find common root folder
-            root = os.path.commonpath(self.filepaths)
+            root = ""
+            if all([f[0] == self.filepaths[0][0] for f in self.filepaths]):
+                root = os.path.commonpath(self.filepaths)
             if root != "": self.list.Append([f.replace(root, "") for f in self.filepaths])
             else: self.list.Append([f for f in self.filepaths])
         else: self.list.Append([f for f in self.filepaths])
@@ -185,10 +130,6 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
         self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
 
-
-        
-        
-
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)       
         # self.leftSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
@@ -199,25 +140,19 @@ class MyFrame(wx.Frame):
         self.rightSplitter.SetMinimumPaneSize(100)  
         # self.leftSplitter.SetMinimumPaneSize(100)
 
-
         self.leftPanel = wx.Panel(self.mainSplitter, wx.ID_ANY)
         self.leftSizer = wx.BoxSizer(wx.VERTICAL)
         self.leftPanel.SetSizer(self.leftSizer)
         self.rightPanel = wx.Panel(self.rightSplitter, wx.ID_ANY)
         self.rightSizer = wx.BoxSizer(wx.VERTICAL)
         self.rightPanel.SetSizer(self.rightSizer)
-        
-        
 
         #New input panel
         #MRS files
-        
         self.inputMRSfiles_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
         self.inputMRSfiles_drag_and_drop_label.SetFont(font1)
 
-        
-        
         self.inputMRSfilesButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.inputMRSfilesclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
         self.inputMRSfilesplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
@@ -227,11 +162,9 @@ class MyFrame(wx.Frame):
         self.inputMRSfilesplus_button.SetFont(font1)
         self.inputMRSfilesminus_button.SetFont(font1)
 
-        
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesplus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesminus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesclear_button, 0, wx.ALL | wx.EXPAND, 5)
-
         
         self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
         self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
@@ -239,10 +172,6 @@ class MyFrame(wx.Frame):
         self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
         self.inputMRSfiles_number_label.SetFont(font1)
-
-        # self.inputMRSfiles_number_label.SetLabel("2 Files imported")
-
-
         
         self.inputMRSfiles_dt = FileDrop(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_number_label)
         self.inputMRSfiles_drag_and_drop_list.SetDropTarget(self.inputMRSfiles_dt)
@@ -252,36 +181,15 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_plus, self.inputMRSfilesplus_button)
         self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_minus, self.inputMRSfilesminus_button)
         
-        
-
-
-
-        
-    
         #wref
-
         self.inputwref_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import water reference here (optional)", style=wx.ALIGN_CENTRE_VERTICAL)
         self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
         self.inputwref_drag_and_drop_label.SetFont(font1)
-
         
         self.inputwrefButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.inputwrefclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
         self.inputwrefplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
         self.inputwrefminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
-        
-        # self.inputwrefclear_button.SetBackgroundColour(wx.Colour(XISLAND6))
-        # self.inputwrefplus_button.SetBackgroundColour(wx.Colour(XISLAND6))
-        # self.inputwrefminus_button.SetBackgroundColour(wx.Colour(XISLAND6))
-        
-        # self.inputwrefclear_button.SetForegroundColour(wx.Colour("#fff"))
-        # self.inputwrefplus_button.SetForegroundColour(wx.Colour("#fff"))
-        # self.inputwrefminus_button.SetForegroundColour(wx.Colour("#fff"))
-        
-        # self.inputwrefclear_button.SetWindowStyleFlag(wx.NO_BORDER)
-        # self.inputwrefplus_button.SetWindowStyleFlag(wx.NO_BORDER)
-        # self.inputwrefminus_button.SetWindowStyleFlag(wx.NO_BORDER)
-
 
         self.inputwrefclear_button.SetFont(font1)
         self.inputwrefplus_button.SetFont(font1)
@@ -290,7 +198,6 @@ class MyFrame(wx.Frame):
         self.inputwrefButtonSizer.Add(self.inputwrefplus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputwrefButtonSizer.Add(self.inputwrefminus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.inputwrefButtonSizer.Add(self.inputwrefclear_button, 0, wx.ALL | wx.EXPAND, 5)
-  
         
         self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
         self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
@@ -298,7 +205,6 @@ class MyFrame(wx.Frame):
         self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
         self.inputwref_number_label.SetFont(font1)
-        
         
         self.inputwref_dt = FileDrop(self, self.inputwref_drag_and_drop_list, self.inputwref_number_label)
         self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
@@ -308,53 +214,17 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_clear, self.inputwrefclear_button)
         self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_plus, self.inputwrefplus_button)
         self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
-        
-
-
-        
-        ###################################################
-        
-        
-        # self.clear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear Inputs")
-        # self.water_ref_button = wx.Button(self.leftPanel, wx.ID_ANY, "Toggle Water Reference")
-        # self.clear_button.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
-        # self.water_ref_button.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
-        # self.clear_button.SetForegroundColour(wx.Colour(BLACK_WX))
-        # self.water_ref_button.SetForegroundColour(wx.Colour(BLACK_WX))
-        
-
-        
-        
-        # self.leftSizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
-        # self.leftSizer.Add(self.water_ref_button, 0, wx.ALL | wx.EXPAND, 5)
-        # self.clear_button.Disable()
-        # self.water_ref_button.Disable()
-
-        # self.drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_SORT | wx.LB_OWNERDRAW)
-        # self.drag_and_drop_list.SetBackgroundColour(wx.Colour(BLACK_WX))  # Set the background color (RGB values)
-
-        # self.drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Drop Inputs Files Here", style=wx.ALIGN_CENTRE_VERTICAL)
-        # self.drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
-
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.inputMRSfiles_drag_and_drop_list)
-
-        # self.leftSizer.Add(self.drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
-        # self.leftSizer.Add(self.drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
-
 
         self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputMRSfilesButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputMRSfiles_number_label, 0, wx.ALL | wx.EXPAND, 5)
-
         self.leftSizer.AddSpacer(20) 
-
-        
         self.leftSizer.Add(self.inputwref_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputwrefButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputwref_drag_and_drop_list, 0, wx.ALL | wx.EXPAND, 5)
         self.leftSizer.Add(self.inputwref_number_label, 0, wx.ALL | wx.EXPAND, 5)
-
 
         
         ### RIGHT PANEL ###
@@ -428,7 +298,7 @@ class MyFrame(wx.Frame):
         
         self.ProgressBar_Sizer= wx.BoxSizer(wx.VERTICAL)
 
-        self.progress_bar= PG.PyGauge(self.playerPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
+        self.progress_bar= pygauge.PyGauge(self.playerPanel, -1, size=(300, 35), style=wx.GA_HORIZONTAL)
         self.progress_bar.SetValue(0)
         self.progress_bar.SetBorderPadding(5)
         self.progress_bar.SetBarColor(wx.Colour(XISLAND3))
@@ -499,17 +369,6 @@ class MyFrame(wx.Frame):
         
         self.Processing_Sizer.Add(self.playerPanel, 0, wx.ALL | wx.EXPAND, 5)
 
-        # self.Processing_Sizer.AddSpacer(60)
-        # self.Processing_Sizer.Add(self.logo_image, 0, wx.ALL | wx.EXPAND, 5)
-
-        # self.Processing_Sizer.Add(self.processing_throbber, 0, wx.ALL | wx.EXPAND, 5)
-        
-        
-        
-
-
-
-
         self.rightSizer.Add(self.Processing_Sizer, 0, wx.ALL | wx.EXPAND, 0)
         
         self.matplotlib_canvas = matplotlib_canvas.MatplotlibCanvas(self.rightPanel, wx.ID_ANY)
@@ -518,14 +377,8 @@ class MyFrame(wx.Frame):
         font_fixed_width = wx.Font(9, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         self.infotext.SetFont(font_fixed_width)
         
-  
-
-        # self.consoltext = wx.TextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.consoltext = wx.richtext.RichTextCtrl(self.consoleinfoSplitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         # self.infotext.SetFont(font1)
-
-
-
 
         self.Bind(wx.EVT_BUTTON, self.on_terminate_processing, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
@@ -533,205 +386,23 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_save_raw, self.button_toggle_save_raw)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.button_open_pipeline)
         self.Bind(wx.EVT_BUTTON, self.on_set_control, self.button_set_control)
-
+        self.Bind(wx.EVT_SIZE,self.OnResize)
+        self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
 
         self.rightSizer.Add(self.matplotlib_canvas, 1, wx.ALL | wx.EXPAND, 0)
         self.rightSizer.Add(self.matplotlib_canvas.toolbar, 0, wx.EXPAND, 0)
-        
-
-
-        # self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(parent=self.pipelineplotSplitter, size=(100, 100))
-        # self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
-        
-        self.pipelineWindow=pipeline_window.PipelineWindow(parent=self)
-        # self.mgr.AddPane(self.nodegraph_pnl,
-        #                   aui.AuiPaneInfo()
-        #                   .Name("NODE_EDITOR")
-        #                   .CaptionVisible(False)
-        #                   .CenterPane()
-        #                   .CloseButton(visible=False)
-        #                   .BestSize(500, 300))
-
-
-        ## pipelinepart ##
-        # self.pipelinePanel = wx.Panel(self.pipelineplotSplitter, wx.ID_ANY)
-        # self.pipelineSizer = wx.BoxSizer(wx.HORIZONTAL)
-        # self.pipelinePanel.SetSizer(self.pipelineSizer)
-        
-        #pipeline node graph directly imported from a modified version of the main  of gsnodegraph
-        # node_registry = {
-        #     "image_nodeid": ImageNode,
-        #     "mix_nodeid": MixNode,
-        #     "blur_nodeid": BlurNode,
-        #     "blend_nodeid": BlendNode,
-        #     "value_nodeid": ValueNode,
-        #     "output_nodeid": OutputNode,
-        #     ##All the line below are added for MRS software
-        #     "freqphasealignement_nodeid": FrequencyPhaseAlignementNode,
-        #     "average_nodeid":AverageNode,
-        #     "removebadaverages_nodeid":RemoveBadAveragesNode,
-        #     "linebroadening_nodeid":LineBroadeningNode,
-        #     "zeropadding_nodeid":ZeroPaddingNode,
-        #     "eddyccurentcorrection_nodeid":EddyCurrentCorrectionNode,
-        #     "input_nodeid":InputNode
-
-        # }
-        # # Setup the config with datatypes and node categories
-        # config = {
-        #     "image_datatype": "IMAGE",
-        #     "node_datatypes": {
-        #         "IMAGE": "#C6C62D",  # Yellow
-        #         "INTEGER": "#A0A0A0",  # Grey
-        #         "FLOAT": "#A0A0A0",  # Grey
-        #         "VALUE": "#A0A0A0",  # Depreciated!
-        #         "TRANSIENTS": "#B33641", 
-        #     },
-        #     "input_nodes_categories": ["INPUT"],
-        #     "node_categories": {
-        #         "INPUT": "#008000",  # Burgendy
-        #         "DRAW": "#AF4467",  # Pink
-        #         "MASK": "#084D4D",  # Blue-green
-        #         "CONVERT": "#564B7C",  # Purple
-        #         "FILTER": "#558333",  # Green
-        #         "BLEND": "#498DB8",  # Light blue
-        #         "QUALITY CONTROL": "#B33641",  # Light blue
-
-        #         "COLOR": "#C2AF3A",  # Yellow
-        #         "TRANSFORM": "#6B8B8B", # Blue-grey
-        #         "OUTPUT": "#B33641"  # Red
-        #     }
-        # }
-
-        # # Init the nodegraph
-        # self.pipelinePanel = NodeGraph(self.pipelineplotSplitter, registry=node_registry, config=config)
-
-        # # Add nodes to the node graph
-        # node1 = self.pipelinePanel.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(200, 100))
-        # node2 = self.pipelinePanel.AddNode("zeropadding_nodeid",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
-        # node3 = self.pipelinePanel.AddNode("linebroadening_nodeid", nodeid='linebroadening0',pos=wx.Point(600, 100))
-        # node4 = self.pipelinePanel.AddNode("freqphasealignement_nodeid",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
-        # node5 = self.pipelinePanel.AddNode("eddyccurentcorrection_nodeid",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
-        # node6 = self.pipelinePanel.AddNode("removebadaverages_nodeid",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
-        # node7 = self.pipelinePanel.AddNode("average_nodeid", nodeid='average0', pos=wx.Point(1400, 100))
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['input0'].GetSockets()[0],self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[1])
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['zeropadding_node0'].GetSockets()[0],self.pipelinePanel.nodes['linebroadening0'].GetSockets()[1])
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['linebroadening0'].GetSockets()[0],self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[1])
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['freqphasealignement0'].GetSockets()[0],self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[1])
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['eddyccurentcorrection0'].GetSockets()[0],self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[1])
-        # self.pipelinePanel.ConnectNodes(self.pipelinePanel.nodes['removebadaverages0'].GetSockets()[0],self.pipelinePanel.nodes['average0'].GetSockets()[1])
-
-
-
-        # # Maximize the window
-        # self.Maximize(True)
-
-        # # Bind events
-        # self.pipelinePanel.nodegraph.Bind(EVT_GSNODEGRAPH_ADDNODEBTN, self.OnAddNodeMenuBtn)
-
-        
-        
-        # self.list_ctrl = DragList.MyDragList(self.pipelinePanel,style=wx.BORDER_SUNKEN|wx.LC_REPORT)
-        # self.list_ctrl.InsertColumn(0, "Pipeline Steps", width = 100)
-
-        # self.list_ctrl.InsertItem(0, "ZeroPadding")
-        # self.list_ctrl.InsertItem(1, "LineBroadening")
-        # self.list_ctrl.InsertItem(2, "FreqPhaseAlignment")
-        # self.list_ctrl.InsertItem(3, "EddyCurrentCorrection")
-        # self.list_ctrl.InsertItem(4, "RemoveBadAverages")
-        # self.list_ctrl.InsertItem(5, "Average")
-
-
-
-
-        # self.pipelineparameters = wx.TextCtrl(self.pipelinePanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
-        # self.pipelineparameters.SetBackgroundColour(wx.Colour(200, 200, 200))  # Set the background color to black
-        
-        # self.context_menu_pipeline = wx.Menu()
-        # self.context_menu_pipeline.Append(1, "Delete step")
-        # self.context_menu_pipeline.Append(2, "Plot step Results")
-
-        
-        # self.Bind(wx.EVT_MENU, self.OnDeleteClick, id=1)
-        # self.Bind(wx.EVT_MENU, self.OnPlotClick, id=2)
-
-        # self.list_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.OnRightClickList)
-
-        
-        # self.list_ctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-
-
-        
-        # self.pipelineSizer.Add(self.list_ctrl, 0, wx.EXPAND, 0)
-        # self.pipelineSizer.Add(self.pipelineparameters, 1, wx.EXPAND, 0)
-
-        
-        
         self.rightSplitter.SplitHorizontally(self.rightPanel, self.consoleinfoSplitter, -150)
         self.rightSplitter.SetSashGravity(1.)
-        
         self.consoleinfoSplitter.SplitVertically(self.consoltext, self.infotext, 0)
         self.consoleinfoSplitter.SetSashGravity(.5)
-        
-        
-
-        
-        # self.pipelineplotSplitter.SplitVertically(self.pipelinePanel,self.rightPanel , -150)
-        # self.pipelineplotSplitter.SetSashGravity(1.)
-        
-        
+        self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
         self.SetBackgroundColour(wx.Colour(XISLAND1)) 
 
-
-
-        self.mainSplitter.SplitVertically(self.leftPanel, self.rightSplitter, 300)
-        
-        
-        self.Bind(wx.EVT_SIZE,self.OnResize)
-        
         self.Layout()
-        self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
-        # self.dt = FileDrop(self, self.drag_and_drop_list, self.drag_and_drop_label)
-        # self.leftPanel.SetDropTarget(self.dt)
-        # self.dt.clear_button = self.clear_button
-        # self.dt.water_ref_button = self.water_ref_button
-        # self.Bind(wx.EVT_BUTTON, self.dt.on_clear, self.clear_button)
-        # self.Bind(wx.EVT_BUTTON, self.dt.on_water_ref, self.water_ref_button)
-        # self.leftPanel.Disable()
-        # self.leftPanel.Enable()
-    
-
-        
 
     def on_button_processing(self, event): # wxGlade: MyFrame.<event_handler>
         print("Event handler 'on_button_processing' not implemented!")
         event.Skip()
-        
-
-    # def OnAddNodeMenuBtn(self, event):
-    #     # print(self.ng.nodes['lol'].GetSockets().GetWires())
-    #     current_node= self.pipelinePanel.nodegraph.GetInputNode()
-    #     pipeline =[]
-    #     while current_node is not None:
-    #         for socket in current_node.GetSockets():
-    #             if socket.direction == 1:
-    #                 if len(socket.GetWires())==0:
-    #                     current_node=None
-    #                 elif len(socket.GetWires())>1:
-    #                     print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
-    #                     current_node=None
-
-    #                 else:
-    #                     for wire in socket.GetWires():
-    #                         current_node = wire.dstsocket.node
-    #                         pipeline.append(get_node_type(wire.dstsocket.node))
-                        
-    #     print (pipeline)
-    #     pos = (8, self.pipelinePanel.nodegraph.GetRect()[3]-310)
-    #     self.pipelinePanel.PopupAddNodeMenu(pos)
-        # print(self.ng.GetInputNode())
-        # print()
-        # print(self.ng.nodes['lol'].GetSockets()[0].GetWires()[0].dstsocket.node)
-        # print(len(self.ng.nodes['lol'].GetSockets()[1].GetWires()))
 
 class PlotFrame(wx.Frame):
     def __init__(self, title):
@@ -758,9 +429,3 @@ class PlotFrame(wx.Frame):
         self.splitter.SetSashGravity(1.)
 
         self.Layout()
-
-
-
-
-    
-    

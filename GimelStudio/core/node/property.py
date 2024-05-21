@@ -379,6 +379,7 @@ class VectorProp(Property):
                                          type_="FLOAT",
                                          min_value=self.min_values[0],
                                          max_value=self.max_values[0],
+                                         step_size=0.1,
                                          suffix=self.lbl_suffix, 
                                          show_p=self.show_p,
                                          size=(-1, 32))
@@ -390,6 +391,7 @@ class VectorProp(Property):
                                          type_="FLOAT",
                                          min_value=self.min_values[1],
                                          max_value=self.max_values[1],
+                                         step_size=0.1,
                                          suffix=self.lbl_suffix, 
                                          show_p=self.show_p,
                                          size=(-1, 32))
@@ -401,6 +403,7 @@ class VectorProp(Property):
                                              label=self.labels[2],
                                              min_value=self.min_values[2],
                                              max_value=self.max_values[2],
+                                             step_size=0.1,
                                              suffix=self.lbl_suffix, 
                                              show_p=self.show_p,
                                              size=(-1, 32))

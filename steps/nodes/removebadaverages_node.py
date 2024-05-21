@@ -93,4 +93,4 @@ class RemoveBadAveragesNode(api.Node):
 
 
 
-api.RegisterNode(RemoveBadAveragesNode, "removebadaverages_nodeid")
+# api.RegisterNode(RemoveBadAveragesNode, "removebadaverages_nodeid")

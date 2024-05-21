@@ -71,4 +71,4 @@ class ZeroPaddingNode(api.Node):
 
 
 
-api.RegisterNode(ZeroPaddingNode, "zeropadding_nodeid")
+# api.RegisterNode(ZeroPaddingNode, "zeropadding_nodeid")
