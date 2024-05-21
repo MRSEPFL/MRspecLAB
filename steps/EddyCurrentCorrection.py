@@ -1,15 +1,34 @@
 from processing.ProcessingStep import ProcessingStep
+import gs.api as api
 import numpy as np
 
 class EddyCurrentCorrection(ProcessingStep):
-    def __init__(self):
-        super().__init__({ "gaussian_width": 32 })
+    def __init__(self, nodegraph, id):
+        self.meta_info = {
+            "label": "Eddy Current Correction",
+            "author": "CIBM",
+            "version": (0, 0, 0),
+            "category": "QUALITY CONTROL",
+            "description": "Performs Eddy Current Correction",
+        }
+        self.parameters = [
+            api.IntegerProp(
+                idname="gaussian_width",
+                default=32,
+                min_val=0,
+                max_val=100,
+                show_p=True,
+                exposed=False,
+                fpb_label="Gaussian width of the phase smoothing window"
+            )
+        ]
+        super().__init__(nodegraph, id)
 
     def process(self, data):
         if data["wref"] is None:
             data["output"] = data["input"]
             return
-        w = self.parameters["gaussian_width"]
+        w = self.get_parameter("gaussian_width")
         window = np.linspace(-3, 3, w)
         window = np.exp(-window**2)
         window /= np.sum(window)
@@ -61,3 +80,5 @@ class EddyCurrentCorrection(ProcessingStep):
         ax.legend()
         ax.set_title("Water reference phase")
         figure.tight_layout()
+
+api.RegisterNode(EddyCurrentCorrection, "EddyCurrentCorrection")

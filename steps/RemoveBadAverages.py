@@ -1,9 +1,43 @@
 from processing.ProcessingStep import ProcessingStep
+import gs.api as api
 import numpy as np
 
 class RemoveBadAverages(ProcessingStep):
-    def __init__(self):
-        super().__init__({"stdDevThreshold": 3, "domain": "time", "tmax": 0.4})
+    def __init__(self, nodegraph, id):
+        self.meta_info = {
+            "label": "Remove Bad Averages",
+            "author": "CIBM",
+            "version": (0, 0, 0),
+            "category": "QUALITY CONTROL",
+            "description": "Removes bad quality data via z-test",
+        }
+        self.parameters = [
+            api.IntegerProp(
+                idname="stdDevThreshold",
+                default=3,
+                min_val=1,
+                max_val=10,
+                show_p=True,
+                exposed=False,
+                fpb_label="stddev threshold outside of which to remove the data"
+            ),
+            api.ChoiceProp(
+                idname="domain",
+                default="time",
+                choices=["time", "freq"],
+                exposed=False,
+                fpb_label="Domain to perform the z-test on"
+            ),
+            api.FloatProp(
+                idname="tmax",
+                default=0.4,
+                min_val=0.1,
+                max_val=20.0,
+                exposed=False,
+                fpb_label="Time value up to which to perform the z-test (if domain is time)"
+            )
+        ]
+        super().__init__(nodegraph, id)
         self.plotSpectrum = False
 
     def process(self, data):
@@ -13,16 +47,16 @@ class RemoveBadAverages(ProcessingStep):
             return
         output = []
         metric = []
-        if self.parameters["domain"].lower() == "time":
+        if self.get_parameter("domain").lower() == "time":
             ref = np.mean(data["input"], axis=0)
-            trange = data["input"][0].time_axis() <= self.parameters["tmax"]
+            trange = data["input"][0].time_axis() <= self.get_parameter("tmax")
             for d in data["input"]: metric.append(np.sum((d[trange] - ref[trange])**2))
-        elif self.parameters["domain"].lower().startswith("freq"):
+        elif self.get_parameter("domain").lower().startswith("freq"):
             specs = [np.abs(d.spectrum()) for d in data["input"]]
             ref = np.mean(specs, axis=0)
             for d in specs: metric.append(np.sum((d - ref)**2))
         self.zscores = (metric - np.mean(metric)) / np.std(metric)
-        mask = np.abs(self.zscores) < self.parameters["stdDevThreshold"]
+        mask = np.abs(self.zscores) < self.get_parameter("stdDevThreshold")
         for i, d in enumerate(data["input"]):
             if mask[i]: output.append(d)
             else: self.removed.append(i)
@@ -45,5 +79,7 @@ class RemoveBadAverages(ProcessingStep):
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
-        figure.suptitle(self.__class__.__name__ + " (domain: " + self.parameters["domain"] + ")")
+        figure.suptitle(self.__class__.__name__ + " (domain: " + self.get_parameter("domain") + ")")
         figure.tight_layout()
+
+api.RegisterNode(RemoveBadAverages, "RemoveBadAverages")

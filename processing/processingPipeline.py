@@ -16,8 +16,9 @@ from spec2nii.other_formats import lcm_raw
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders, Table
 from inout.readcontrol import readControl
+from inout.saveraw import save_raw
 from interface.plots import plot_ima, plot_coord
-    
+
 def loadInput(self):
     self.filepaths = []
     for f in self.inputMRSfiles_dt.filepaths:
@@ -120,13 +121,13 @@ def loadInput(self):
 
 def processStep(self, step, nstep):
     dataDict = {
-                "input": self.dataSteps[-1],
-                "wref": self.wrefSteps[-1],
-                "original": self.dataSteps[0],
-                "wref_original": self.wrefSteps[0],
-                "output": None,
-                "wref_output": None
-            }
+        "input": self.dataSteps[-1],
+        "wref": self.wrefSteps[-1],
+        "original": self.dataSteps[0],
+        "wref_original": self.wrefSteps[0],
+        "output": None,
+        "wref_output": None
+    }
     self.button_step_processing.Disable()
     if not self.fast_processing:
         self.button_auto_processing.Disable()
@@ -335,50 +336,26 @@ def analyseResults(self):
     shutil.rmtree(self.workpath) # delete work folder
 
 def processPipeline(self):
-    if self.current_step==0:
-        self.pipeline,self.steps = self.retrievePipeline()
+    if self.current_step == 0:
+        self.pipeline, self.steps = self.retrievePipeline()
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
-        # self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        valid_input=loadInput(self)
-        if valid_input==False:
-            # self.semaphore_step_pro.release()
+        valid_input = loadInput(self)
+        if valid_input == False:
             wx.CallAfter(self.PostStepProcessingGUIChanges)
             self.fast_processing = False
             return
-    if 0<=self.current_step and self.current_step<=(len(self.steps)-1):
-        processStep(self,self.steps[self.current_step],self.current_step+1)
-        self.current_step+=1
-    elif self.current_step==(len(self.steps)):
+    if 0 <= self.current_step and self.current_step <= len(self.steps) - 1:
+        processStep(self,self.steps[self.current_step], self.current_step + 1)
+        self.current_step += 1
+    elif self.current_step == len(self.steps):
         self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
         saveDataPlot(self)
-        valid_analysis=analyseResults(self)
-        # if valid_analysis==False:
-            # self.semaphore_step_pro.release()
-            # return
-        self.current_step+=1 ##### to change with a LCModeldone bool 
+        valid_analysis = analyseResults(self)
+        self.current_step += 1 ##### to change with a LCModeldone bool 
     else: print("Error  Finished, no further steps, to changes this part")
     wx.CallAfter(self.PostStepProcessingGUIChanges)
     self.proces_completion = True
-    # self.semaphore_step_pro.release()
-    # return 
 
 def autorun_pipeline_exe(self):
-    while (self.fast_processing and (self.current_step<=(len(self.steps)))):
+    while self.fast_processing and self.current_step <= len(self.steps):
         processPipeline(self)
-        
-# adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
-def save_raw(filename, data, seq="PRESS"):
-    if seq is None: seq = "PRESS"
-    with open(filename, 'w') as fout:
-        fout.write(" $SEQPAR\n")
-        fout.write(" ECHOT = {}\n".format(data.te))
-        fout.write(" HZPPPM = {}\n".format(data.f0))
-        fout.write(f" SEQ = {seq}\n")
-        fout.write(" $END\n")
-        fout.write(" $NMID\n")
-        fout.write(" FMTDAT = '(2E15.6)'\n")
-        if data.transform is not None: fout.write(" VOLUME = {}\n".format(data.voxel_volume() * 1e-3))
-        # else: print("Saving LCModel data without a transform, using default voxel volume of 1ml")
-        fout.write(" $END\n")
-        for point in np.nditer(data, order='C'):
-            fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))

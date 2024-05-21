@@ -1,14 +1,33 @@
 from processing.ProcessingStep import ProcessingStep
+import gs.api as api
 import numpy as np
 
 class LineBroadening(ProcessingStep):
-    def __init__(self):
-        super().__init__({"factor": 5})
+    def __init__(self, nodegraph, id):
+        self.meta_info = {
+            "label": "Line Broadening",
+            "author": "CIBM",
+            "version": (0, 0, 0),
+            "category": "QUALITY CONTROL",
+            "description": "Shifts spectra in the frequency domain by factor * pi",
+        }
+        self.parameters = [
+            api.IntegerProp(
+                idname="factor",
+                default=5,
+                min_val=1,
+                max_val=50,
+                show_p=True,
+                exposed=False,
+                fpb_label="Factor"
+            )
+        ]
+        super().__init__(nodegraph, id)
         self.plotSpectrum = False
 
     def process(self, data):
-        if self.parameters["factor"] <= 0: return data
-        self.exp = np.exp(-data["input"][0].time_axis() * np.pi * self.parameters["factor"])
+        if self.get_parameter("factor") <= 0: return data
+        self.exp = np.exp(-data["input"][0].time_axis() * np.pi * self.get_parameter("factor"))
         output = []
         self.dmax = 0
         for d in data["input"]:
@@ -33,3 +52,4 @@ class LineBroadening(ProcessingStep):
         ax.set_title("Output")
         figure.tight_layout()
 
+api.RegisterNode(LineBroadening, "LineBroadening")

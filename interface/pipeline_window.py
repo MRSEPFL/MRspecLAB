@@ -1,10 +1,7 @@
-from . import PipelineNodeGraph
-from GimelStudio.nodegraph_dnd import NodeGraphDropTarget
-from GimelStudio.nodeproperties_pnl import NodePropertiesPanel
-
 import wx
-
-SomeNewEvent, EVT_SOME_NEW_EVENT = wx.lib.newevent.NewEvent()
+from . import PipelineNodeGraph
+from gs.nodegraph_dnd import NodeGraphDropTarget
+from gs.nodeproperties_pnl import NodePropertiesPanel
 
 class PipelineWindow(wx.Frame):
     def __init__(self, *args, **kw):
@@ -15,7 +12,7 @@ class PipelineWindow(wx.Frame):
         self.pipelinesizer= wx.BoxSizer(wx.HORIZONTAL)
         self.mainpanel.SetSizer(self.pipelinesizer)
 
-        self.pipelinePanel  = PipelineNodeGraph.NodeGraphPanel(self.mainpanel, size=(100, 100))
+        self.pipelinePanel = PipelineNodeGraph.NodeGraphPanel(self.mainpanel, size=(100, 100))
         self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
         
         self.prop_pnl = NodePropertiesPanel(self.mainpanel,idname="PROPERTIES_PNL", menu_item=None,size=(600, 500))
@@ -26,7 +23,6 @@ class PipelineWindow(wx.Frame):
         
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
-
 
     def on_close(self, event):
         self.Hide()

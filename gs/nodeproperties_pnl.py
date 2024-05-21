@@ -15,21 +15,100 @@
 # ----------------------------------------------------------------------------
 
 import wx
-##Changed the imports to adapt them to MrSoftware repository
-
+import wx.lib.agw.flatmenu as flatmenu
+from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpb
 from gswidgetkit.buttons import Button
 from gswidgetkit.label import  Label
 from gswidgetkit.buttons import EVT_BUTTON
 
-from GimelStudio.constants import (PROP_BG_COLOR, AREA_BG_COLOR, 
-                                   AREA_TOPBAR_COLOR, TEXT_COLOR)
-from GimelStudio.icons import (ICON_HELP, ICON_NODEPROPERTIES_PANEL,
-                                   ICON_MORE_MENU_SMALL) #changed for MRSoftware
-#from gimelstudio.core.node.property import ThumbProp
-from GimelStudio.core.node.property import VectorProp
-from .message_dlgs import ShowNotImplementedDialog
-from .panel_base import PanelBase
+AREA_BG_COLOR = "#1E2429"
+AREA_TOPBAR_COLOR = "#20272C"
+TEXT_COLOR = "#dfdfdf"
+PROP_BG_COLOR = "#272E35"
+
+ICON_HELP = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAYJJ'
+    b'REFUSIntldtZwkAQhX/8LAArYKcDSogVSAdiBaYDQgdQgXZArMB0AB1MqMBYAT7sRDbLLqDP'
+    b'zFtmz54zO7fAzS7Y6BJAVR3wBMwCdwc0wIeItP8SUNUxsABKYA/URgwwNsEJsAKWItKleJIC'
+    b'Rv4JPACliNQZ3ByogC/gMSVyIhCQj4AiF1mEb4BDSuQ+caeyyKc9OEhXYZgaWItIJyKdqhbA'
+    b'Dp/OKiS7i6JxwCs+LWEkNcda7I1k0x8atgIWxpF9bqmqbeQrVPVg+e59c/MVEbZV1TL7Anxn'
+    b'xAUdA98i8h74muCMyD8QTdVgUCTroF8iq8ebfe6iu+01AllT1SnHDnu5NGQpgY7TZ4fWF3qW'
+    b'IXdEGYhr0ODXQs6qM+Tg09OEjligBlzYMYnzTerA7kyImmQgYJGt8f2cS1Vu+hf4ndReA86O'
+    b'fgafXS1xivqpLOzCVlWfz5DPgW2OPPmCKLIKvzpahuvaWRAOWAKrP63rSMjhJ7zg2ML9D6e+'
+    b'ZhZudtZ+AOGFtUl0bXYfAAAAAElFTkSuQmCC')
+
+def ComputeMenuPosAlignedLeft(menu, btn):
+    """ Given flatmenu and button objects, computes the positioning
+    of the dropdown menu.
+
+    :returns: wx.Point
+    """
+    y = btn.GetSize()[1] + btn.GetScreenPosition()[1] + 6
+    x = btn.GetScreenPosition()[0] - menu.GetMenuWidth() + btn.GetSize()[1]
+    return wx.Point(x, y)
+
+ID_MENU_UNDOCKPANEL = wx.NewIdRef()
+ID_MENU_HIDEPANEL = wx.NewIdRef()
+
+class PanelBase(wx.Panel):
+    """
+    Base class for panels in the UI. Handles the panel dropdown menu
+    with the necessary show/hide and undock logic.
+    """
+    def __init__(self, parent, idname, menu_item, *args, **kwargs):
+        wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                          size=wx.DefaultSize, style=wx.NO_BORDER | wx.TAB_TRAVERSAL)
+        self.parent = parent
+        self._idname = idname
+        self._menu_item = menu_item
+
+        self.Bind(wx.EVT_MENU, self.OnMenuUndockPanel, id=ID_MENU_UNDOCKPANEL)
+        self.Bind(wx.EVT_MENU, self.OnMenuHidePanel, id=ID_MENU_HIDEPANEL)
+
+    def OnAreaMenuButton(self, event):
+        self.CreateAreaMenu()
+        pos = ComputeMenuPosAlignedLeft(self.area_dropdownmenu, self.menu_button)
+        self.area_dropdownmenu.Popup(pos, self)
+
+    def OnMenuUndockPanel(self, event):
+        self.UndockPanel()
+
+    def OnMenuHidePanel(self, event):
+        self.HidePanel()
+
+    def UndockPanel(self):
+        self.AUIManager.GetPane(self._idname).Float()
+        self.AUIManager.Update()
+
+    def ShowPanel(self):
+        self.AUIManager.GetPane(self._idname).Show()
+        self.AUIManager.Update()
+
+        if self._menu_item is not None:
+            self._menu_item.Check(True)
+
+    def HidePanel(self):
+        self.AUIManager.GetPane(self._idname).Hide()
+        self.AUIManager.Update()
+
+        if self._menu_item is not None:
+            self._menu_item.Check(False)
+
+    def CreateAreaMenu(self):
+        self.area_dropdownmenu = flatmenu.FlatMenu()
+
+        undockpanel_menuitem = flatmenu.FlatMenuItem(self.area_dropdownmenu,
+                                                     ID_MENU_UNDOCKPANEL,
+                                                     _("Undock panel"), "",
+                                                     wx.ITEM_NORMAL)
+        self.area_dropdownmenu.AppendItem(undockpanel_menuitem)
+
+        hidepanel_menuitem = flatmenu.FlatMenuItem(self.area_dropdownmenu,
+                                                   ID_MENU_HIDEPANEL,
+                                                   _("Hide panel"), "",
+                                                   wx.ITEM_NORMAL)
+        self.area_dropdownmenu.AppendItem(hidepanel_menuitem)
 
 
 class NodeInfoPanel(wx.Panel):
@@ -57,26 +136,22 @@ class NodeInfoPanel(wx.Panel):
     def OnHelpButton(self, event):
         if self.parent.Parent.selected_node is not None:
             properties_description=""
-            for key in self.parent.Parent.selected_node.processing_step.parameters:
-                if key in self.parent.Parent.selected_node.properties:
-                    properties_description= properties_description+ insert_newlines(self.parent.Parent.selected_node.properties[key].label +": "+self.parent.Parent.selected_node.properties[key].description,90) +"\n"
-                    
-                
+            # for key in self.parent.Parent.selected_node.parameters:
+            #     if key in self.parent.Parent.selected_node.properties:
+            #         properties_description = properties_description
+            #         + insert_newlines(self.parent.Parent.selected_node.properties[key].label + ": "
+            #                           + self.parent.Parent.selected_node.properties[key].description,90) +"\n"
             dlg = wx.MessageDialog(None,
                             "Description :" +  "\n"+self.parent.Parent.selected_node.NodeMeta["description"] +"\n \n"+"Parameters: \n"+properties_description,
                             _(self.parent.Parent.selected_node.NodeMeta["label"] + " by " + self.parent.Parent.selected_node.NodeMeta["author"]), style=wx.ICON_INFORMATION)
             dlg.ShowModal()  
-
-
-           
-                
+      
 #added for MRSoftware         
 def insert_newlines(input_string, interval):
     result = ""
     for i in range(0, len(input_string), interval):
         result += input_string[i:i+interval] + '\n'
     return result
-
 
 class NodePropertiesPanel(PanelBase):
     def __init__(self, parent, idname, menu_item, *args, **kwargs):
@@ -205,31 +280,7 @@ class NodePropertiesPanel(PanelBase):
         #                  thumb_img=node.thumbnail)
         # prop.CreateUI(panel, panel_bar)
         
-    def reset_parameter(self,event):
-        if self.selected_node is not None:
-
-            self.selected_node.processing_step.resetParameters()
-            for key in self.selected_node.processing_step.parameters:
-
-        
-                if key in self.selected_node.properties:
-                    if isinstance(self.selected_node.properties[key], VectorProp):
-                        self.selected_node.properties[key].value=(self.selected_node.processing_step.parameters[key][0],self.selected_node.processing_step.parameters[key][1],0)
-                    else:
-                        self.selected_node.properties[key].value=self.selected_node.processing_step.parameters[key]
-
-            self.UpdatePanelContents(self.selected_node)
-            # Update everything then allow refreshing
-
-
-            
-            
-        # def EditParametersProcessing(self):
-        # for key, value in self.properties.items():
-        #     if key == "freqRange":
-        #        self.processing_step.parameters[key] = self.properties[key].value[:-1]
-        #     elif key in self.processing_step.parameters:
-        #         self.processing_step.parameters[key] = self.properties[key].value
-
-            
-        
+    def reset_parameter(self, event):
+        if self.selected_node is None: return
+        self.selected_node.resetParameters()
+        self.UpdatePanelContents(self.selected_node)
