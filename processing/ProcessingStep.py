@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-import api
+import gs.api as api
 
 class ProcessingStep(api.Node):
     def __init__(self, nodegraph, id):

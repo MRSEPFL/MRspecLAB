@@ -1,5 +1,5 @@
 from processing.ProcessingStep import ProcessingStep
-import api
+import gs.api as api
 import numpy as np
 
 class ZeroPadding(ProcessingStep):
