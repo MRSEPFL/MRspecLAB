@@ -1,3 +1,4 @@
+### modified from GimelStudio
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #
@@ -17,18 +18,17 @@
 import wx
 import wx.adv
 import wx.stc
-
-import constants as const
-
 from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
 
+ACCENT_COLOR = "#3D7DC5"
+ADD_NODE_MENU_BG = "#121719"
 
 class NodesVListBox(wx.VListBox):
     def __init__(self, *args, **kw):
         self.parent = args[0]
         wx.VListBox.__init__(self, *args, **kw)
 
-        self.SetBackgroundColour(const.ADD_NODE_MENU_BG)
+        self.SetBackgroundColour(ADD_NODE_MENU_BG)
 
         self.Bind(wx.EVT_MOTION, self.OnStartDrag)
 
@@ -100,7 +100,7 @@ class NodesVListBox(wx.VListBox):
     def OnDrawBackground(self, dc, rect, n):
         """ Draws the item background. """
         if self.GetSelection() == n:
-            color = wx.Colour(const.ACCENT_COLOR)
+            color = wx.Colour(ACCENT_COLOR)
         else:
             color = wx.Colour(XISLAND2) #change color add node menue
 

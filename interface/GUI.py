@@ -80,14 +80,14 @@ class MyFrame(wxglade_out.MyFrame):
         processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
-            if module_name != "__init__":
-                spec = importlib.util.spec_from_file_location(module_name, file)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                for name, obj in inspect.getmembers(module):
-                    if inspect.isclass(obj) and obj.__module__ == module_name:
-                        obj = getattr(module, name)
-                        processing_steps[name] = obj
+            if module_name == "__init__": continue
+            spec = importlib.util.spec_from_file_location(module_name, file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            for name, obj in inspect.getmembers(module):
+                if inspect.isclass(obj) and obj.__module__ == module_name:
+                    obj = getattr(module, name)
+                    processing_steps[name] = obj
         return processing_steps, rootPath
 
     def on_save_pipeline(self, event, filepath=None):
@@ -98,8 +98,8 @@ class MyFrame(wxglade_out.MyFrame):
             fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
             if fileDialog.ShowModal() == wx.ID_CANCEL: return
             filepath = fileDialog.GetPath()
-        if not os.path.exists(filepath):
-            self.log_error(f"File not found: " + filepath)
+        if filepath == "":
+            self.log_error(f"File not found")
             return
         tosave = []
         nodes = dict(self.pipelineWindow.pipelinePanel.nodegraph.nodes)

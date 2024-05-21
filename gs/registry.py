@@ -1,3 +1,4 @@
+### modified from GimelStudio
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #
@@ -13,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
-from GimelStudio.utils import NodeExistsError, NodeNotFoundError
 
 # The node registry is simply a python dictionary holding all of the available
 # nodes in this application session. To be registered means that is is use-able in
@@ -32,7 +31,8 @@ def RegisterNode(node, idname=""):
         raise TypeError("Please specify the idname of the node you want to register!")
     else:
         if idname in NODE_REGISTRY:
-            raise NodeExistsError(idname)
+            # raise NodeExistsError(idname)
+            print(f"Node with idname '{idname}' already exists in the registry.")
 
         NODE_REGISTRY[idname] = node
 
@@ -46,6 +46,7 @@ def UnregisterNode(idname):
         raise TypeError("Please specify the idname of the node you want to unregister!")
     else:
         if idname not in NODE_REGISTRY:
-            raise NodeNotFoundError(idname)
+            # raise NodeNotFoundError(idname)
+            print(f"Node with idname '{idname}' does not exist in the registry.")
         else:
             del NODE_REGISTRY[idname]

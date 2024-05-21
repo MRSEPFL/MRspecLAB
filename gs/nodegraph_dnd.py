@@ -14,11 +14,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-import os
 import wx
-
-import gimelstudio.constants as const
-
 
 class NodeGraphDropTarget(wx.DropTarget):
     def __init__(self, window, *args, **kwargs):
@@ -61,33 +57,33 @@ class NodeGraphDropTarget(wx.DropTarget):
         return wx.DragCopy
 
     def OnFileDrop(self):
-        for filename in self._fileDropData.GetFilenames():
-            try:
-                filetype = os.path.splitext(filename)[1]
+        # for filename in self._fileDropData.GetFilenames():
+        #     try:
+        #         filetype = os.path.splitext(filename)[1]
                 
-                if filetype.lower() in const.SUPPORTED_FT_SAVE_LIST:
-                    if os.path.exists(filename) is True:
-                        # Create Image node with path
-                        node = self._window.AddNode("corenode_image", pos=(0, 0),
-                                                    nodeid=None, location="CURSOR")
-                        node.NodeEditProp(idname="file_path",
-                                          value=filename, render=False)
-                        node.ToggleExpand()
-                        node.NodeDndEventHook()
-                        self._window.UpdateNodegraph()
+        #         if filetype.lower() in const.SUPPORTED_FT_SAVE_LIST:
+        #             if os.path.exists(filename) is True:
+        #                 # Create Image node with path
+        #                 node = self._window.AddNode("corenode_image", pos=(0, 0),
+        #                                             nodeid=None, location="CURSOR")
+        #                 node.NodeEditProp(idname="file_path",
+        #                                   value=filename, render=False)
+        #                 node.ToggleExpand()
+        #                 node.NodeDndEventHook()
+        #                 self._window.UpdateNodegraph()
 
-                    else:
-                        self.ShowError()
+        #             else:
+        #                 self.ShowError()
 
-                else:
-                    dlg = wx.MessageDialog(None,
-                                           _("That file type isn't currently supported!"),
-                                           _("Cannot Open File!"), style=wx.ICON_EXCLAMATION)
-                    dlg.ShowModal()
-                    return False
+        #         else:
+        #             dlg = wx.MessageDialog(None,
+        #                                    _("That file type isn't currently supported!"),
+        #                                    _("Cannot Open File!"), style=wx.ICON_EXCLAMATION)
+        #             dlg.ShowModal()
+        #             return False
 
-            except Exception as error:
-                self.ShowError(error)
+        #     except Exception as error:
+        #         self.ShowError(error)
 
         return wx.DragCopy
 

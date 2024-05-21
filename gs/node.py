@@ -1,3 +1,4 @@
+### modified from GimelStudio
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #
@@ -14,14 +15,26 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-import os.path
 import wx
 from gsnodegraph.gsnodegraph.node.node import NodeBase as NodeView
 
-from ... import constants as const
-# from GimelStudio.utils_interface import ResizeKeepAspectRatio, ConvertImageToWx
-from ...core import EvalInfo, Image
+class EvalInfo(object):
+    """
+    Evaluate node properties and parameters
+    """
+    def __init__(self, node):
+        if node is None:
+            raise TypeError
+        self.node = node
 
+    def EvaluateProperty(self, name):
+        prop = self.node.properties[name]
+        if prop.binding:
+            # Evaluate the next node
+            binding = prop.binding
+            info = EvalInfo(binding[0])
+            return binding[0].EvaluateNode(info)[binding[1]]
+        return prop.value
 
 class Node(NodeView):
     def __init__(self, nodegraph, id):

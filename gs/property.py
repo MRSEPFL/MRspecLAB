@@ -1,3 +1,4 @@
+### modified from GimelStudio/core/node/property.py
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #
@@ -14,22 +15,26 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-from GimelStudio.core import Image
-
-import os
 import wx
 from wx import stc
+from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpbar
-from gswidgetkit import (NumberField, EVT_NUMBERFIELD,
-                         Button, EVT_BUTTON, TextCtrl,
-                         Label, DropDown, EVT_DROPDOWN, 
-                         ColorPickerButton, EVT_COLORPICKER_BUTTON)
+from gswidgetkit import (NumberField, EVT_NUMBERFIELD, TextCtrl, DropDown, EVT_DROPDOWN)
 
-from GimelStudio.constants import (AREA_BG_COLOR, PROP_BG_COLOR, 
-                                   SUPPORTED_FT_OPEN_LIST)
-from GimelStudio.datafiles import ICON_ARROW_DOWN, ICON_ARROW_RIGHT
+PROP_BG_COLOR = "#272E35"
 
+ICON_ARROW_DOWN = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAHJJ'
+    b'REFUSIntkEENg1AQBYc6+Q7AQaUgBSdIQAJIwMG0DuqgHNqE088C6anZOe5udl4eJEny56iT'
+    b'2gY3vTrU9rfA8QTmmkTtgRF4RGGjhO/vs3D+E4k6qq+oPoDmjIRPHQvQAfdSyno1dFWirkeS'
+    b'J0myswFVsUqvSX87GAAAAABJRU5ErkJggg==')
 
+#----------------------------------------------------------------------
+ICON_ARROW_RIGHT = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAHxJ'
+    b'REFUSIntk0sNgDAQRAeCACS0DioFHCAFKUjACRIeDsBBuXAigbA05dR3np3ZT1YqFH4DaIFg'
+    b'rasNWidpAQZryGuAAYhfJrGGbLlDpj9D3JPOcuQrUVKVUH8PMAJ7lhWdR85qHoEuh3k4zU2P'
+    b'1hi0q6Teez/bWisUUjkApRFYRcDHLkcAAAAASUVORK5CYII=')
 
 class Property(object):
     def __init__(self, idname, default, fpb_label, exposed=True, 
@@ -143,45 +148,6 @@ class Property(object):
             self.expanded = True
         event.Skip()
 
-
-class ActionProp(Property):
-    """ Allows the user to click a button to perform an action. """
-    def __init__(self, idname, default="", btn_label="", action=None, fpb_label="", 
-                 exposed=True, can_be_exposed=True, expanded=True, visible=True,description=""):
-        Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible,description)
-        self.value = default
-        self.datatype = "STRING"
-        self.label = ""
-        self.btn_label = btn_label
-        if fpb_label != "":
-            self.fpb_label = fpb_label
-        else:
-            self.fpb_label = btn_label
-        self.action = action
-
-    def CreateUI(self, parent, sizer):
-        fold_panel = self.CreateFoldPanel(sizer, self.fpb_label)
-
-        self.button = Button(fold_panel, label=_(self.btn_label), size=(-1, 30))
-        self.AddToFoldPanel(sizer, fold_panel, self.button)
-        self.button.Bind(EVT_BUTTON, self.action)
-
-
-class ImageProp(Property):
-    """ Represents an RGBA Image. """
-    def __init__(self, idname, default=Image(), fpb_label="", exposed=True, 
-                 can_be_exposed=True, expanded=True, visible=True):
-        Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
-        self.value = default
-        self.datatype = "IMAGE"
-        self.label = "Image"
-
-    def CreateUI(self, parent, sizer):
-        pass
-
-
 class ChoiceProp(Property):
     """ 
     Allows the user to select from a list of choices via a Drop-down widget. 
@@ -215,111 +181,6 @@ class ChoiceProp(Property):
         if not value:
             print("Value is null!")
         self.SetValue(value)
-
-
-class ColorProp(Property):
-    """ 
-    Allows the user to select a color.
-    """
-    def __init__(self, idname, default=(255, 255, 255, 255), label="", fpb_label="", 
-                 exposed=True, can_be_exposed=True, expanded=True, visible=True,description=""):
-        Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible,description)
-        self.label = label
-
-        self.datatype = "COLOR"
-        self.label = "Color"
-
-    def CreateUI(self, parent, sizer):
-        fold_panel = self.CreateFoldPanel(sizer)
-
-        color_picker = ColorPickerButton(fold_panel,
-                                         default=self.GetValue(),
-                                         label=self.label,
-                                         size=(-1, 32))
-
-        self.AddToFoldPanel(sizer, fold_panel, color_picker, spacing=10)
-        
-        color_picker.Bind(EVT_COLORPICKER_BUTTON, self.WidgetEvent)
-
-    def WidgetEvent(self, event):
-        self.SetValue(event.value)
-
-
-class FileProp(Property):
-    """ Allows the user to select a file to open.
-
-    (e.g: use this to open an .PNG, .JPG, .JPEG image, etc.)
-    """
-    def __init__(self, idname, default="", dlg_msg="Choose file...",
-                 wildcard="All files (*.*)|*.*", btn_lbl="Choose...",
-                 fpb_label="", exposed=True, can_be_exposed=True, 
-                 expanded=True, visible=True,description=""):
-        Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible,description)
-        self.dlg_msg = dlg_msg
-        self.wildcard = wildcard
-        self.btn_lbl = btn_lbl
-
-        self.datatype = "STRING"
-        self.label = fpb_label
-
-        self._RunErrorCheck()
-
-    def _RunErrorCheck(self):
-        if type(self.value) != str:
-            raise TypeError("Value must be a string!")
-
-    def GetDlgMessage(self):
-        return self.dlg_msg
-
-    def GetWildcard(self):
-        return self.wildcard
-
-    def GetBtnLabel(self):
-        return self.btn_lbl
-
-    def CreateUI(self, parent, sizer):
-        fold_panel = self.CreateFoldPanel(sizer)
-
-        pnl = wx.Panel(fold_panel)
-        pnl.SetBackgroundColour(wx.Colour(PROP_BG_COLOR))
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.textcontrol = TextCtrl(pnl, default=self.GetValue(), size=(-1, 32))
-        hbox.Add(self.textcontrol, proportion=1, flag=wx.EXPAND | wx.BOTH)
-
-        self.button = Button(pnl, label=self.GetBtnLabel(), size=(-1, 32))
-        hbox.Add(self.button, flag=wx.LEFT, border=5)
-        self.button.Bind(EVT_BUTTON, self.WidgetEvent)
-
-        vbox.Add(hbox, flag=wx.EXPAND | wx.BOTH)
-
-        vbox.Fit(pnl)
-        pnl.SetSizer(vbox)
-
-        self.AddToFoldPanel(sizer, fold_panel, pnl)
-
-    def WidgetEvent(self, event):
-        style = wx.FD_OPEN | wx.FD_CHANGE_DIR | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW
-        dlg = wx.FileDialog(None, message=self.GetDlgMessage(), defaultDir=os.getcwd(),
-                            defaultFile="", wildcard=self.GetWildcard(), style=style)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            paths = dlg.GetPaths()
-            filetype = os.path.splitext(paths[0])[1].lower()
-
-            if filetype not in SUPPORTED_FT_OPEN_LIST:
-                dlg = wx.MessageDialog(None, _("That file type isn't currently supported!"),
-                                       _("Cannot Open Image!"), style=wx.ICON_EXCLAMATION)
-                dlg.ShowModal()
-
-            else:
-                self.SetValue(paths[0])
-                self.textcontrol.SetValue(self.GetValue())
-
 
 class StringProp(Property):
     """ 
@@ -372,7 +233,7 @@ class VectorProp(Property):
         pnl.SetBackgroundColour(wx.Colour(PROP_BG_COLOR))
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-###Changed for MRS Software to accept flotat instead of int
+###Changed for MRS Software to accept float instead of int
         self.numberfield_x = NumberField(pnl,
                                          default_value=self.value[0],
                                          label=self.labels[0],
@@ -544,21 +405,6 @@ class FloatProp(Property):
     def WidgetEvent(self, event):
         self.SetValue(event.value)
 
-
-class ImageProp(Property):
-    """ Represents an RGBA Image. """
-    def __init__(self, idname, default=Image(), fpb_label="", exposed=True, 
-                 can_be_exposed=True, expanded=True, visible=True):
-        Property.__init__(self, idname, default, fpb_label, exposed, 
-                          can_be_exposed, expanded, visible)
-        self.value = default
-        self.datatype = "IMAGE"
-        self.label = "Image"
-
-    def CreateUI(self, parent, sizer):
-        pass
-
-                
 ##added for MRS software
 class TransientsProp(Property):
     """ Example property. """
@@ -572,6 +418,3 @@ class TransientsProp(Property):
         
     def CreateUI(self, parent, sizer):
         pass
-
-
-    
