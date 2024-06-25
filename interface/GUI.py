@@ -109,7 +109,7 @@ class MyFrame(wxglade_out.MyFrame):
         tosave = [tosave]
         wires = list(self.pipelineWindow.pipelinePanel.nodegraph.wires)
         tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
-        print(tosave)
+        # print(tosave)
         with open(filepath, 'wb') as f:
             pickle.dump(tosave, f)
         if event is not None: event.Skip()
@@ -168,20 +168,6 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
     
     def on_button_step_processing(self, event):
-        # if not self.processing:
-        #     self.pipeline=self.retrievePipeline()
-        #     self.steps = [self.processing_steps[step]() for step in self.pipeline]
-        #     self.processing = True
-        #     self.next = False
-        #     self.button_terminate_processing.Enable()
-        #     # self.button_terminate_processing.SetBitmap(self.bmpterminatecolor)
-
-        #     thread = threading.Thread(target=self.processPipeline, args=())
-        #     thread.start()
-        #     # self.processPipeline()
-        # else:
-        #     self.next = True
-        # if event is not None:event.Skip()
         self.button_step_processing.Disable()
         self.button_auto_processing.Disable()
         if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 

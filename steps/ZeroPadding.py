@@ -6,9 +6,7 @@ class ZeroPadding(ProcessingStep):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Zero padding",
-            "author": "MRSoftware",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
+            "author": "CIBM",
             "description": "Adds factor times the length of the data with zeros",
         }
         self.parameters = [

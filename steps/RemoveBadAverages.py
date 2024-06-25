@@ -7,8 +7,6 @@ class RemoveBadAverages(ProcessingStep):
         self.meta_info = {
             "label": "Remove Bad Averages",
             "author": "CIBM",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
             "description": "Removes bad quality data via z-test",
         }
         self.parameters = [

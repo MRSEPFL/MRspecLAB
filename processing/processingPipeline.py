@@ -210,7 +210,7 @@ def analyseResults(self):
     def request_basisfile():
         basisfile = ""
         self.log_info("Requesting basisfile from user...")
-        while basisfile is "" or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+        while basisfile == "" or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
             self.log_warning("Basis set not found:\n\t", basisfile)
             dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
             if dlg.ShowModal() == wx.ID_CANCEL:

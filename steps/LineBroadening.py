@@ -7,8 +7,6 @@ class LineBroadening(ProcessingStep):
         self.meta_info = {
             "label": "Line Broadening",
             "author": "CIBM",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
             "description": "Shifts spectra in the frequency domain by factor * pi",
         }
         self.parameters = [

@@ -16,7 +16,7 @@
 # ----------------------------------------------------------------------------
 
 import wx
-from gsnodegraph.gsnodegraph.node.node import NodeBase as NodeView
+from gsnodegraph import NodeBase as NodeView
 
 class EvalInfo(object):
     """

@@ -8,8 +8,6 @@ class FreqPhaseAlignment(ProcessingStep):
         self.meta_info = {
             "label": "Frequency and Phase Alignment",
             "author": "CIBM",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
             "description": "Performs frequency and phase alignment"
         }
         self.parameters = [

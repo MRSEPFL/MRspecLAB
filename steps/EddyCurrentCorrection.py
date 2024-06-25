@@ -7,8 +7,6 @@ class EddyCurrentCorrection(ProcessingStep):
         self.meta_info = {
             "label": "Eddy Current Correction",
             "author": "CIBM",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
             "description": "Performs Eddy Current Correction",
         }
         self.parameters = [

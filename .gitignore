@@ -5,3 +5,7 @@ lcmodel/lcmodel
 lcmodel/lcmodel.exe
 *.pipe
 *.pickle
+*.spec
+build/
+dist/
+!dist/*.zip

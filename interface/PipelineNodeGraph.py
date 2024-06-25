@@ -9,12 +9,173 @@ import ctypes
 try: ctypes.windll.shcore.SetProcessDpiAwareness(True)
 except Exception: pass
 
-from gsnodegraph.nodes import InputNode
-from gsnodegraph.nodegraph import NodeGraph
-from gsnodegraph.gsnodegraph import (EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_NODECONNECT, EVT_GSNODEGRAPH_NODEDISCONNECT, EVT_GSNODEGRAPH_MOUSEZOOM, EVT_GSNODEGRAPH_ADDNODEBTN)
+#Added for MRS software to fix a bug in the UI (disable connection from input to output)
+from gsnodegraph.constants import SOCKET_INPUT
+
+from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_NODECONNECT, EVT_GSNODEGRAPH_NODEDISCONNECT, EVT_GSNODEGRAPH_MOUSEZOOM, EVT_GSNODEGRAPH_ADDNODEBTN)
         
 import builtins
 builtins.__dict__['_'] = wx.GetTranslation
+
+class Output(object):
+    def __init__(self, idname, datatype, label, visible=True):
+        self.idname = idname
+        self.datatype = datatype
+        self.label = label 
+        self.visible = visible
+
+class InputNode(NodeBase):
+    """ Example node showing an input node. """
+    def __init__(self, nodegraph, _id):
+        NodeBase.__init__(self, nodegraph, _id)
+
+        self.label = "Input"
+        self.category = "INPUT"
+        self.is_input = True
+
+        self.outputs = {
+            "transients": Output(idname="transients", datatype="TRANSIENTS", label="Transients")
+        }
+
+class NodeGraph(NodeGraphBase): # modified for MRS software
+    def __init__(self, parent, registry, config, *args, **kwargs):
+        NodeGraphBase.__init__(self, parent, registry, config, *args, **kwargs)
+
+    def OnLeftUp(self, event):
+        pnt = event.GetPosition()
+        winpnt = self.CalcMouseCoords(pnt)
+
+        # Clear selection bbox and set nodes as selected
+        if self.bbox_rect != None:
+            self.sel_nodes = self.BoxSelectHitTest(self.bbox_rect)
+            for node in self.sel_nodes:
+                if node.IsSelected() != True and node.IsActive() != True:
+                    node.SetSelected(True)
+
+        # Attempt to make a connection
+        if self.src_node != None:
+            dst_node = self.HitTest(winpnt)
+            
+            if dst_node is not None:
+                dst_socket = dst_node.HitTest(winpnt)
+
+                # Make sure not to allow different datatypes or
+                # the same 'socket type' to be connected!
+                if dst_socket is not None:
+                    if (self.src_socket.direction != dst_socket.direction
+                        and self.src_socket.datatype == dst_socket.datatype
+                        and self.src_node != dst_node):
+
+                        # Only allow a single wire to be connected to any one input.
+                        if self.SocketHasWire(dst_socket) is not True:
+                            #Added for MRS software to fix a bug in the UI (disable connection from input to output)
+
+                            if dst_socket.direction is SOCKET_INPUT:
+                                self.ConnectNodes(self.src_socket, dst_socket)
+
+                        # If there is already a connection,
+                        # but a wire is "dropped" into the socket
+                        # disconnect the last connection and
+                        # connect the current wire.
+                        else:
+                            for wire in self.wires:
+                                if wire.dstsocket == dst_socket:
+                                    dst = wire.dstsocket
+                                    src = wire.srcsocket
+                                    self.DisconnectNodes(src, dst)
+
+                            self.ConnectNodes(self.src_socket, dst_socket)
+
+            # Send event to update the properties panel
+            if self.last_active_node is None:
+                self.SendNodeSelectEvent()
+            if self.last_active_node is not self.src_node:
+                self.SendNodeSelectEvent()
+            self.last_active_node = self.src_node
+
+
+        # Reset all values
+        self.src_node = None
+        self.src_socket = None
+        self.tmp_wire = None
+        self.bbox_start = None
+        self.bbox_rect = None
+
+        # Update add node button and send button event if it was clicked
+        pnt = event.GetPosition()
+        if self.MouseInAddNodeBtn(pnt) is True:
+            self.addnode_btn.SetClicked(False)
+            self.SendAddNodeBtnEvent()
+
+        # Refresh the nodegraph
+        self.UpdateNodeGraph()
+
+    def OnDeleteNode(self, event):
+        if (self.active_node != None and
+            self.active_node.IsOutputNode() != True and not isinstance(self.active_node, InputNode)): ##Changed for MRS
+            self.DeleteNode(self.active_node)
+            self.active_node = None
+
+        # Update the properties panel so that the deleted
+        # nodes' properties are not still shown!
+        self.SendNodeSelectEvent()
+
+        self.UpdateNodeGraph()
+
+    def DeleteNodes(self):
+        """ Delete the currently selected nodes. This will refuse
+        to delete the Output Composite node though, for obvious reasons.
+        """
+        for node in self.sel_nodes:
+            if (node.IsOutputNode() != True and not isinstance(node, InputNode)):##Changed for MRS
+                self.DeleteNode(node)
+            else:
+                # In the case that this is an output node, we
+                # want to deselect it, not delete it. :)
+                node.SetSelected(False)
+        self.sel_nodes = []
+
+        if (self.active_node != None and
+            self.active_node.IsOutputNode() != True and not isinstance(node, InputNode)):##Changed for MRS
+            self.DeleteNode(self.active_node)
+            self.active_node = None
+
+        # Update the properties panel so that the deleted
+        # nodes' properties are not still shown!
+        self.SendNodeSelectEvent()
+
+        self.UpdateNodeGraph()
+
+    def DuplicateNode(self, node):
+        """ Duplicates the given ``Node`` object with its properties.
+        :param node: the ``Node`` object to duplicate
+        :returns: the duplicate ``Node`` object
+        """
+        if (node.IsOutputNode() is not True and not isinstance(node, InputNode)): #changed for MRS softfare
+            duplicate_node = self.AddNode(node.GetIdname(), location="CURSOR")
+
+            # TODO: Assign the same properties to the duplicate node object
+
+            self.UpdateNodeGraph()
+            return duplicate_node
+    
+    def GetInputNode(self): ##added for MRS Software
+        """ Return the input node object. """
+        for node_id in self.nodes:
+            node = self.nodes[node_id]
+            # if node.IsInputNode():
+            if isinstance(node, InputNode):
+                return node
+    
+    def DisconnectNodes(self, src_socket, dst_socket):
+        for wire in self.wires:
+            if wire.srcsocket is src_socket and wire.dstsocket is dst_socket:
+                self.wires.remove(wire)
+                src_socket.wires.remove(wire)        #Added for MRS software, because when there is a  disconnection the list of the socket does not suppress the wire
+                dst_socket.wires.remove(wire)        #Added for MRS software, because when there is a  disconnection the list of the socket does not suppress the wire
+                wire.dstsocket.node.EditConnection(wire.dstsocket.idname, None, None)
+
+        self.SendNodeDisconnectEvent()
 
 class NodeGraphPanel(wx.Panel):
     def __init__(self, parent, *args, **kwargs):

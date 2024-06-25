@@ -10,9 +10,7 @@ class QualityMatrix(ProcessingStep):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Quality Matrix",
-            "author": "MRSoftware",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
+            "author": "CIBM",
             "description": "Shows SNR and water reference quality metrics",
         }
         super().__init__(nodegraph, id)

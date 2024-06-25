@@ -1,3 +1,4 @@
+### mod
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #
@@ -18,9 +19,7 @@ import wx
 import wx.lib.agw.flatmenu as flatmenu
 from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpb
-from gswidgetkit.buttons import Button
-from gswidgetkit.label import  Label
-from gswidgetkit.buttons import EVT_BUTTON
+from gswidgetkit import Label, Button, EVT_BUTTON
 
 AREA_BG_COLOR = "#1E2429"
 AREA_TOPBAR_COLOR = "#20272C"

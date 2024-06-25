@@ -7,8 +7,6 @@ class Average(ProcessingStep):
         self.meta_info = {
             "label": "Averaging",
             "author": "CIBM",
-            "version": (0, 0, 0),
-            "category": "QUALITY CONTROL",
             "description": "Averages all input spectra into one"
         }
         super().__init__(nodegraph, id)
