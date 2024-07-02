@@ -5,14 +5,15 @@ import matplotlib
 from suspect import MRSData
 from inout.readcoord import ReadlcmCoord
 
-def plot_ima(data, figure: matplotlib.figure, title=None):
+def plot_mrs(data, figure: matplotlib.figure, title=None):
     if isinstance(data, str):
         filepath = data
         if filepath == "" or not os.path.exists(filepath):
             print(f"File not found:\n\t{filepath}")
             return
         data = suspect.io.load_siemens_dicom(filepath)
-        if title is None: title = filepath
+        if title is None:
+            title = filepath.rsplit(os.path.sep, 1)[1]
     elif isinstance(data, MRSData):
         data = [data]
     elif not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):

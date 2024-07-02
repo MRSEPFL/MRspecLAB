@@ -1,8 +1,8 @@
 import wx
 
 from gs.registry import NODE_REGISTRY
-from gs.addnode_menu import AddNodeMenu
-from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
+from .node_add import AddNodeMenu
+from utils.colours import(XISLAND1)
 
 ID_ADDNODEMENU = wx.NewIdRef()
 import ctypes
@@ -10,9 +10,8 @@ try: ctypes.windll.shcore.SetProcessDpiAwareness(True)
 except Exception: pass
 
 #Added for MRS software to fix a bug in the UI (disable connection from input to output)
+from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_ADDNODEBTN)
 from gsnodegraph.constants import SOCKET_INPUT
-
-from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_NODECONNECT, EVT_GSNODEGRAPH_NODEDISCONNECT, EVT_GSNODEGRAPH_MOUSEZOOM, EVT_GSNODEGRAPH_ADDNODEBTN)
         
 import builtins
 builtins.__dict__['_'] = wx.GetTranslation
@@ -193,7 +192,7 @@ class NodeGraphPanel(wx.Panel):
         topbar_sizer.AddGrowableCol(2)
         topbar.SetSizer(topbar_sizer)
         self.available_registery_nodes = NODE_REGISTRY
-        print(self.available_registery_nodes)
+        # print(self.available_registery_nodes)
         self.available_registery_nodes = dict(sorted(self.available_registery_nodes.items()))
         self.registry =self.available_registery_nodes.copy()
         self.registry["input_nodeid"] = InputNode

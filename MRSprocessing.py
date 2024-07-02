@@ -1,5 +1,5 @@
-from interface.GUI import MyApp
+from interface.main_frame import MainApp
 
 if __name__ == "__main__":
-    app = MyApp(0)
+    app = MainApp(0)
     app.MainLoop()

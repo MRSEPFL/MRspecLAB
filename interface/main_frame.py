@@ -6,19 +6,15 @@ import importlib.util
 import threading
 import suspect
 import pickle
-import time
-
-import constants
-from . import wxglade_out
-from .plots import plot_ima, plot_coord
-from inout.readcoord import ReadlcmCoord
-from processing import processingPipeline
-from .wxglade_out import PlotFrame
-from . import pipeline_window
-
 from datetime import datetime
 
-from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
+from .main_layout import LayoutFrame
+from .plot_helpers import plot_mrs, plot_coord
+from inout.readcoord import ReadlcmCoord
+from processing import processingPipeline
+from .plot_frame import PlotFrame
+from . import pipeline_window
+from utils.colours import(XISLAND1,XISLAND2,INFO_COLOR,ERROR_COLOR,WARNING_COLOR,DEBUG_COLOR)
 
 myEVT_LOG = wx.NewEventType()
 EVT_LOG = wx.PyEventBinder(myEVT_LOG, 1)
@@ -31,23 +27,21 @@ class LogEvent(wx.PyCommandEvent):
     def GetText(self): return self.text
     def GetColour(self): return self.colour
     
-class MyFrame(wxglade_out.MyFrame):
+class MainFrame(LayoutFrame):
 
     def __init__(self, *args, **kwds):
-        wxglade_out.MyFrame.__init__(self, *args, **kwds)
+        LayoutFrame.__init__(self, *args, **kwds)
 
         self.processing_steps, self.rootPath = self.retrieve_steps() # dictionary of processing steps definitions
         self.pipelineWindow = pipeline_window.PipelineWindow(parent=self) # /!\ put this after retrieve_steps
-        self.pipeline, self.steps = self.retrievePipeline() # list of processing step instances in pipeline, should be changed to strings only
+        self.pipeline, self.steps = self.retrieve_pipeline() # list of processing step instances in pipeline, should be changed to strings only
 
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         
-        self.processing = False
-        self.fast_processing = False
-        self.next = False
+        self.current_step = 0
         self.show_editor = True
         self.debug = True
         self.save_raw = False
@@ -63,11 +57,27 @@ class MyFrame(wxglade_out.MyFrame):
             self.inputwref_dt.OnDropFiles(None, None, filepaths_wref)
         self.on_toggle_editor(None)
         
-        self.bmpterminatecolor= wx.Bitmap("resources/terminate.png")
-        self.bmpRunLCModel= wx.Bitmap("resources/run_lcmodel.png")
+        self.bmpterminatecolor = wx.Bitmap("resources/terminate.png")
+        self.bmpRunLCModel = wx.Bitmap("resources/run_lcmodel.png")
 
-        self.current_step=0
-        self.proces_completion =False
+        self.reset()
+
+    def reset(self, event=None):
+        self.processing = False
+        self.fast_processing = False
+        self.button_terminate_processing.Disable()
+        self.button_step_processing.Enable()
+        self.button_auto_processing.Enable()
+        self.button_open_pipeline.Enable()
+        self.DDstepselection.Clear()
+        self.DDstepselection.AppendItems("")
+        self.DDstepselection
+        if self.current_step >= len(self.steps):
+            self.button_step_processing.SetBitmap(self.bmp_steppro)
+        self.button_auto_processing.SetBitmap(self.bmp_autopro)
+        self.current_step = 0
+        self.Layout()
+        if event is not None: event.Skip()
     
     def retrieve_steps(self):
         rootPath = os.path.dirname(__file__)
@@ -134,7 +144,7 @@ class MyFrame(wxglade_out.MyFrame):
             dst = self.pipelineWindow.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
             self.pipelineWindow.pipelinePanel.nodegraph.ConnectNodes(src, dst)
         self.pipelineWindow.pipelinePanel.nodegraph.Refresh()
-        self.pipeline, self.steps = self.retrievePipeline()
+        self.pipeline, self.steps = self.retrieve_pipeline()
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
         event.Skip()
 
@@ -155,7 +165,7 @@ class MyFrame(wxglade_out.MyFrame):
         self.read_file(None, filepath)
         event.Skip()
 
-    def OnPlotClick(self, event):
+    def on_plot_click(self, event):
         if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
             self.consoltext.AppendText("Need to process the data before plotting the results\n")
             return
@@ -164,16 +174,16 @@ class MyFrame(wxglade_out.MyFrame):
             self.consoltext.AppendText("The step has not been performed yet\n")
             return
         self.matplotlib_canvas.clear()
-        plot_ima(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
+        plot_mrs(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
         event.Skip()
     
     def on_button_step_processing(self, event):
+        self.pipelineWindow.Hide()
+        self.button_open_pipeline.Disable()
         self.button_step_processing.Disable()
         self.button_auto_processing.Disable()
-        if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
+        if 0 < self.current_step:
             self.button_terminate_processing.Disable()
-        self.progress_bar.SetValue(0)
-        self.progress_bar.Update(100, 15000)
         for filepath in self.inputMRSfiles_dt.filepaths:
             if not os.path.exists(filepath):
                 self.log_error(f"File not found:\n\t{filepath}")
@@ -183,7 +193,7 @@ class MyFrame(wxglade_out.MyFrame):
                 self.log_error(f"File not found:\n\t{filepath}")
                 return
 
-        thread_processing = threading.Thread(target=self.processPipeline, args=())
+        thread_processing = threading.Thread(target=processingPipeline.processPipeline, args=[self])
         thread_processing.start()
         event.Skip()
         
@@ -191,16 +201,14 @@ class MyFrame(wxglade_out.MyFrame):
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
-            self.log_error("Autorun Paused")
+            self.log_info("AUTORUN PAUSED")
         else:
             self.button_auto_processing.SetBitmap(self.bmp_pause)
             self.button_step_processing.Disable()
-            self.log_error("Autorun Activated")
-            if 0<self.current_step:  #because if it is equal to zero(procesing haven't began) the button is disable anyway 
+            self.log_info("AUTORUN ACTIVATED")
+            if 0 < self.current_step:
                 self.button_terminate_processing.Disable()
-            self.progress_bar.SetValue(0)
-            self.progress_bar.Update(100, 15000)
-            thread_processing = threading.Thread(target=self.autorun_pipeline_exe, args=())
+            thread_processing = threading.Thread(target=processingPipeline.autorun_pipeline_exe, args=[self])
             thread_processing.start()
         event.Skip()
 
@@ -241,65 +249,6 @@ class MyFrame(wxglade_out.MyFrame):
         self.log_info(f"Control file set to:\n\t{filepath}")
         event.Skip()
 
-    def PostStepProcessingGUIChanges(self):
-        if self.current_step == len(self.steps) + 1:
-            self.log_info("Processing completed, no further steps")
-            self.progress_bar_LCModel_info.SetLabel("LCModel: (1/1)" )
-
-        if self.proces_completion:
-            if self.current_step == len(self.steps) + 1:
-                self.DDstepselection.AppendItems("lcmodel")
-            else:
-                self.DDstepselection.AppendItems(str(self.current_step) + self.steps[self.current_step-1].__class__.__name__)
-            self.DDstepselection.SetSelection(self.current_step)
-
-            if self.current_step==1:
-                self.pipelineWindow.Hide()
-                self.button_open_pipeline.Disable()
-
-            
-            self.progress_bar.Update(0,50)
-            time.sleep(0.100)
-            self.progress_bar.Update(100-self.progress_bar.GetValue(),200)
-            if 0<=self.current_step and self.current_step<=(len(self.steps)):
-                self.updateprogress(self.steps[self.current_step-1],self.current_step,len(self.steps))
-        else:
-            self.progress_bar.Update(1,50)
-            time.sleep(0.100)
-            self.progress_bar.SetValue(0)
-            if 0==self.current_step:
-                self.on_terminate_processing(None)
-
-            
-            
-            
-        if 0<=self.current_step and self.current_step<=(len(self.steps)) and self.fast_processing==False:
-                self.button_step_processing.Enable()
-                self.button_auto_processing.Enable()
-                
-        if 0<self.current_step and self.fast_processing==False:##Can't be with the condition above because if the loading of the file failed, the current step will be 0 and thus the button must be disabled
-            self.button_terminate_processing.Enable()
-           
-        if self.current_step==(len(self.steps)):
-            self.button_step_processing.SetBitmap(self.bmpRunLCModel)
-            
-        #After Fast Processing update
-        if self.fast_processing==True and self.current_step<=(len(self.steps)):
-            self.progress_bar.SetValue(0)
-            self.progress_bar.Update(100, 10000)
-        elif self.fast_processing==True and self.current_step==(len(self.steps)+1):#When the fast processing finish all the execution (LCMODEL)
-            self.button_auto_processing.SetBitmap(self.bmp_autopro)
-            self.button_auto_processing.Disable()
-            self.button_terminate_processing.Enable()
-            
-        self.proces_completion=False
-
-    def updateprogress(self,current_step,current_step_index,totalstep):
-        self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):" +  " " +current_step.__class__.__name__ )
-        # self.progress_bar_info.SetLabel("Progress ("+str(current_step_index)+ "/"+str(totalstep)+"):"+"\n"+str(current_step_index)+" - "+ current_step.__class__.__name__ )
-
-
-
     def read_file(self, event, filepath=None, new_window=False):
         if filepath is None:
             index = self.inputwref_drag_and_drop_list.GetSelection()
@@ -328,6 +277,11 @@ class MyFrame(wxglade_out.MyFrame):
             canvas.draw()
             dtab = '\n\t\t'
             text.SetValue("")
+
+            def pad_string(input_str, desired_length):
+                desired_length = int(desired_length)    
+                return input_str.ljust(desired_length)
+
             text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
                                     + f"""\tMetabolites:\n\t\t{dtab.join([f"{pad_string(c['name'], 4)}: (±{pad_string(str(c['SD']) + '%', 3)}, Cr: {str(c['c_cr'])})" for c in f['conc']])}\n""")
@@ -346,7 +300,7 @@ class MyFrame(wxglade_out.MyFrame):
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
             canvas.clear()
-            plot_ima(flist, canvas.figure, title=filepath)
+            plot_mrs(flist, canvas.figure, title=filepath)
             canvas.draw()
             text.SetValue("")
             info = f"File: {filepath}"
@@ -365,35 +319,6 @@ class MyFrame(wxglade_out.MyFrame):
             text.WriteText(info)
         if event is not None: event.Skip()
         return
-
-    def processPipeline(self):
-        return processingPipeline.processPipeline(self)
-    
-    def autorun_pipeline_exe(self):
-        return processingPipeline.autorun_pipeline_exe(self)
-    
-    def on_terminate_processing(self, event):
-        # self.processing = False
-        self.fast_processing = False
-        self.button_terminate_processing.Disable()
-        self.button_step_processing.Enable()
-        self.button_auto_processing.Enable()
-        self.button_open_pipeline.Enable()
-        self.DDstepselection.Clear()
-        self.DDstepselection.AppendItems("")
-        self.DDstepselection
-        if self.current_step >=(len(self.steps)):
-            self.button_step_processing.SetBitmap(self.bmp_steppro)
-
-        self.current_step=0 
-        self.progress_bar_info.SetLabel("Progress (0/0):")
-        self.progress_bar_LCModel_info.SetLabel("LCModel: (0/1)" )
-
-        self.progress_bar.SetValue(0)
-        self.button_auto_processing.SetBitmap(self.bmp_autopro)
-        # self.matplotlib_canvas.clear()
-        self.Layout()
-        if event is not None: event.Skip()
         
     def on_DDstepselection_select(self, event):
         selected_item = self.DDstepselection.GetValue()
@@ -426,7 +351,7 @@ class MyFrame(wxglade_out.MyFrame):
                     return
             self.log_warning("Step not found")
 
-    def retrievePipeline(self):
+    def retrieve_pipeline(self):
         current_node = self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
         pipeline = []
         steps = []
@@ -466,20 +391,20 @@ class MyFrame(wxglade_out.MyFrame):
         event.Skip()
 
     def log_info(self, *args):
-        colour = constants.INFO_COLOR
+        colour = INFO_COLOR
         self.log_text(colour, *args)
 
     def log_error(self, *args):
-        colour = constants.ERROR_COLOR
+        colour = ERROR_COLOR
         self.log_text(colour, *args)
 
     def log_warning(self, *args):
-        colour = constants.WARNING_COLOR
+        colour = WARNING_COLOR
         self.log_text(colour, *args)
 
     def log_debug(self, *args):
         if not self.debug: return
-        colour = constants.DEBUG_COLOR
+        colour = DEBUG_COLOR
         self.log_text(colour, *args)
 
     def on_close(self, event):
@@ -492,19 +417,13 @@ class MyFrame(wxglade_out.MyFrame):
                 pickle.dump(tosave, f)
         self.Destroy()
         
-    def OnResize(self,event):
+    def OnResize(self, event):
         self.Layout()
         self.Refresh()
 
-class MyApp(wx.App):
+class MainApp(wx.App):
     def OnInit(self):
-        self.frame = MyFrame(None, wx.ID_ANY, "")
+        self.frame = MainFrame(None, wx.ID_ANY, "")
         self.SetTopWindow(self.frame)
         self.frame.Show()
         return True
-    
-    
-def pad_string(input_str, desired_length):
-
-    desired_length = int(desired_length)    
-    return input_str.ljust(desired_length)

@@ -20,11 +20,7 @@ import wx.lib.agw.flatmenu as flatmenu
 from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpb
 from gswidgetkit import Label, Button, EVT_BUTTON
-
-AREA_BG_COLOR = "#1E2429"
-AREA_TOPBAR_COLOR = "#20272C"
-TEXT_COLOR = "#dfdfdf"
-PROP_BG_COLOR = "#272E35"
+from utils.colours import AREA_BG_COLOR, AREA_TOPBAR_COLOR, TEXT_COLOR, PROP_BG_COLOR
 
 ICON_HELP = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAYJJ'

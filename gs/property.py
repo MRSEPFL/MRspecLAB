@@ -1,4 +1,4 @@
-### modified from GimelStudio/core/node/property.py
+### modified from GimelStudio
 # ----------------------------------------------------------------------------
 # Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
 #

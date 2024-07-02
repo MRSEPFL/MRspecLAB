@@ -18,10 +18,7 @@
 import wx
 import wx.adv
 import wx.stc
-from constants import(XISLAND1,XISLAND2,XISLAND3,XISLAND4,XISLAND5,XISLAND6)
-
-ACCENT_COLOR = "#3D7DC5"
-ADD_NODE_MENU_BG = "#121719"
+from utils.colours import(XISLAND2, ACCENT_COLOR, ADD_NODE_MENU_BG)
 
 class NodesVListBox(wx.VListBox):
     def __init__(self, *args, **kw):

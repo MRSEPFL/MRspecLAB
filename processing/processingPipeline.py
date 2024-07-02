@@ -17,7 +17,7 @@ from inout.readcoord import ReadlcmCoord
 from inout.readheader import DataReaders, Table
 from inout.readcontrol import readControl
 from inout.saveraw import save_raw
-from interface.plots import plot_ima, plot_coord
+from interface.plot_helpers import plot_mrs, plot_coord
 
 def loadInput(self):
     self.filepaths = []
@@ -155,7 +155,7 @@ def processStep(self, step, nstep):
     self.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
     # data plot
     figure.clear()
-    plot_ima(dataDict["output"], figure)
+    plot_mrs(dataDict["output"], figure)
     figure.suptitle("Result of " + step.__class__.__name__)
     filepath = os.path.join(steppath, "result.png")
     figure.savefig(filepath, dpi=600)
@@ -177,7 +177,7 @@ def saveDataPlot(self):
     for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original", "Result"]):
         filepath = os.path.join(self.outputpath, name + ".png")
         figure = matplotlib.figure.Figure(figsize=(12, 9))
-        plot_ima(d, figure)
+        plot_mrs(d, figure)
         figure.suptitle(name)
         figure.savefig(filepath, dpi=600)
         self.log_debug("Saved "+ str(name) +" to " + filepath)
@@ -333,7 +333,7 @@ def analyseResults(self):
     #     print(GM[centre[0], centre[1], centre[2]])
     #     print(WM[centre[0], centre[1], centre[2]])
 
-    shutil.rmtree(self.workpath) # delete work folder
+    # shutil.rmtree(self.workpath) # delete work folder
 
 def processPipeline(self):
     if self.current_step == 0:
@@ -341,20 +341,33 @@ def processPipeline(self):
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         valid_input = loadInput(self)
         if valid_input == False:
-            wx.CallAfter(self.PostStepProcessingGUIChanges)
-            self.fast_processing = False
+            self.log_error("Error loading input")
+            wx.CallAfter(self.reset)
             return
+        
     if 0 <= self.current_step and self.current_step <= len(self.steps) - 1:
         processStep(self,self.steps[self.current_step], self.current_step + 1)
+        wx.CallAfter(self.DDstepselection.AppendItems, str(self.current_step) + self.steps[self.current_step].__class__.__name__)
+        if not self.fast_processing:
+            wx.CallAfter(self.button_step_processing.Enable)
+            wx.CallAfter(self.button_auto_processing.Enable)
         self.current_step += 1
+
     elif self.current_step == len(self.steps):
         self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
         saveDataPlot(self)
+        wx.CallAfter(self.button_step_processing.SetBitmap, self.bmpRunLCModel)
         valid_analysis = analyseResults(self)
-        self.current_step += 1 ##### to change with a LCModeldone bool 
-    else: print("Error  Finished, no further steps, to changes this part")
-    wx.CallAfter(self.PostStepProcessingGUIChanges)
-    self.proces_completion = True
+        wx.CallAfter(self.DDstepselection.AppendItems, "lcmodel")
+        if self.fast_processing:
+            wx.CallAfter(self.button_auto_processing.SetBitmap, self.bmp_autopro)
+            wx.CallAfter(self.button_auto_processing.Disable)
+            wx.CallAfter(self.button_terminate_processing.Enable)
+        self.current_step += 1
+        
+    wx.CallAfter(self.DDstepselection.SetSelection, self.current_step)
+    if not self.fast_processing:
+        wx.CallAfter(self.button_terminate_processing.Enable)
 
 def autorun_pipeline_exe(self):
     while self.fast_processing and self.current_step <= len(self.steps):
