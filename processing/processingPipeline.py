@@ -1,20 +1,17 @@
-import os
-import sys
-import suspect
-import shutil
-import zipfile
+import os, sys, shutil, zipfile, time
 import numpy as np
 import matplotlib
-import time
 import wx
 from suspect import MRSData
+from suspect.io.lcmodel import write_all_files
 from spec2nii.other_formats import lcm_raw
 # import nibabel
 # import ants
 # import pandas as pd
 
+from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
-from inout.readheader import DataReaders, Table
+from inout.readheader import Table
 from inout.readcontrol import readControl
 from inout.saveraw import save_raw
 from interface.plot_helpers import plot_mrs, plot_coord
@@ -22,60 +19,53 @@ from interface.plot_helpers import plot_mrs, plot_coord
 def loadInput(self):
     self.filepaths = []
     for f in self.inputMRSfiles_dt.filepaths:
-        if not f.lower().endswith(".coord"):
-            self.filepaths.append(f)
+        if not f.lower().endswith(".coord"): self.filepaths.append(f)
     if len(self.filepaths) == 0:
         self.log_error("No files found")
         return False
-
-    self.originalWref = None
-    if len(self.inputwref_dt.filepaths)==0:
-        self.log_warning("No water reference found")
-    elif len(self.inputwref_dt.filepaths)>1:
-        self.log_error("Only one water reference is supported for now")
-        return False
-    else:
-        if self.inputwref_dt.filepaths[0].lower().endswith((".ima", ".dcm")):
-            self.originalWref  = suspect.io.load_siemens_dicom(self.inputwref_dt.filepaths[0])
-        elif self.inputwref_dt.filepaths[0].lower().endswith(".dat"):
-            self.originalWref = suspect.io.load_twix(self.inputwref_dt.filepaths[0])
-            self.originalWref = suspect.processing.channel_combination.combine_channels(self.originalWref) # temporary?
-        self.log_info("Water reference loaded: " + self.inputwref_dt.filepaths[0])
 
     self.originalData = []
     self.header = None
     vendor = None
     dtype = None
-    for i in range(len(self.filepaths)):
-        try:
-            if self.filepaths[i].lower().endswith((".ima", ".dcm")):
-                data = suspect.io.load_siemens_dicom(self.filepaths[i])
-                if vendor is None: vendor = "siemens"
-                if self.header is None: self.header, _ = DataReaders().siemens_ima(self.filepaths[i], None)
-            elif self.filepaths[i].lower().endswith(".dat"):
-                data = suspect.io.load_twix(self.filepaths[i])
-                if vendor is None: vendor = "siemens"
-                if self.header is None: self.header, _ = DataReaders().siemens_twix(self.filepaths[i], None)
-                data = suspect.processing.channel_combination.combine_channels(data) # temporary?
-            elif self.filepaths[i].lower().endswith(".sdat"):
-                data = suspect.io.load_sdat(self.filepaths[i], None) # should find .spar
-                spar = self.filepaths[i].lower()[:-5] + ".spar"
-                if vendor is None: vendor = "philips"
-                if os.path.exists(spar):
-                    if self.header is None: self.header, _ = DataReaders().philips_spar(spar, None)
-                else: self.log_warning("SPAR file not found for: " + self.filepaths[i])
-            else:
-                self.log_error("Unsupported file format: " + self.filepaths[i])
+
+    for filepath in self.filepaths:
+        try: data, header, ext, vendor = loadFile(filepath)
+        except: self.log_warning("Error loading file: " + filepath + "\n\t" + str(sys.exc_info()[0]))
+        else:
+            if data is None:
+                self.log_warning("Couldn't load file: " + filepath)
                 continue
-            if dtype is None: dtype = os.path.splitext(self.filepaths[i])[1][1:].lower() # [1:] to remove .
             if len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
-        except: self.log_warning("Error loading file: " + self.filepaths[i] + "\n\t" + str(sys.exc_info()[0]))
+            if header is None: self.log_warning("Header not found in file: " + filepath)
+            elif self.header is None:
+                self.header = header
+                dtype = ext
+                vendor = vendor
+            self.log_debug("Loaded file: " + filepath)
+    
     if len(self.originalData) == 0:
         self.log_error("No files loaded")
         return False
-    if self.header is None: self.log_warning("Header not found, crashes impending")
+    if self.header is None:
+        self.log_error("No header found")
+        return False
+
+    self.originalWref = None
+    wrefpath = None
+    if len(self.inputwref_dt.filepaths) > 1: self.log_warning("Only one water reference is supported; choosing first one")
+    if len(self.inputwref_dt.filepaths) == 0: self.log_warning("No water reference given")
+    else: wrefpath = self.inputwref_dt.filepaths[0]
+    if wrefpath is not None:
+        try: self.originalWref, _, _, _ = loadFile(wrefpath)
+        except: self.log_warning("Error loading water reference: " + wrefpath + "\n\t" + str(sys.exc_info()[0]))
+        else:
+            if self.originalWref is None: self.log_warning("Couldn't load water reference: " + wrefpath)
+            if len(self.originalWref.shape) > 1: self.originalWref = self.originalWref[0]
+            self.log_debug("Loaded water reference: " + filepath)
+
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
 
     seqkey = None
@@ -92,7 +82,8 @@ def loadInput(self):
                 break
 
     allfiles = [os.path.basename(f) for f in self.filepaths]
-    allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
+    if self.originalWref is not None:
+        allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
     prefix = os.path.commonprefix(allfiles)
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)
@@ -257,7 +248,7 @@ def analyseResults(self):
     })
     
     controlfilepath = os.path.join(self.workpath, "result")
-    suspect.io.lcmodel.write_all_files(controlfilepath, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
+    write_all_files(controlfilepath, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
     save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
@@ -337,7 +328,7 @@ def analyseResults(self):
 
 def processPipeline(self):
     if self.current_step == 0:
-        self.pipeline, self.steps = self.retrievePipeline()
+        self.pipeline, self.steps = self.retrieve_pipeline()
         self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         valid_input = loadInput(self)
         if valid_input == False:

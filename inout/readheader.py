@@ -673,7 +673,7 @@ class DataReaders():
 		write_log(log, 'Data Read: Siemens Twix') 											# Log - Twix
 		try:
 			from mapvbvd import mapVBVD  													# Siemens File Reading with pymapVBVD
-			twixObj  = mapVBVD(fname)  														# Get Twix Object
+			twixObj  = mapVBVD(fname, quiet=True)  														# Get Twix Object
 
 			if isinstance(twixObj, list) == True:
 				twixHd   = twixObj[1]['hdr'] 												# Get Twix Header Single Header
@@ -715,8 +715,12 @@ class DataReaders():
 
 		## Correct Echo/Repetition Time Units
 		if 'TE' in list(MRSinMRS.keys()):
-			MRSinMRS['TE'              ]  = float(MRSinMRS['TE'   ]) / 1e6					# Echo Time
+			if isinstance(MRSinMRS['TE'], str):
+				MRSinMRS['TE'] = float(MRSinMRS['TE'].split(' ')[0]) / 1e6
+			else: MRSinMRS['TE'              ]  = float(MRSinMRS['TE'   ]) / 1e6					# Echo Time
 		if 'TR' in list(MRSinMRS.keys()):
+			if isinstance(MRSinMRS['TR'], str):
+				MRSinMRS['TR'] = float(MRSinMRS['TR'].split(' ')[0]) / 1e6
 			MRSinMRS['TR'              ]  = float(MRSinMRS['TR'   ]) / 1e6  				# Repetition Time
 
 		write_log(log, 'Data Read: Siemens Twix - Returning MRSinMRS Dictionary') 			# Log - Note Success

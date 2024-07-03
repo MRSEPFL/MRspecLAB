@@ -290,13 +290,8 @@ class MainFrame(LayoutFrame):
         
         else:
             f = None
-            if filepath.lower().endswith((".ima", ".dcm")):
-                f = suspect.io.load_siemens_dicom(filepath)
-            elif filepath.lower().endswith(".dat"):
-                f = suspect.io.load_twix(filepath)
-                f = suspect.processing.channel_combination.combine_channels(f)
-            elif filepath.lower().endswith(".sdat"):
-                f = suspect.io.load_sdat(filepath)
+            from inout.read_mrs import loadFile
+            f, _, _, _= loadFile(filepath)
             if len(f.shape) == 1: flist = [f]
             else: flist = [f.inherit(d) for d in f]
             canvas.clear()
