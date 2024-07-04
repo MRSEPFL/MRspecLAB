@@ -167,18 +167,6 @@ class MainFrame(LayoutFrame):
             return
         self.read_file(None, filepath)
         event.Skip()
-
-    def on_plot_click(self, event):
-        if not self.dataSteps or len(self.dataSteps) <= 1: # first entry is the original data
-            self.consoltext.AppendText("Need to process the data before plotting the results\n")
-            return
-        selected_item_index = self.list_ctrl.GetFirstSelected()
-        if len(self.dataSteps) < selected_item_index + 2: # for step 1 (index 0), we should have a length of 2 (original and result of step 1)
-            self.consoltext.AppendText("The step has not been performed yet\n")
-            return
-        self.matplotlib_canvas.clear()
-        plot_mrs(self.dataSteps[selected_item_index + 1], self.matplotlib_canvas, title="Result of " + self.pipeline[selected_item_index])
-        event.Skip()
     
     def on_button_step_processing(self, event):
         self.pipelineWindow.Hide()
@@ -295,10 +283,12 @@ class MainFrame(LayoutFrame):
             f = None
             from inout.read_mrs import loadFile
             f, _, _, _= loadFile(filepath)
-            if len(f.shape) == 1: flist = [f]
-            else: flist = [f.inherit(d) for d in f]
+            if len(f.shape) > 1:
+                from suspect.processing.channel_combination import combine_channels
+                f = combine_channels(f)
+
             canvas.clear()
-            plot_mrs(flist, canvas.figure, title=filepath)
+            plot_mrs(f, canvas.figure, title=filepath)
             canvas.draw()
             text.SetValue("")
             info = f"File: {filepath}"

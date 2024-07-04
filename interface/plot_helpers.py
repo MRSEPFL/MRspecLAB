@@ -6,18 +6,12 @@ from suspect import MRSData
 from inout.readcoord import ReadlcmCoord
 
 def plot_mrs(data, figure: matplotlib.figure, title=None):
-    if isinstance(data, str):
-        filepath = data
-        if filepath == "" or not os.path.exists(filepath):
-            print(f"File not found:\n\t{filepath}")
-            return
-        data = suspect.io.load_siemens_dicom(filepath)
-        if title is None:
-            title = filepath.rsplit(os.path.sep, 1)[1]
-    elif isinstance(data, MRSData):
-        data = [data]
-    elif not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):
-        print("Invalid data type")
+    if isinstance(data, MRSData):
+        if len(data.shape) > 1:
+            data = [data.inherit(data[i]) for i in range(data.shape[0])]
+        else:
+            data = [data]
+    if not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):
         return
     if title is None: title = "Result"
     # canvas.clear()
@@ -39,12 +33,12 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     if isinstance(lcmdata, str):
         filepath = lcmdata
         if filepath == "" or not os.path.exists(filepath):
-            print(f"File not found:\n\t{filepath}")
+            # print(f"File not found:\n\t{filepath}")
             return
         lcmdata = ReadlcmCoord(filepath)
         if title is None: title = filepath
     elif not isinstance(lcmdata, dict):
-        print("Invalid data type")
+        # print("Invalid data type")
         return
     if title is None: title = ".coord file"
     
