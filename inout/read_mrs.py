@@ -2,7 +2,11 @@ import os
 import numpy
 import mapvbvd
 import suspect.io
+import pydicom.dicomio
 from suspect import MRSData
+from suspect.io._common import complex_array_from_iter
+from suspect.io.twix import calculate_orientation
+from suspect._transforms import rotation_matrix
 from .readheader import DataReaders
 
 def loadFile(filepath):
@@ -10,6 +14,9 @@ def loadFile(filepath):
     ext = os.path.splitext(filepath)[1][1:].lower()
     if ext == "ima":
         data = suspect.io.load_siemens_dicom(filepath)
+        header, _ = DataReaders().siemens_ima(filepath, None)
+    if ext == "dcm":
+        data = load_dicom(filepath)
         header, _ = DataReaders().siemens_ima(filepath, None)
     elif ext == "dat":
         data = loadVBVD(filepath) # coils not combined
@@ -33,8 +40,6 @@ def loadVBVD(filepath):
         if len(twixobj) == 1: twixobj = twixobj[0]
         if len(twixobj) == 2: twixobj = twixobj[1] # twixobj[0] is reference noise
         else: raise ValueError("Multiple acquisitions found in VBVD file.")
-
-    # complex data
     data = twixobj.image['']
     data = numpy.squeeze(data)
 
@@ -74,7 +79,6 @@ def get_transform(twixobj):
         except: pass
     if pos_sag == '' or pos_cor == '' or pos_tra == '':
         return None
-    
     pos_sag = float(pos_sag)
     pos_cor = float(pos_cor)
     pos_tra = float(pos_tra)
@@ -90,7 +94,6 @@ def get_transform(twixobj):
         except: pass
     if normal_sag == '' or normal_cor == '' or normal_tra == '':
         return None
-    
     normal_sag = float(normal_sag)
     normal_cor = float(normal_cor)
     normal_tra = float(normal_tra)
@@ -99,7 +102,6 @@ def get_transform(twixobj):
     pe_fov = float(twixobj.hdr["Config"]["VoI_PeFOV"])
     slice_thickness = float(twixobj.hdr["Config"]["VoI_SliceThickness"])
     in_plane_rot = twixobj.hdr["Config"]["VoI_InPlaneRotAngle"]
-
     normal_vector = numpy.array([normal_sag, normal_cor, normal_tra])
     if calculate_orientation(normal_vector) == "SAG": x_vector = numpy.array([0, 0, 1])
     else: x_vector = numpy.array([-1, 0, 0])
@@ -111,29 +113,7 @@ def get_transform(twixobj):
     transform = transformation_matrix(row_vector, column_vector, [pos_sag, pos_cor, pos_tra], [ro_fov, pe_fov, slice_thickness])
     return transform
 
-# taken from suspect._transforms
-def calculate_orientation(normal):
-    if normal[2] >= normal[1] - 1e-6 and normal[2] >= normal[0] - 1e-6:
-        return "TRA"
-    elif normal[1] >= normal[0] - 1e-6:
-        return "COR"
-    return "SAG"
-
-def rotation_matrix(angle, axis):
-    c = numpy.cos(angle)
-    s = numpy.sin(angle)
-    matrix = numpy.zeros((3, 3))
-    matrix[0, 0] = c + axis[0] ** 2 * (1 - c)
-    matrix[0, 1] = axis[0] * axis[1] * (1 - c) - axis[2] * s
-    matrix[0, 2] = axis[0] * axis[2] * (1 - c) + axis[1] * s
-    matrix[1, 0] = axis[1] * axis[0] * (1 - c) + axis[2] * s
-    matrix[1, 1] = c + axis[1] ** 2 * (1 - c)
-    matrix[1, 2] = axis[1] * axis[2] * (1 - c) - axis[0] * s
-    matrix[2, 0] = axis[2] * axis[0] * (1 - c) - axis[1] * s
-    matrix[2, 1] = axis[2] * axis[1] * (1 - c) + axis[0] * s
-    matrix[2, 2] = c + axis[2] ** 2 * (1 - c)
-    return matrix
-
+# adapted from suspect._transforms
 def transformation_matrix(x_vector, y_vector, translation, spacing):
     matrix = numpy.zeros((4, 4), dtype=float) # removed deprecated numpy.float
     matrix[:3, 0] = x_vector
@@ -142,7 +122,6 @@ def transformation_matrix(x_vector, y_vector, translation, spacing):
     matrix[:3, 2] = z_vector
     matrix[:3, 3] = numpy.array(translation)
     matrix[3, 3] = 1.0
-
     spacing = list(spacing)
     while len(spacing) < 4:
         spacing.append(1.0)
@@ -150,3 +129,22 @@ def transformation_matrix(x_vector, y_vector, translation, spacing):
         for j in range(4):
             matrix[i, j] *= spacing[j]
     return matrix
+
+# adapted from suspect.io.load_dicom
+def load_dicom(filename):
+    dataset = pydicom.dicomio.read_file(filename)
+    sw = dataset[0x0018, 0x9052].value
+    dt = 1.0 / sw
+    f0 = dataset[0x0018, 0x9098].value
+    te = float(dataset[0x5200, 0x9229][0][0x0018, 0x9114][0][0x0018, 0x9082].value)
+    tr = float(dataset[0x5200, 0x9229][0][0x0018, 0x9112][0][0x0018, 0x0080].value)
+    ppm0 = dataset[0x0018, 0x9053].value
+    rows = dataset[0x0028, 0x0010].value
+    cols = dataset[0x0028, 0x0011].value
+    frames = dataset[0x0028, 0x0008].value
+    num_second_spectral = dataset[0x0028, 0x9001].value
+    num_points = dataset[0x0028, 0x9002].value
+    data_shape = [frames, rows, cols, num_second_spectral, 4*num_points]
+    data_iter = iter(dataset[0x5600, 0x0020])
+    data = complex_array_from_iter(data_iter, shape=data_shape, chirality=-1)
+    return MRSData(data, dt, f0=f0, te=te, tr=tr, ppm0=ppm0)

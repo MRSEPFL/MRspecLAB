@@ -755,7 +755,7 @@ class DataReaders():
 		MRSinMRS['cc_size'        ] = image['_Nifti__pixdim'][2                       ] 	# CranioCaudal
 		MRSinMRS['TR'             ] = hdr['_standard_data'  ]['RepetitionTime'        ] 	# TR
 		MRSinMRS['TE'             ] = hdr['_standard_data'  ]['EchoTime'              ] 	# TE
-		MRSinMRS['TI'             ] = hdr['_standard_data'  ]['InversionTime'         ] 	# TI
+		# MRSinMRS['TI'             ] = hdr['_standard_data'  ]['InversionTime'         ] 	# TI
 		MRSinMRS['VectorSize'     ] = image['_Nifti__shape' ][3                       ] 	# Vector Size
 
 		MRSinMRS['FieldStrength'  ] = hdr['SpectrometerFrequency'][0                  ] 	# Field Strength
