@@ -6,3 +6,5 @@ numpy<=1.23.5 # compatibility with suspect's import functions
 antspyx
 gsnodegraph
 gswidgetkit
+pydicom
+pymapvbvd
