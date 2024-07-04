@@ -16,7 +16,7 @@
 # ----------------------------------------------------------------------------
 
 import wx
-from gsnodegraph import NodeBase as NodeView
+from gsnodegraph import NodeBase
 
 class EvalInfo(object):
     """
@@ -30,15 +30,14 @@ class EvalInfo(object):
     def EvaluateProperty(self, name):
         prop = self.node.properties[name]
         if prop.binding:
-            # Evaluate the next node
             binding = prop.binding
             info = EvalInfo(binding[0])
             return binding[0].EvaluateNode(info)[binding[1]]
         return prop.value
 
-class Node(NodeView):
+class Node(NodeBase):
     def __init__(self, nodegraph, id):
-        NodeView.__init__(self, nodegraph, id)
+        NodeBase.__init__(self, nodegraph, id)
         self.nodegraph = nodegraph
         self.id = id
         self.properties = {}
@@ -62,26 +61,13 @@ class Node(NodeView):
         self.SetEditedFlag(True)
         if render == True:
             self.NodeWidgetEventHook(idname, value)
-            # self.nodegraph.parent.parent.Render()
 
     @property
     def NodeMeta(self):
-        """ Override property for node meta information. """
-        meta_info = {
-            "label": "...",
-            "author": "N/A",
-            "version": (0, 0, 1),
-            "category": "DEFAULT",
-            "description": "...",
-        }
-        return meta_info
+        return self.meta_info
 
-    @property
-    # def GLSLRenderer(self):
-    #     return self.nodegraph.GLSLRenderer
-
-    # def GetLabel(self):
-    #     return self.NodeMeta["label"]
+    def GetLabel(self):
+        return self.NodeMeta["label"]
 
     def GetAuthor(self):
         return self.NodeMeta["author"]
@@ -97,9 +83,6 @@ class Node(NodeView):
 
     def IsOutputNode(self):
         return False
-
-    # def IsNodeCacheEnabled(self):
-    #     return self.cache_enabled
 
     def AddProperty(self, prop):
         self.properties[prop.idname] = prop
@@ -196,76 +179,12 @@ class Node(NodeView):
     def NodeDndEventHook(self):
         pass
 
-    def ClearCache(self):
-        self.cache = {}
-
-    # def RemoveFromCache(self, name):
-    #     cached = self.IsInCache(name)
-    #     if cached is True and self.IsNodeCacheEnabled() is True:
-    #         del self.cache[name]
-
-    # def IsInCache(self, name):
-    #     try:
-    #         self.cache[name]
-    #         return True
-    #     except KeyError:
-    #         return False
-
-    # def EvalProperty(self, eval_info, name):
-    #     cached = self.IsInCache(name)
-
-    #     # Basic node cache implementation
-    #     if self.IsNodeCacheEnabled() == True:
-    #         if self.GetEditedFlag() == True and cached == True:
-    #             value = self.cache[name]
-    #             self.SetEditedFlag(False)
-    #             # print("Used Cache: ", name)
-    #         else:
-    #             value = eval_info.EvaluateProperty(name)
-    #             self.cache[name] = value
-    #             self.SetEditedFlag(False)
-    #             # print("Evaluated: ", name)
-    #     else:
-    #         value = eval_info.EvaluateProperty(name)
-
-    #     return value
-
     # @property
     # def EvaluateNode(self):
     #     """ Internal method. Please do not override. """
     #     if self.IsMuted():
     #         return self.MutedNodeEvaluation
     #     return self.NodeEvaluation
-
-    # def EvalMutedNode(self, eval_info):
-    #     try:
-    #         image = self.EvalProperty(eval_info, "in_image").GetImage()
-    #     except:
-    #         image = self.EvalProperty(eval_info, "in_image_2").GetImage()
-    #     render_image = Image()
-    #     render_image.SetAsImage(image)
-    #     self.NodeUpdateThumb(render_image)
-
-    #     # TODO: support multi-outputs
-    #     return {
-    #         "image": render_image
-    #     }
-
-  #cpmmented for MRSoftware
-    # def RenderGLSL(self, path, props, image=Image((200, 200)), image2=None):
-    #     if self.shader_cache_enabled == True:
-    #         if self.shader_cache == None:
-    #             self.shader_cache = self.LoadGLSL(path)
-    #         shader = self.shader_cache
-    #     else:
-    #         shader = self.LoadGLSL(path)
-    #     self.GLSLRenderer.Render(shader, props, image, image2)
-    #     return self.GLSLRenderer.ReadNumpy()
-
-    # def LoadGLSL(self, path):
-    #     file_path = os.path.expanduser(os.path.expandvars(path))
-    #     shader_path = os.path.join(const.APP_DIR, file_path)
-    #     return self.GLSLRenderer.LoadGLSLFile(shader_path)
 
     def RefreshNodeGraph(self):
         """ Force a refresh of the Node Graph panel. """

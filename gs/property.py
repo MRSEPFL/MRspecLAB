@@ -414,7 +414,7 @@ class TransientsProp(Property):
                           can_be_exposed, visible)
         self.value = default
         self.datatype = "TRANSIENTS"
-        self.label = "transients"
+        # self.label = "transients"
         
     def CreateUI(self, parent, sizer):
         pass

@@ -83,6 +83,8 @@ class PipelineWindow(wx.Frame):
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
 
     def on_close(self, event):
+        self.Parent.retrieve_pipeline()
+        self.Parent.update_statusbar()
         self.Hide()
         
         

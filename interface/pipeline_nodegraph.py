@@ -33,7 +33,7 @@ class InputNode(NodeBase):
         self.is_input = True
 
         self.outputs = {
-            "transients": Output(idname="transients", datatype="TRANSIENTS", label="Transients")
+            "Output": Output(idname="transients", datatype="TRANSIENTS", label="Output")
         }
 
 class NodeGraph(NodeGraphBase): # modified for MRS software
@@ -203,22 +203,16 @@ class NodeGraphPanel(wx.Panel):
                 "INTEGER": "#A0A0A0",  # Grey
                 "FLOAT": "#A0A0A0",  # Grey
                 "VECTOR":"#A0A0A0",
-                "VALUE": "#A0A0A0",  # Depreciated!
+                "VALUE": "#A0A0A0",
                 "TRANSIENTS": "#FFA07A", 
             },
             "input_nodes_categories": ["INPUT"],
             "node_categories": {
-                "INPUT": "#32CD32",  # Burgendy     008000
-                "DRAW": "#AF4467",  # Pink
-                "MASK": "#084D4D",  # Blue-green
-                "CONVERT": "#564B7C",  # Purple
-                "FILTER": "#558333",  # Green
-                "BLEND": "#498DB8",  # Light blue
-                "QUALITY CONTROL": "#02ccfe",  # Light blue  B33641   ff00fe
-
-                "COLOR": "#C2AF3A",  # Yellow
-                "TRANSFORM": "#6B8B8B", # Blue-grey
-                "OUTPUT": "#B33641"  # Red
+                "INPUT": "#329D32",
+                "COIL_COMBINATION": "#B06000",
+                "PROCESSING": "#D08000",
+                "QUALITY_CONTROL": "#028cae",
+                "OUTPUT": "#B33641"
             }
         }
 
@@ -226,7 +220,8 @@ class NodeGraphPanel(wx.Panel):
 
         # For testing during development
         # Add nodes to the node graph
-        node1 = self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(200, 100))
+        node1 = self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(0, 100))
+        node11 = self.nodegraph.AddNode("CoilCombinationSVD", nodeid= 'coil_combination_svd', pos=wx.Point(200, 100))
         node2 = self.nodegraph.AddNode("ZeroPadding",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
         node3 = self.nodegraph.AddNode("LineBroadening", nodeid='linebroadening0',pos=wx.Point(600, 100))
         node4 = self.nodegraph.AddNode("FreqPhaseAlignment",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
@@ -234,7 +229,9 @@ class NodeGraphPanel(wx.Panel):
         node6 = self.nodegraph.AddNode("RemoveBadAverages",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
         node7 = self.nodegraph.AddNode("Average", nodeid='average0', pos=wx.Point(1400, 100))
         # Connect the nodes by default
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
+        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['coil_combination_svd'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['coil_combination_svd'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
         self.nodegraph.ConnectNodes(self.nodegraph.nodes['zeropadding_node0'].GetSockets()[0],self.nodegraph.nodes['linebroadening0'].GetSockets()[1])
         self.nodegraph.ConnectNodes(self.nodegraph.nodes['linebroadening0'].GetSockets()[0],self.nodegraph.nodes['freqphasealignement0'].GetSockets()[1])
         self.nodegraph.ConnectNodes(self.nodegraph.nodes['freqphasealignement0'].GetSockets()[0],self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[1])

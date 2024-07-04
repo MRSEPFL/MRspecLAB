@@ -34,12 +34,12 @@ class MainFrame(LayoutFrame):
 
         self.processing_steps, self.rootPath = self.retrieve_steps() # dictionary of processing steps definitions
         self.pipelineWindow = pipeline_window.PipelineWindow(parent=self) # /!\ put this after retrieve_steps
-        self.pipeline, self.steps = self.retrieve_pipeline() # list of processing step instances in pipeline, should be changed to strings only
+        self.retrieve_pipeline() # list of processing step instances in pipeline, should be changed to strings only
 
         self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
-        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
+        self.update_statusbar()
         
         self.current_step = 0
         self.show_editor = True
@@ -144,9 +144,12 @@ class MainFrame(LayoutFrame):
             dst = self.pipelineWindow.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
             self.pipelineWindow.pipelinePanel.nodegraph.ConnectNodes(src, dst)
         self.pipelineWindow.pipelinePanel.nodegraph.Refresh()
-        self.pipeline, self.steps = self.retrieve_pipeline()
-        self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
+        self.retrieve_pipeline()
+        self.update_statusbar()
         event.Skip()
+
+    def update_statusbar(self):
+        self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
 
     def on_toggle_editor(self, event):
         self.show_editor = not self.show_editor
@@ -160,7 +163,7 @@ class MainFrame(LayoutFrame):
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepath = fileDialog.GetPaths()[0]
         if filepath == "" or not os.path.exists(filepath):
-            print(f"File not found:\n\t{filepath}")
+            self.log_error(f"File not found:\n\t{filepath}")
             return
         self.read_file(None, filepath)
         event.Skip()
@@ -256,7 +259,7 @@ class MainFrame(LayoutFrame):
                 return
             filepath = self.inputMRSfiles_dt.filepaths[index]
         if filepath == "" or not os.path.exists(filepath):
-            print("File not found")
+            self.log_error(f"File not found:\n\t{filepath}")
             return
         if not any([filepath.lower().endswith(ext) for ext in self.supported_files]):
             self.log_error("Invalid file type")
@@ -348,8 +351,8 @@ class MainFrame(LayoutFrame):
 
     def retrieve_pipeline(self):
         current_node = self.pipelineWindow.pipelinePanel.nodegraph.GetInputNode()
-        pipeline = []
-        steps = []
+        self.pipeline = []
+        self.steps = []
         while current_node is not None:
             for socket in current_node.GetSockets():
                 if socket.direction == 1:
@@ -358,12 +361,13 @@ class MainFrame(LayoutFrame):
                         continue
                     if len(socket.GetWires()) > 1:
                         self.log_error("Only serial pipelines are allowed for now")
-                        return pipeline, steps
+                        self.pipeline = []
+                        self.steps = []
+                        return
                     for wire in socket.GetWires():
                         current_node = wire.dstsocket.node
-                        pipeline.append(current_node.label)
-                        steps.append(current_node)
-        return pipeline, steps
+                        self.pipeline.append(current_node.GetLabel())
+                        self.steps.append(current_node)
     
     def log_text(self, colour, *args):
         text = ""

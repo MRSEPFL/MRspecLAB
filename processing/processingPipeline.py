@@ -68,19 +68,33 @@ def loadInput(self):
 
     self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
 
+    # check coil combination
+    if len(self.originalData[0].shape) > 1:
+        if self.steps[0].GetCategory() != "COIL_COMBINATION":
+            self.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
+            from suspect.processing.channel_combination import combine_channels
+            self.originalData = [combine_channels(d) for d in self.originalData]
+    
+    self.dataSteps = [self.originalData]
+    self.wrefSteps = [self.originalWref]
+    self.last_wref = None
+
+    # get sequence for proper raw file saving
     seqkey = None
     for key in ["SequenceString", "Sequence"]:
         if key in self.header.keys():
             seqkey = key
             break
-    self.sequence = None # get sequence for proper raw file saving
+    self.sequence = None
     if seqkey is None: self.log_warning("Sequence not found in header")
     else:
         for seq in self.supported_sequences:
             if seq.lower() in self.header[seqkey].lower():
                 self.sequence = seq
                 break
+        if self.sequence is None: self.log_warning("Sequence not supported: " + self.header[seqkey])
 
+    # create output and work folders
     allfiles = [os.path.basename(f) for f in self.filepaths]
     if self.originalWref is not None:
         allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
@@ -99,9 +113,6 @@ def loadInput(self):
     self.workpath = os.path.join(self.rootPath, "temp")
     if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
     os.mkdir(self.workpath)
-    self.dataSteps: list[MRSData] = [self.originalData]
-    self.wrefSteps: list[MRSData] = [self.originalWref]
-    self.last_wref = None
 
     # save header.csv
     table = Table()
@@ -123,12 +134,12 @@ def processStep(self, step, nstep):
     if not self.fast_processing:
         self.button_auto_processing.Disable()
 
-    # updateprogress(self,step,nstep,len(self.steps))
     self.log_debug("Running ", step.__class__.__name__)
     start_time = time.time()
     step.process(dataDict)
     self.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
+    self.dataSteps[0] = dataDict["original"] # very illegal but allows coil combination steps
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
@@ -165,7 +176,7 @@ def processStep(self, step, nstep):
     self.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self): 
-    for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original", "Result"]):
+    for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original (after coil combination)", "Result"]):
         filepath = os.path.join(self.outputpath, name + ".png")
         figure = matplotlib.figure.Figure(figsize=(12, 9))
         plot_mrs(d, figure)
@@ -181,10 +192,8 @@ def analyseResults(self):
 
     # basis file
     larmor = 0
-    nucleus = None
     for key in ["Nucleus", "nucleus"]:
         if key in self.header.keys():
-            nucleus = self.header[key]
             if self.header[key] == "1H": larmor = 42.57747892
             elif self.header[key] == "31P": larmor = 10.705
             elif self.header[key] == "23Na": larmor = 11.262
@@ -290,20 +299,20 @@ def analyseResults(self):
     else: self.log_warning("LCModel output not found")
     
     # save nifti
-    rawpath = os.path.join(self.workpath, "result.RAW")
-    niftipath = os.path.join(self.workpath, "result.nii.gz")
-    save_raw(rawpath, result, seq=self.sequence)
-    class Args:
-        pass
-    args = Args()
-    args.file = rawpath
-    args.fileout = niftipath
-    args.bandwidth = 1 / result.dt
-    args.nucleus = nucleus
-    args.imagingfreq = result.f0
-    args.affine = None
-    imageOut, _ = lcm_raw(args)
-    imageOut[0].save(niftipath) # nifti
+    # rawpath = os.path.join(self.workpath, "result.RAW")
+    # niftipath = os.path.join(self.workpath, "result.nii.gz")
+    # save_raw(rawpath, result, seq=self.sequence)
+    # class Args:
+    #     pass
+    # args = Args()
+    # args.file = rawpath
+    # args.fileout = niftipath
+    # args.bandwidth = 1 / result.dt
+    # args.nucleus = nucleus
+    # args.imagingfreq = result.f0
+    # args.affine = None
+    # imageOut, _ = lcm_raw(args)
+    # imageOut[0].save(niftipath) # nifti
     
     # # segmentation
     # nib_image = nibabel.loadsave.load(niftipath)
@@ -328,8 +337,6 @@ def analyseResults(self):
 
 def processPipeline(self):
     if self.current_step == 0:
-        self.pipeline, self.steps = self.retrieve_pipeline()
-        self.SetStatusText("Current pipeline: " + " → ".join(self.pipeline))
         valid_input = loadInput(self)
         if valid_input == False:
             self.log_error("Error loading input")
@@ -338,7 +345,7 @@ def processPipeline(self):
         
     if 0 <= self.current_step and self.current_step <= len(self.steps) - 1:
         processStep(self,self.steps[self.current_step], self.current_step + 1)
-        wx.CallAfter(self.DDstepselection.AppendItems, str(self.current_step) + self.steps[self.current_step].__class__.__name__)
+        wx.CallAfter(self.DDstepselection.AppendItems, str(self.current_step + 1) + self.steps[self.current_step].__class__.__name__)
         if not self.fast_processing:
             wx.CallAfter(self.button_step_processing.Enable)
             wx.CallAfter(self.button_auto_processing.Enable)

@@ -12,10 +12,8 @@ def loadFile(filepath):
         data = suspect.io.load_siemens_dicom(filepath)
         header, _ = DataReaders().siemens_ima(filepath, None)
     elif ext == "dat":
-        # data = suspect.io.load_twix(filepath)
-        data = loadVBVD(filepath)
+        data = loadVBVD(filepath) # coils not combined
         header, _ = DataReaders().siemens_twix(filepath, None)
-        data = suspect.processing.channel_combination.combine_channels(data) # temporary?
     elif ext == "sdat":
         data = suspect.io.load_sdat(filepath, None) # should find .spar
         spar = filepath.lower()[:-5] + ".spar"

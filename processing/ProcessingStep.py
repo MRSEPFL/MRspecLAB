@@ -6,10 +6,10 @@ class ProcessingStep(api.Node):
     def __init__(self, nodegraph, id):
         if self.meta_info is not None:
             if "version" not in self.meta_info: self.meta_info["version"] = (0, 0, 0)
-            if "category" not in self.meta_info: self.meta_info["category"] = "QUALITY CONTROL"
+            if "category" not in self.meta_info: self.meta_info["category"] = "PROCESSING"
+        self.meta_info["label"] = self.__class__.__name__
         if nodegraph is not None:
             api.Node.__init__(self, nodegraph, id)
-        self.label = self.__class__.__name__
         self.defaultParameters = {}
         if hasattr(self, "parameters"):
             for p in self.parameters: self.defaultParameters[p.idname] = p.value
@@ -31,7 +31,7 @@ class ProcessingStep(api.Node):
 
     def NodeInitProps(self):
         transients = api.TransientsProp(
-            idname="in_transients",
+            idname="in_transients"
         )
         self.NodeAddProp(transients)
         if not hasattr(self, "parameters"): return
@@ -39,7 +39,7 @@ class ProcessingStep(api.Node):
 
     def NodeInitOutputs(self):
         self.outputs = {
-            "transients": api.Output(idname="transients", datatype="TRANSIENTS", label="Transients")
+            "transients": api.Output(idname="Output", datatype="TRANSIENTS", label="Output")
         }
 
     def get_parameter(self, key: str):
@@ -78,6 +78,7 @@ class ProcessingStep(api.Node):
         figure.tight_layout()
 
     def plotData(self, ax, data, plotfreq): # helper plotting function
+        '''Plot a list of MRSData on axes in time or frequency domain.'''
         if plotfreq:
             if self.plotPPM:
                 for d in data:
