@@ -118,10 +118,8 @@ class NodeInfoPanel(wx.Panel):
         self.node_label = Label(self, label="")
         self.help_button = Button(self, label="", flat=True, bmp=(ICON_HELP.GetBitmap(), 'left'))
 
-        nodeinfo_pnl_sizer.Add(self.node_label, (0, 1),
-                                flag=wx.TOP | wx.BOTTOM, border=10)
-        nodeinfo_pnl_sizer.Add(self.help_button, (0, 4),
-                                flag=wx.TOP | wx.BOTTOM | wx.RIGHT, border=10)
+        nodeinfo_pnl_sizer.Add(self.node_label, (0, 1), flag=wx.TOP | wx.BOTTOM, border=10)
+        nodeinfo_pnl_sizer.Add(self.help_button, (0, 4), flag=wx.TOP | wx.BOTTOM | wx.RIGHT, border=10)
         nodeinfo_pnl_sizer.AddGrowableCol(2)
         self.SetSizer(nodeinfo_pnl_sizer)
 
@@ -129,24 +127,16 @@ class NodeInfoPanel(wx.Panel):
 
     #Adapted for MRSoftware
     def OnHelpButton(self, event):
-        if self.parent.Parent.selected_node is not None:
-            properties_description=""
-            # for key in self.parent.Parent.selected_node.parameters:
-            #     if key in self.parent.Parent.selected_node.properties:
-            #         properties_description = properties_description
-            #         + insert_newlines(self.parent.Parent.selected_node.properties[key].label + ": "
-            #                           + self.parent.Parent.selected_node.properties[key].description,90) +"\n"
-            dlg = wx.MessageDialog(None,
-                            "Description :" +  "\n"+self.parent.Parent.selected_node.NodeMeta["description"] +"\n \n"+"Parameters: \n"+properties_description,
-                            _(self.parent.Parent.selected_node.NodeMeta["label"] + " by " + self.parent.Parent.selected_node.NodeMeta["author"]), style=wx.ICON_INFORMATION)
-            dlg.ShowModal()  
-      
-#added for MRSoftware         
-def insert_newlines(input_string, interval):
-    result = ""
-    for i in range(0, len(input_string), interval):
-        result += input_string[i:i+interval] + '\n'
-    return result
+        node = self.Parent.Parent.selected_node
+        if node is None: return
+        propertystr = ""
+        for p in node.parameters:
+            propertystr += str(type(p))[20:-6] + ": " + p.label + "\n"
+        dlg = wx.MessageDialog(None,
+                               node.NodeMeta["description"] + "\n\nParameters: \n" + propertystr,
+                               caption=node.GetLabel() + " by " + node.GetAuthor() + " v" + str(node.GetVersion()),
+                               style=wx.ICON_INFORMATION)
+        dlg.ShowModal()
 
 class NodePropertiesPanel(PanelBase):
     def __init__(self, parent, idname, menu_item, *args, **kwargs):

@@ -5,9 +5,11 @@ import gs.api as api
 class ProcessingStep(api.Node):
     def __init__(self, nodegraph, id):
         if self.meta_info is not None:
+            if "label" not in self.meta_info: self.meta_info["label"] = self.__class__.__name__
+            if "author" not in self.meta_info: self.meta_info["author"] = ""
             if "version" not in self.meta_info: self.meta_info["version"] = (0, 0, 0)
             if "category" not in self.meta_info: self.meta_info["category"] = "PROCESSING"
-        self.meta_info["label"] = self.__class__.__name__
+            if "description" not in self.meta_info: self.meta_info["description"] = ""
         if nodegraph is not None:
             api.Node.__init__(self, nodegraph, id)
         self.defaultParameters = {}
