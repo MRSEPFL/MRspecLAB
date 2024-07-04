@@ -74,6 +74,7 @@ def loadInput(self):
             self.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
             from suspect.processing.channel_combination import combine_channels
             self.originalData = [combine_channels(d) for d in self.originalData]
+            if self.originalWref is not None: self.originalWref = combine_channels(self.originalWref)
     
     self.dataSteps = [self.originalData]
     self.wrefSteps = [self.originalWref]
