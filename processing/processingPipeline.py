@@ -36,7 +36,9 @@ def loadInput(self):
             if data is None:
                 self.log_warning("Couldn't load file: " + filepath)
                 continue
-            if len(data.shape) > 1:
+            if isinstance(data, list):
+                self.originalData += data
+            elif len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
             if header is None: self.log_warning("Header not found in file: " + filepath)

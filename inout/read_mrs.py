@@ -45,7 +45,7 @@ def loadVBVD(filepath):
     data = twixobj.image['']
     data = numpy.squeeze(data)
 
-    # suspect expects data as [Rep, Cha, Col]
+    # suspect expects data as [Rep, Cha, Col] = [Repetitions, Coils, Timepoints]
     axes = twixobj.image.sqzDims # ['Col', 'Cha', 'Ave', 'Rep'] for example
     target = ['Rep', 'Cha', 'Col']
     inds = [i for i, dim in enumerate(axes) if dim not in target]
@@ -66,8 +66,9 @@ def loadVBVD(filepath):
     tr = float(twixobj.hdr["Meas"]["alTR"].split()[0]) * 1e-3 # us to ms
 
     transform = get_transform(twixobj)
-    metadata = None
-    return MRSData(data, dt, f0, te=te, tr=tr, transform=transform, metadata=metadata)
+    metadata = None # not used
+    
+    return [MRSData(data[i], dt, f0, te=te, tr=tr, transform=transform, metadata=metadata) for i in range(data.shape[0])] # separate repetitions
 
 def get_transform(twixobj):
     pos_sag = twixobj.hdr["Config"]["VoI_Position_Sag"]
