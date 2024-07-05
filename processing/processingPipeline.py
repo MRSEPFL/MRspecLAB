@@ -30,7 +30,7 @@ def loadInput(self):
     dtype = None
 
     for filepath in self.filepaths:
-        try: data, header, ext, vendor = loadFile(filepath)
+        try: data, header, dtype, vendor = loadFile(filepath)
         except: self.log_warning("Error loading file: " + filepath + "\n\t" + str(sys.exc_info()[0]))
         else:
             if data is None:
@@ -40,10 +40,7 @@ def loadInput(self):
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
             if header is None: self.log_warning("Header not found in file: " + filepath)
-            elif self.header is None:
-                self.header = header
-                dtype = ext
-                vendor = vendor
+            elif self.header is None: self.header = header
             self.log_debug("Loaded file: " + filepath)
     
     if len(self.originalData) == 0:
@@ -99,13 +96,13 @@ def loadInput(self):
     allfiles = [os.path.basename(f) for f in self.filepaths]
     if self.originalWref is not None:
         allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
-    prefix = os.path.commonprefix(allfiles)
+    prefix = os.path.commonprefix(allfiles).strip("."+dtype).replace(" ", "").replace("^", "")
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)
     self.outputpath = base
     i = 1
     while os.path.exists(self.outputpath):
-        self.outputpath = base + "(" + str(i) + ")"
+        self.outputpath = base + f"({i})"
         i += 1
     os.mkdir(self.outputpath)
     self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
@@ -116,11 +113,12 @@ def loadInput(self):
     os.mkdir(self.workpath)
 
     # save header.csv
-    table = Table()
-    self.header = table.table_clean(vendor, dtype, self.header)
-    table.populate(vendor, dtype, self.header)
-    csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
-    table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
+    if vendor is not None:
+        table = Table()
+        self.header = table.table_clean(vendor, dtype, self.header)
+        table.populate(vendor, dtype, self.header)
+        csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
+        table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
 
 def processStep(self, step, nstep):
     dataDict = {

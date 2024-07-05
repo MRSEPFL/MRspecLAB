@@ -36,7 +36,7 @@ class MainFrame(LayoutFrame):
         self.pipelineWindow = pipeline_window.PipelineWindow(parent=self) # /!\ put this after retrieve_steps
         self.retrieve_pipeline() # list of processing step instances in pipeline, should be changed to strings only
 
-        self.supported_files = ["ima", "dcm", "dat", "sdat", "coord"]
+        self.supported_files = ["ima", "dcm", "dat", "sdat", "rda", "coord"]
         self.supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
         self.CreateStatusBar(1)
         self.update_statusbar()

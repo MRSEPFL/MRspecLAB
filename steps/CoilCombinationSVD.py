@@ -14,6 +14,9 @@ class CoilCombinationSVD(ProcessingStep):
         super().__init__(nodegraph, id)
 
     def process(self, data):
+        if len(data["input"][0].shape) == 1: # single coil data
+            data["output"] = data["input"]
+            return
         data["output"] = [combine_channels(d) for d in data["input"]]
         if data["wref"] is not None:
             data["wref_output"] = combine_channels(data["wref"])
@@ -21,6 +24,11 @@ class CoilCombinationSVD(ProcessingStep):
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):
+        if len(data["input"][0].shape) == 1:
+            self.plotData(figure.add_subplot(2, 1, 1), data["input"], False)
+            self.plotData(figure.add_subplot(2, 1, 2), data["output"], True)
+            figure.suptitle(self.__class__.__name__ + " (nothing done)")
+            return
         datain = np.array(data["input"]).transpose(1, 0, 2) # from (rep, coil, col) to (coil, rep, col)
         datain = [data["input"][0].inherit(d) for d in datain] # turn back into MRSData objects
         coils = []

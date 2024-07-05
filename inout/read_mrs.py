@@ -16,7 +16,7 @@ def loadFile(filepath):
         data = suspect.io.load_siemens_dicom(filepath)
         header, _ = DataReaders().siemens_ima(filepath, None)
     if ext == "dcm":
-        data = load_dicom(filepath)
+        data = load_dicom(filepath) # suspect's load_dicom doesn't work
         header, _ = DataReaders().siemens_ima(filepath, None)
     elif ext == "dat":
         data = loadVBVD(filepath) # coils not combined
@@ -26,10 +26,12 @@ def loadFile(filepath):
         spar = filepath.lower()[:-5] + ".spar"
         if os.path.exists(spar):
             header, _ = DataReaders().philips_spar(spar, None)
+    elif ext == "rda":
+        data, header = load_rda(filepath) # no rda in DataReaders; we only need Sequence and Nucleus for processing
     else:
         return None, None, None, None
     vendor = None
-    if ext == "ima" or "dat": vendor = "siemens"
+    if ext in ["ima", "dat"]: vendor = "siemens"
     elif ext == "sdat": vendor = "philips"
     return data, header, ext, vendor
 
@@ -148,3 +150,42 @@ def load_dicom(filename):
     data_iter = iter(dataset[0x5600, 0x0020])
     data = complex_array_from_iter(data_iter, shape=data_shape, chirality=-1)
     return MRSData(data, dt, f0=f0, te=te, tr=tr, ppm0=ppm0)
+
+def load_rda(filepath):
+    header = {}
+    dt = None
+    tr = None
+    te = None
+    f0 = None
+    vector_size = None
+    filebytes = open(filepath, 'rb').read()
+    headerend = filebytes.find(">>> End of header <<<".encode('utf-8')) + 21
+    headerstr = filebytes[:headerend].decode('utf-8')
+    data = filebytes[headerend:]
+    data = data[len(data) % 16:]
+    for line in headerstr.split('\n'):
+        if line.startswith('Nucleus: '):
+            header["Nucleus"] = line.split(':')[1].strip()
+            continue
+        if line.startswith('SequenceName: '):
+            header["Sequence"] = line.split(':')[1].strip()
+            continue
+        if line.startswith('TR: '):
+            tr = float(line.split(':')[1].strip()) # ms
+            continue
+        if line.startswith('TE: '):
+            te = float(line.split(':')[1].strip()) # ms
+            continue
+        if line.startswith('DwellTime: '):
+            dt = float(line.split(':')[1].strip()) * 1e-6 # us
+            continue
+        if line.startswith('MRFrequency: '):
+            f0 = float(line.split(':')[1].strip().replace(',', '.')) # MHz
+            continue
+        if line.startswith('VectorSize: '):
+            vector_size = int(line.split(':')[1].strip())
+            continue
+    data = numpy.frombuffer(data, dtype=numpy.float64)
+    data = data[::2] + 1j * data[1::2]
+    # assert data.size == vector_size
+    return MRSData(data, dt, f0=f0, te=te, tr=tr), header
