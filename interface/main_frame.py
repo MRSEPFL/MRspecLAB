@@ -283,13 +283,17 @@ class MainFrame(LayoutFrame):
             f = None
             from inout.read_mrs import loadFile
             f, _, _, _= loadFile(filepath)
-            if len(f.shape) > 1:
-                from suspect.processing.channel_combination import combine_channels
-                f = combine_channels(f)
+            if not isinstance(f, list): f = [f]
+            for i in range(len(f)):
+                if len(f[i].shape) > 1:
+                    from suspect.processing.channel_combination import combine_channels
+                    f[i] = combine_channels(f[i])
 
             canvas.clear()
             plot_mrs(f, canvas.figure, title=filepath)
             canvas.draw()
+
+            f = f[0]
             text.SetValue("")
             info = f"File: {filepath}"
             if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
