@@ -11,11 +11,11 @@ from .readheader import DataReaders
 
 def loadFile(filepath):
     header = None
-    ext = os.path.splitext(filepath)[1][1:].lower()
+    ext = os.path.splitext(filepath)[-1][1:].lower()
     if ext == "ima":
         data = suspect.io.load_siemens_dicom(filepath)
         header, _ = DataReaders().siemens_ima(filepath, None)
-    if ext == "dcm":
+    elif ext == "dcm":
         data = load_dicom(filepath) # suspect's load_dicom doesn't work
         header, _ = DataReaders().siemens_ima(filepath, None)
     elif ext == "dat":
@@ -42,6 +42,7 @@ def loadVBVD(filepath):
         if len(twixobj) == 1: twixobj = twixobj[0]
         if len(twixobj) == 2: twixobj = twixobj[1] # twixobj[0] is reference noise
         else: raise ValueError("Multiple acquisitions found in VBVD file.")
+    twixobj.image.removeOS = False
     data = twixobj.image['']
     data = numpy.squeeze(data)
 
@@ -55,12 +56,13 @@ def loadVBVD(filepath):
         data = numpy.expand_dims(data, 0)
         axes = ['Rep'] + axes
     data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col')))
+    data = numpy.conj(data)
 
     # parameters
     if "DwellTime" in twixobj.hdr["Config"]:
-        dt = twixobj.hdr["Config"]["DwellTime"] * 1e-9 # s to ns
+        dt = twixobj.hdr["Config"]["DwellTime"] * 1e-9 # ns to s
     else:
-        dt = twixobj.hdr["Config"]["DwellTimeSig"] * 1e-9 # s to ns
+        dt = twixobj.hdr["Config"]["DwellTimeSig"] * 1e-9 # ns to s
     f0 = twixobj.hdr["Config"]["Frequency"] * 1e-6 # Hz to MHz
     te = float(twixobj.hdr["Meas"]["alTE"].split()[0]) * 1e-3 # us to ms
     tr = float(twixobj.hdr["Meas"]["alTR"].split()[0]) * 1e-3 # us to ms

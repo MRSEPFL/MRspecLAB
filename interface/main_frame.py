@@ -4,12 +4,12 @@ import glob
 import inspect
 import importlib.util
 import threading
-import suspect
 import pickle
 from datetime import datetime
 
 from .main_layout import LayoutFrame
 from .plot_helpers import plot_mrs, plot_coord
+from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
 from processing import processingPipeline
 from .plot_frame import PlotFrame
@@ -280,8 +280,6 @@ class MainFrame(LayoutFrame):
             return
         
         else:
-            f = None
-            from inout.read_mrs import loadFile
             f, _, _, _= loadFile(filepath)
             if not isinstance(f, list): f = [f]
             for i in range(len(f)):
