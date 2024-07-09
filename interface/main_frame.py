@@ -266,16 +266,12 @@ class MainFrame(LayoutFrame):
             canvas.clear()
             plot_coord(f, canvas.figure, title=filepath)
             canvas.draw()
+            
             dtab = '\n\t\t'
             text.SetValue("")
-
-            def pad_string(input_str, desired_length):
-                desired_length = int(desired_length)    
-                return input_str.ljust(desired_length)
-
             text.WriteText(f"File: {filepath}\n\tNumber of points: {len(f['ppm'])}\n\tNumber of metabolites: {len(f['conc'])} ({f['nfit']} fitted)\n"
                                     + f"\t0th-order phase: {f['ph0']}\n\t1st-order phase: {f['ph1']}\n\tFWHM: {f['linewidth']}\n\tSNR: {f['SNR']}\n\tData shift: {f['datashift']}\n"
-                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{pad_string(c['name'], 4)}: (±{pad_string(str(c['SD']) + '%', 3)}, Cr: {str(c['c_cr'])})" for c in f['conc']])}\n""")
+                                    + f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {str(c['c'])} (±{str(c['SD'])}%, Cr: {str(c['c_cr'])})" for c in f['conc']])}\n""")
             if event is not None: event.Skip()
             return
         
