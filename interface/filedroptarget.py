@@ -9,7 +9,7 @@ class FileDrop(wx.FileDropTarget):
         self.label = label
         self.filepaths = []
         self.root = ""
-        self.list.Bind(wx.EVT_LISTBOX, self.on_select)
+        self.list.Bind(wx.EVT_LISTBOX, self.on_click)
         self.list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_dclick)
 
     def OnDropFiles(self, x, y, filenames):
@@ -85,11 +85,11 @@ class FileDrop(wx.FileDropTarget):
             self.OnDropFiles(0, 0, new_paths)
         event.Skip()
 
-    def on_select(self, event):
-        filename = self.filepaths[self.list.GetSelection()]
-        self.parent.read_file(event, filename, new_window=True)
+    def on_click(self, event):
+        # self.list.Deselect(self.list.GetSelection())
         event.Skip()
 
     def on_dclick(self, event):
-        self.list.Deselect(self.list.GetSelection())
+        filename = self.filepaths[self.list.GetSelection()]
+        self.parent.read_file(event, filename, new_window=True)
         event.Skip()
