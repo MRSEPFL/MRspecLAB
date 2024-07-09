@@ -74,21 +74,19 @@ class CoilCombinationAdaptive(ProcessingStep):
         coils = []
         for d in datain:
             coils += [d.inherit(d[_]) for _ in range(0, d.shape[0])]
-        sx, sy = 2, 2
-        index = 1
         # time
-        ax = figure.add_subplot(sx, sy, index)
+        ax = figure.add_subplot(2, 2, 1)
         self.plotData(ax, coils, False)
         ax.set_title("Input")
-        ax = figure.add_subplot(sx, sy, index + sy)
+        ax = figure.add_subplot(2, 2, 2)
         self.plotData(ax, data["output"], False)
         ax.set_title("Output")
         index += 1
         # freq
-        ax = figure.add_subplot(sx, sy, index)
+        ax = figure.add_subplot(2, 2, 3)
         self.plotData(ax, coils, True)
         ax.set_title("Input")
-        ax = figure.add_subplot(sx, sy, index + sy)
+        ax = figure.add_subplot(2, 2, 4)
         self.plotData(ax, data["output"], True)
         ax.set_title("Output")
         figure.suptitle(self.__class__.__name__)
