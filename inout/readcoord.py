@@ -48,7 +48,6 @@ def ReadlcmCoord(filename):
         conc['c_cr'] = float(next(words))
         conc['name'] = next(words).strip()
         lcmdata['conc'].append(conc.copy())
-        print(conc['name'])
         index += 1
 
     skipto("FWHM")
