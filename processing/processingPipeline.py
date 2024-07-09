@@ -69,7 +69,7 @@ def loadInput(self):
 
     # check coil combination
     if len(self.originalData[0].shape) > 1:
-        if self.steps[0].GetCategory() != "COIL_COMBINATION":
+        if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
             self.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
             from suspect.processing.channel_combination import combine_channels
             self.originalData = [combine_channels(d) for d in self.originalData]
