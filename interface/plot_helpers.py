@@ -28,6 +28,15 @@ def plot_mrs(data, figure: matplotlib.figure, title=None):
     figure.suptitle(title)
     figure.tight_layout()
 
+def estimate_snr(data: MRSData):
+    ppms = data.frequency_axis_ppm()
+    spec = data.spectrum()
+    naapeak = np.max(np.real(spec[np.where(np.logical_and(ppms > 1.8, ppms < 2.2))]))
+    noise = np.real(spec[np.where(np.logical_and(ppms > 0, ppms < 0.5))])
+    poly = np.polynomial.polynomial.Polynomial.fit(range(len(noise)), noise, 5)
+    noise -= poly(range(len(noise)))
+    return naapeak / np.std(noise)
+
 def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     if isinstance(lcmdata, str):
         filepath = lcmdata

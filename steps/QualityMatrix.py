@@ -1,6 +1,7 @@
 from processing.ProcessingStep import ProcessingStep
 import gs.api as api
 import numpy as np
+from interface.plot_helpers import estimate_snr
 from scipy.optimize import curve_fit
 
 def gaussian(x, a, x0, sigma):
@@ -16,16 +17,7 @@ class QualityMatrix(ProcessingStep):
         super().__init__(nodegraph, id)
 
     def process(self, data):
-        self.snr = []
-        for d in data["input"]:
-            ppms = d.frequency_axis_ppm()
-            spec = d.spectrum()
-            naapeak = np.max(np.real(spec[np.where(np.logical_and(ppms > 1.8, ppms < 2.2))]))
-            noise = np.real(spec[np.where(np.logical_and(ppms > 0, ppms < 0.5))])
-            poly = np.polynomial.polynomial.Polynomial.fit(range(len(noise)), noise, 5)
-            noise -= poly(range(len(noise)))
-            noisestd = np.std(noise)
-            self.snr.append(naapeak / noisestd)
+        self.snr = [estimate_snr(d) for d in data["input"]]
         data["output"] = data["input"] # no change
         if data['wref'] is None: return
 
