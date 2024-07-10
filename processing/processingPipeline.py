@@ -9,6 +9,7 @@ from spec2nii.other_formats import lcm_raw
 # import ants
 # import pandas as pd
 
+from interface import utils
 from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import Table
@@ -18,10 +19,10 @@ from interface.plot_helpers import plot_mrs, plot_coord
 
 def loadInput(self):
     self.filepaths = []
-    for f in self.inputMRSfiles_dt.filepaths:
+    for f in self.MRSfiles.filepaths:
         if not f.lower().endswith(".coord"): self.filepaths.append(f)
     if len(self.filepaths) == 0:
-        self.log_error("No files found")
+        utils.log_error("No files found")
         return False
 
     self.originalData = []
@@ -31,46 +32,46 @@ def loadInput(self):
 
     for filepath in self.filepaths:
         try: data, header, dtype, vendor = loadFile(filepath)
-        except: self.log_warning("Error loading file: " + filepath + "\n\t" + str(sys.exc_info()[0]))
+        except: utils.log_warning("Error loading file: " + filepath + "\n\t" + str(sys.exc_info()[0]))
         else:
             if data is None:
-                self.log_warning("Couldn't load file: " + filepath)
+                utils.log_warning("Couldn't load file: " + filepath)
                 continue
             if isinstance(data, list):
                 self.originalData += data
             elif len(data.shape) > 1:
                 for d in data: self.originalData.append(data.inherit(d))
             else: self.originalData.append(data)
-            if header is None: self.log_warning("Header not found in file: " + filepath)
+            if header is None: utils.log_warning("Header not found in file: " + filepath)
             elif self.header is None: self.header = header
-            self.log_debug("Loaded file: " + filepath)
+            utils.log_debug("Loaded file: " + filepath)
     
     if len(self.originalData) == 0:
-        self.log_error("No files loaded")
+        utils.log_error("No files loaded")
         return False
     if self.header is None:
-        self.log_error("No header found")
+        utils.log_error("No header found")
         return False
 
     self.originalWref = None
     wrefpath = None
-    if len(self.inputwref_dt.filepaths) > 1: self.log_warning("Only one water reference is supported; choosing first one")
-    if len(self.inputwref_dt.filepaths) == 0: self.log_warning("No water reference given")
-    else: wrefpath = self.inputwref_dt.filepaths[0]
+    if len(self.Waterfiles.filepaths) > 1: utils.log_warning("Only one water reference is supported; choosing first one")
+    if len(self.Waterfiles.filepaths) == 0: utils.log_warning("No water reference given")
+    else: wrefpath = self.Waterfiles.filepaths[0]
     if wrefpath is not None:
         try: self.originalWref, _, _, _ = loadFile(wrefpath)
-        except: self.log_warning("Error loading water reference: " + wrefpath + "\n\t" + str(sys.exc_info()[0]))
+        except: utils.log_warning("Error loading water reference: " + wrefpath + "\n\t" + str(sys.exc_info()[0]))
         else:
-            if self.originalWref is None: self.log_warning("Couldn't load water reference: " + wrefpath)
-            if len(self.originalWref.shape) > 1: self.originalWref = self.originalWref[0]
-            self.log_debug("Loaded water reference: " + filepath)
+            if self.originalWref is None: utils.log_warning("Couldn't load water reference: " + wrefpath)
+            self.originalWref = self.originalWref[0]
+            utils.log_debug("Loaded water reference: " + filepath)
 
-    self.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
+    utils.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
 
     # check coil combination
     if len(self.originalData[0].shape) > 1:
         if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
-            self.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
+            utils.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
             from suspect.processing.channel_combination import combine_channels
             self.originalData = [combine_channels(d) for d in self.originalData]
             if self.originalWref is not None: self.originalWref = combine_channels(self.originalWref)
@@ -86,18 +87,18 @@ def loadInput(self):
             seqkey = key
             break
     self.sequence = None
-    if seqkey is None: self.log_warning("Sequence not found in header")
+    if seqkey is None: utils.log_warning("Sequence not found in header")
     else:
-        for seq in self.supported_sequences:
+        for seq in utils.supported_sequences:
             if seq.lower() in self.header[seqkey].lower():
                 self.sequence = seq
                 break
-        if self.sequence is None: self.log_warning("Sequence not supported: " + self.header[seqkey])
+        if self.sequence is None: utils.log_warning("Sequence not supported: " + self.header[seqkey])
 
     # create output and work folders
     allfiles = [os.path.basename(f) for f in self.filepaths]
     if self.originalWref is not None:
-        allfiles.append(os.path.basename(self.inputwref_dt.filepaths[0]))
+        allfiles.append(os.path.basename(self.Waterfiles.filepaths[0]))
     prefix = os.path.commonprefix(allfiles).strip("."+dtype).replace(" ", "").replace("^", "")
     if prefix == "": prefix = "output"
     base = os.path.join(self.rootPath, "output", prefix)
@@ -135,17 +136,17 @@ def processStep(self, step, nstep):
     if not self.fast_processing:
         self.button_auto_processing.Disable()
 
-    self.log_debug("Running ", step.__class__.__name__)
+    utils.log_debug("Running ", step.__class__.__name__)
     start_time = time.time()
     step.process(dataDict)
-    self.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
+    utils.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
     self.dataSteps[0] = dataDict["original"] # very illegal but allows coil combination steps
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
 
-    self.log_debug("Plotting ", step.__class__.__name__)
+    utils.log_debug("Plotting ", step.__class__.__name__)
     start_time = time.time()
     steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
     if not os.path.exists(steppath): os.mkdir(steppath)
@@ -155,14 +156,14 @@ def processStep(self, step, nstep):
     figure.suptitle(step.__class__.__name__)
     filepath = os.path.join(steppath, "step.png")
     figure.savefig(filepath, dpi=600)
-    self.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
+    utils.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
     # data plot
     figure.clear()
     plot_mrs(dataDict["output"], figure)
     figure.suptitle("Result of " + step.__class__.__name__)
     filepath = os.path.join(steppath, "result.png")
     figure.savefig(filepath, dpi=600)
-    self.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
+    utils.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
     # raw
     if self.save_raw:
         filepath = os.path.join(steppath, "data")
@@ -174,7 +175,7 @@ def processStep(self, step, nstep):
         self.matplotlib_canvas.clear()
         step.plot(self.matplotlib_canvas.figure, dataDict)
         self.matplotlib_canvas.draw()
-    self.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
+    utils.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self): 
     for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original (after coil combination)", "Result"]):
@@ -183,7 +184,7 @@ def saveDataPlot(self):
         plot_mrs(d, figure)
         figure.suptitle(name)
         figure.savefig(filepath, dpi=600)
-        self.log_debug("Saved "+ str(name) +" to " + filepath)
+        utils.log_debug("Saved "+ str(name) +" to " + filepath)
         
 def analyseResults(self):
     result = self.dataSteps[-1]
@@ -206,13 +207,13 @@ def analyseResults(self):
         if strte.endswith(".0"): strte = strte[:-2]
         basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
         basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
-    else: self.log_warning("Sequence not found, basis file not generated")
+    else: utils.log_warning("Sequence not found, basis file not generated")
 
     def request_basisfile():
         basisfile = ""
-        self.log_info("Requesting basisfile from user...")
+        utils.log_info("Requesting basisfile from user...")
         while basisfile == "" or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-            self.log_warning("Basis set not found:\n\t", basisfile)
+            utils.log_warning("Basis set not found:\n\t", basisfile)
             dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
             if dlg.ShowModal() == wx.ID_CANCEL:
                 dlg.Destroy()
@@ -227,10 +228,10 @@ def analyseResults(self):
         if button_clicked == wx.ID_NO: basisfile = request_basisfile()
         elif button_clicked == wx.ID_CANCEL: return False
     else:
-        self.log_warning("Basis set not found:\n\t", basisfile)
+        utils.log_warning("Basis set not found:\n\t", basisfile)
         basisfile = request_basisfile()
     if basisfile is None:
-        self.log_error("No basis file specified")
+        utils.log_error("No basis file specified")
         return False
 
     # lcmodel
@@ -243,7 +244,7 @@ def analyseResults(self):
             "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline # not good very bad code
         })
     if params is None:
-        self.log_error("Control file not found:\n\t", self.controlfile)
+        utils.log_error("Control file not found:\n\t", self.controlfile)
         return False
     params.update({
         "FILBAS": basisfile,
@@ -263,20 +264,20 @@ def analyseResults(self):
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
-    self.log_debug("Looking for executable here: ", lcmodelfile)
+    utils.log_debug("Looking for executable here: ", lcmodelfile)
     if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
         zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
         if not os.path.exists(zippath):
-            self.log_error("lcmodel executable or zip not found")
+            utils.log_error("lcmodel executable or zip not found")
             pass
-        self.log_info("lcmodel executable not found, extracting from zip")
-        self.log_debug("Looking for zip here: ", zippath)
+        utils.log_info("lcmodel executable not found, extracting from zip")
+        utils.log_debug("Looking for zip here: ", zippath)
         with zipfile.ZipFile(zippath, "r") as zip_ref:
             zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
     if os.name == 'nt': command = f"""mkdir {self.workpath} & copy {lcmodelfile} {self.workpath} & cd {self.workpath} & lcmodel.exe < result_sl0.CONTROL & del lcmodel.exe"""
     else: command = f"""mkdir {workpath} && cp {lcmodelfile} {workpath} && cd {workpath} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
-    self.log_debug("Running LCModel...\n\t", command)
+    utils.log_debug("Running LCModel...\n\t", command)
     os.system(command)
     
     command = ''
@@ -284,7 +285,7 @@ def analyseResults(self):
         if os.name == 'nt': command += f" & move {os.path.join(self.workpath, f)} {self.lcmodelsavepath}"
         else: command += f" && mv {os.path.join(workpath, f)} {lcmodelsavepath}"
     command = command[3:]
-    self.log_debug("Moving files...\n\t", command)
+    utils.log_debug("Moving files...\n\t", command)
     os.system(command)
 
     filepath = os.path.join(self.lcmodelsavepath, "result.coord")
@@ -297,7 +298,7 @@ def analyseResults(self):
         self.matplotlib_canvas.draw()
         filepath = os.path.join(self.lcmodelsavepath, "lcmodel.png")
         figure.savefig(filepath, dpi=600)
-    else: self.log_warning("LCModel output not found")
+    else: utils.log_warning("LCModel output not found")
     
     # save nifti
     # rawpath = os.path.join(self.workpath, "result.RAW")
@@ -334,13 +335,13 @@ def analyseResults(self):
     #     print(GM[centre[0], centre[1], centre[2]])
     #     print(WM[centre[0], centre[1], centre[2]])
 
-    # shutil.rmtree(self.workpath) # delete work folder
+    shutil.rmtree(self.workpath) # delete work folder
 
 def processPipeline(self):
     if self.current_step == 0:
         valid_input = loadInput(self)
         if valid_input == False:
-            self.log_error("Error loading input")
+            utils.log_error("Error loading input")
             wx.CallAfter(self.reset)
             return
         

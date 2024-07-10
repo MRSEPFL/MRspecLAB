@@ -20,7 +20,7 @@ import wx.lib.agw.flatmenu as flatmenu
 from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpb
 from gswidgetkit import Label, Button, EVT_BUTTON
-from utils.colours import AREA_BG_COLOR, AREA_TOPBAR_COLOR, TEXT_COLOR, PROP_BG_COLOR
+from interface.colours import AREA_BG_COLOR, AREA_TOPBAR_COLOR, TEXT_COLOR, PROP_BG_COLOR
 
 ICON_HELP = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAYJJ'
@@ -54,7 +54,6 @@ class PanelBase(wx.Panel):
     def __init__(self, parent, idname, menu_item, *args, **kwargs):
         wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
                           size=wx.DefaultSize, style=wx.NO_BORDER | wx.TAB_TRAVERSAL)
-        self.parent = parent
         self._idname = idname
         self._menu_item = menu_item
 
@@ -109,8 +108,6 @@ class PanelBase(wx.Panel):
 class NodeInfoPanel(wx.Panel):
     def __init__(self, parent, *args, **kwds):
         wx.Panel.__init__(self, parent, *args, **kwds)
-        #Added for MRSoftware
-        self.parent=parent
         self.SetBackgroundColour(AREA_BG_COLOR)
 
         nodeinfo_pnl_sizer = wx.GridBagSizer(vgap=1, hgap=1)

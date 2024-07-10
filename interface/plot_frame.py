@@ -1,10 +1,13 @@
 import wx
+from .plot_helpers import read_file
 from .plot_canvas import MatplotlibCanvas
-from utils.colours import XISLAND1
+from interface.colours import XISLAND1
 
 class PlotFrame(wx.Frame):
-    def __init__(self, title):
+    def __init__(self, filepath, title=None):
         super().__init__(None)
+        self.filepath = filepath
+        if title is None: title = filepath
         self.SetTitle(title)
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
         self.SetBackgroundColour(wx.Colour(XISLAND1)) 
@@ -12,18 +15,34 @@ class PlotFrame(wx.Frame):
         self.Show(True)
 
         self.splitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
-        self.panel = wx.Panel(self.splitter, wx.ID_ANY)
-        self.canvas = MatplotlibCanvas(self.panel, wx.ID_ANY)
-        self.text = wx.TextCtrl(self.splitter, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.leftPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.canvas = MatplotlibCanvas(self.leftPanel, wx.ID_ANY)
+
+        self.rightPanel = wx.Panel(self.splitter, wx.ID_ANY)
+        self.checkbox = wx.CheckBox(self.rightPanel, wx.ID_ANY, "Fit gaussian")
+        self.checkbox.SetValue(False)
+        self.text = wx.TextCtrl(self.rightPanel, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
         self.text.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False))
+
+        self.leftSizer = wx.BoxSizer(wx.VERTICAL)
+        self.leftSizer.Add(self.canvas, 1, wx.EXPAND, 0)
+        self.leftSizer.Add(self.canvas.toolbar, 0, wx.EXPAND, 0)
+        self.leftPanel.SetSizer(self.leftSizer)
         
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.canvas, 1, wx.EXPAND, 0)
-        self.sizer.Add(self.canvas.toolbar, 0, wx.EXPAND, 0)
-        self.panel.SetSizer(self.sizer)
+        self.rightSizer = wx.BoxSizer(wx.VERTICAL)
+        self.rightSizer.Add(self.checkbox, 0, wx.EXPAND, 0)
+        self.rightSizer.Add(self.text, 1, wx.EXPAND, 0)
+        self.rightPanel.SetSizer(self.rightSizer)
         
         self.splitter.SetMinimumPaneSize(200)
-        self.splitter.SplitVertically(self.panel, self.text, -150)
+        self.splitter.SplitVertically(self.leftPanel, self.rightPanel, -150)
         self.splitter.SetSashGravity(1.)
+        self.checkbox.Bind(wx.EVT_CHECKBOX, self.on_checkbox)
 
+        if self.filepath.lower().endswith(".coord"):
+            self.checkbox.Hide()
         self.Layout()
+    
+    def on_checkbox(self, event):
+        read_file(self.filepath, self.canvas, self.text, self.checkbox.GetValue())
+        event.Skip()

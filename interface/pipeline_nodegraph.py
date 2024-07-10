@@ -2,7 +2,7 @@ import wx
 
 from gs.registry import NODE_REGISTRY
 from .node_add import AddNodeMenu
-from utils.colours import(XISLAND1)
+from interface.colours import(XISLAND1)
 
 ID_ADDNODEMENU = wx.NewIdRef()
 import ctypes

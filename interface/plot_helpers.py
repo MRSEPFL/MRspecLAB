@@ -2,14 +2,23 @@ import os
 import numpy as np
 import matplotlib
 from suspect import MRSData
+from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
 
-def plot_mrs(data, figure: matplotlib.figure, title=None):
+def plot_mrs(data, figure: matplotlib.figure, title=None, fit_gaussian=False):
+    ncoils = 1
     if isinstance(data, MRSData):
-        if len(data.shape) > 1:
+        if len(data.shape) > 1: # plot each coil separately
+            ncoils = data.shape[0]
             data = [data.inherit(data[i]) for i in range(data.shape[0])]
         else:
             data = [data]
+            if len(data[0].shape) > 1:
+                ncoils = data[0].shape[0]
+                data2 = []
+                for d in data:
+                    data2 = data2 + [d.inherit(d[i]) for i in range(d.shape[0])]
+                data = data2
     if not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):
         return
     if title is None: title = "Result"
@@ -27,6 +36,24 @@ def plot_mrs(data, figure: matplotlib.figure, title=None):
     ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
     figure.suptitle(title)
     figure.tight_layout()
+
+    f = data[0]
+    info = ""
+    if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
+    info += f"\n\tNumber of coils: {ncoils}"
+    info += f"\n\tNumber of averages: {len(data)}"
+    if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
+    if hasattr(f, "dt"): info += f"\n\tDwell time (s): {f.dt}"
+    if hasattr(f, "df"): info += f"\n\tFrequency delta (Hz): {f.df}"
+    if hasattr(f, "sw"): info += f"\n\tSpectral Width (Hz): {f.sw}"
+    if hasattr(f, "te"): info += f"\n\tEcho time (ms): {f.te}"
+    if hasattr(f, "tr"): info += f"\n\tRepetition time (ms): {f.tr}"
+    info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
+    try:
+        if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
+    except: pass
+    if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
+    return info
 
 def estimate_snr(data: MRSData):
     ppms = data.frequency_axis_ppm()
@@ -79,3 +106,31 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     
     figure.suptitle(title)
     figure.tight_layout()
+
+    dtab = '\n\t\t'
+    info = (
+        f"\n\tNumber of points: {len(lcmdata['ppm'])}\n\tNumber of metabolites: {len(lcmdata['conc'])} ({lcmdata['nfit']} fitted)\n\t0th-order phase: {lcmdata['ph0']}"
+        f"\n\t1st-order phase: {lcmdata['ph1']}\n\tFWHM: {lcmdata['linewidth']}\n\tSNR: {lcmdata['SNR']}\n\tData shift: {lcmdata['datashift']}\n"
+        f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {str(c['c'])} (±{str(c['SD'])}%, Cr: {str(c['c_cr'])})" for c in lcmdata['conc']])}\n"""
+    )
+    return info
+
+def read_file(filepath, canvas, text, fit_gaussian=False):
+    if filepath.lower().endswith(".coord"):
+        f = ReadlcmCoord(filepath)
+        canvas.clear()
+        info = plot_coord(f, canvas.figure, title=filepath)
+        canvas.draw()
+        text.SetValue(f"File: {filepath}\n{info}")
+        return
+    else:
+        f, _, _, _= loadFile(filepath)
+        for i in range(len(f)):
+            if len(f[i].shape) > 1:
+                from suspect.processing.channel_combination import combine_channels
+                f[i] = combine_channels(f[i])
+
+        canvas.clear()
+        info = plot_mrs(f, canvas.figure, title=filepath, fit_gaussian=fit_gaussian)
+        canvas.draw()
+        text.SetValue(f"File: {filepath}\n{info}")

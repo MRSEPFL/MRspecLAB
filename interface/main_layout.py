@@ -1,16 +1,16 @@
 import wx
 import wx.richtext
 from .plot_canvas import MatplotlibCanvas
-from .filedroptarget import FileDrop
-from utils.colours import(BLACK_WX,XISLAND1,XISLAND2,XISLAND4)
+from .file_panel import FilePanel
+from interface.colours import(BLACK_WX,XISLAND1,XISLAND2)
 
 class BtmButtonNoBorder(wx.BitmapButton):
-    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnHover)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnUnHover)
-        self.SetWindowStyleFlag(wx.NO_BORDER)        
+        self.SetWindowStyleFlag(wx.NO_BORDER)
+
     def OnHover(self, event):
         self.SetWindowStyleFlag(wx.BORDER_SUNKEN)
         event.Skip()
@@ -20,9 +20,7 @@ class BtmButtonNoBorder(wx.BitmapButton):
         event.Skip()
 
 class LayoutFrame(wx.Frame):
-
     def __init__(self, *args, **kwds):
-
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         font1 = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False)
@@ -60,84 +58,19 @@ class LayoutFrame(wx.Frame):
         self.rightSizer = wx.BoxSizer(wx.VERTICAL)
         self.rightPanel.SetSizer(self.rightSizer)
 
-        #New input panel
-        #MRS files
-        self.inputMRSfiles_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.inputMRSfiles_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
-        self.inputMRSfiles_drag_and_drop_label.SetFont(font1)
+        self.MRSfiles = FilePanel(self.leftPanel)
+        self.MRSfiles.SetFont(font1)
+        self.MRSfiles.label.SetLabel("Import MRS files here")
+        self.MRSfiles.Layout()
 
-        self.inputMRSfilesButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.inputMRSfilesclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
-        self.inputMRSfilesplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
-        self.inputMRSfilesminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
-        
-        self.inputMRSfilesclear_button.SetFont(font1)
-        self.inputMRSfilesplus_button.SetFont(font1)
-        self.inputMRSfilesminus_button.SetFont(font1)
+        self.Waterfiles = FilePanel(self.leftPanel)
+        self.Waterfiles.SetFont(font1)
+        self.Waterfiles.label.SetLabel("Import water reference here (optional)")
+        self.Waterfiles.Layout()
 
-        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesplus_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesminus_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.inputMRSfilesButtonSizer.Add(self.inputMRSfilesclear_button, 0, wx.ALL | wx.EXPAND, 5)
-        
-        self.inputMRSfiles_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
-        self.inputMRSfiles_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
-        
-        self.inputMRSfiles_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
-        self.inputMRSfiles_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
-        self.inputMRSfiles_number_label.SetFont(font1)
-        
-        self.inputMRSfiles_dt = FileDrop(self, self.inputMRSfiles_drag_and_drop_list, self.inputMRSfiles_number_label)
-        self.inputMRSfiles_drag_and_drop_list.SetDropTarget(self.inputMRSfiles_dt)
-        self.inputMRSfiles_dt.clear_button = self.inputMRSfilesclear_button
-        self.inputMRSfiles_dt.minus_button = self.inputMRSfilesminus_button
-        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_clear, self.inputMRSfilesclear_button)
-        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_plus, self.inputMRSfilesplus_button)
-        self.Bind(wx.EVT_BUTTON, self.inputMRSfiles_dt.on_minus, self.inputMRSfilesminus_button)
-        
-        #wref
-        self.inputwref_drag_and_drop_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "Import water reference here (optional)", style=wx.ALIGN_CENTRE_VERTICAL)
-        self.inputwref_drag_and_drop_label.SetForegroundColour(wx.Colour(BLACK_WX))
-        self.inputwref_drag_and_drop_label.SetFont(font1)
-        
-        self.inputwrefButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.inputwrefclear_button = wx.Button(self.leftPanel, wx.ID_ANY, "Clear")
-        self.inputwrefplus_button = wx.Button(self.leftPanel, wx.ID_ANY, "+")
-        self.inputwrefminus_button = wx.Button(self.leftPanel, wx.ID_ANY, "-")
-
-        self.inputwrefclear_button.SetFont(font1)
-        self.inputwrefplus_button.SetFont(font1)
-        self.inputwrefminus_button.SetFont(font1)
-        
-        self.inputwrefButtonSizer.Add(self.inputwrefplus_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.inputwrefButtonSizer.Add(self.inputwrefminus_button, 0, wx.ALL | wx.EXPAND, 5)
-        self.inputwrefButtonSizer.Add(self.inputwrefclear_button, 0, wx.ALL | wx.EXPAND, 5)
-        
-        self.inputwref_drag_and_drop_list = wx.ListBox(self.leftPanel, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
-        self.inputwref_drag_and_drop_list.SetBackgroundColour(wx.Colour(XISLAND4)) 
-        
-        self.inputwref_number_label = wx.StaticText(self.leftPanel, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
-        self.inputwref_number_label.SetForegroundColour(wx.Colour(BLACK_WX))
-        self.inputwref_number_label.SetFont(font1)
-        
-        self.inputwref_dt = FileDrop(self, self.inputwref_drag_and_drop_list, self.inputwref_number_label)
-        self.inputwref_drag_and_drop_list.SetDropTarget(self.inputwref_dt)
-        self.inputwref_dt.clear_button = self.inputwrefclear_button
-        self.inputwref_dt.minus_button = self.inputwrefminus_button
-
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_clear, self.inputwrefclear_button)
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_plus, self.inputwrefplus_button)
-        self.Bind(wx.EVT_BUTTON, self.inputwref_dt.on_minus, self.inputwrefminus_button)
-        self.Bind(wx.EVT_LISTBOX_DCLICK, self.read_file, self.inputMRSfiles_drag_and_drop_list)
-
-        self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputMRSfilesButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputMRSfiles_drag_and_drop_list, 1, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputMRSfiles_number_label, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.AddSpacer(20) 
-        self.leftSizer.Add(self.inputwref_drag_and_drop_label, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputwrefButtonSizer, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputwref_drag_and_drop_list, 0, wx.ALL | wx.EXPAND, 5)
-        self.leftSizer.Add(self.inputwref_number_label, 0, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.Add(self.MRSfiles, 1, wx.ALL | wx.EXPAND, 5)
+        self.leftSizer.AddSpacer(20)
+        self.leftSizer.Add(self.Waterfiles, 1, wx.ALL | wx.EXPAND, 5)
         
         ### RIGHT PANEL ###
         self.Processing_Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -189,8 +122,7 @@ class LayoutFrame(wx.Frame):
         self.button_toggle_save_raw.SetToolTip("Enable/Disable saving raw data\nin the output folder")
         self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)   
         
-        self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state") 
-
+        self.button_terminate_processing.SetToolTip("Stop the current processing of the Pipeline  \nand come back to the initial state")
 
         bmp_control= wx.Bitmap("resources/open_ctrl_file.png", wx.BITMAP_TYPE_PNG)
         self.button_set_control = BtmButtonNoBorder(self.rightPanel, wx.ID_ANY, bmp_control)
