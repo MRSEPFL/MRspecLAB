@@ -1,11 +1,11 @@
 import os
 import numpy as np
-import matplotlib
+import matplotlib.pyplot
 from suspect import MRSData
 from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
 
-def plot_mrs(data, figure: matplotlib.figure, title=None, fit_gaussian=False):
+def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=False):
     ncoils = 1
     if isinstance(data, MRSData):
         if len(data.shape) > 1: # plot each coil separately
