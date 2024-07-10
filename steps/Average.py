@@ -10,12 +10,11 @@ class Average(ProcessingStep):
             "description": "Averages all input spectra into one"
         }
         super().__init__(nodegraph, id)
-        self.plotSpectrum = False # use plot() from ProcessingStep.py
 
     def process(self, data):
         if len(data["input"]) == 1:
             data["output"] = data["input"]
             return
-        data["output"] = [ data["input"][0].inherit(np.mean(data["input"], axis=0)) ] # retrieve metadata; we want a list of MRSData objects
+        data["output"] = [data["input"][0].inherit(np.mean(data["input"], axis=0))] # retrieve metadata; we want a list of MRSData objects
 
 api.RegisterNode(Average, "Average")
