@@ -33,6 +33,7 @@ def loadFile(filepath):
     vendor = None
     if ext in ["ima", "dat"]: vendor = "siemens"
     elif ext == "sdat": vendor = "philips"
+    if not isinstance(data, list): data = [data]
     return data, header, ext, vendor
 
 # adapted from suspect.io.load_twix to use mapVBVD for newer Siemens formats
@@ -46,16 +47,14 @@ def loadVBVD(filepath):
     data = twixobj.image['']
     data = numpy.squeeze(data)
 
-    # suspect expects data as [Rep, Cha, Col] = [Repetitions, Coils, Timepoints]
-    axes = twixobj.image.sqzDims # ['Col', 'Cha', 'Ave', 'Rep'] for example
-    target = ['Rep', 'Cha', 'Col']
-    inds = [i for i, dim in enumerate(axes) if dim not in target]
-    data = numpy.mean(data, axis=tuple(inds))
-    axes = [dim for dim in axes if dim in target]
-    if 'Rep' not in axes: # happens with water reference
-        data = numpy.expand_dims(data, 0)
-        axes = ['Rep'] + axes
-    data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col')))
+    axes = twixobj.image.sqzDims
+    if 'Ave' in axes and 'Rep' in axes: # transform [Col, Cha, Ave, Rep] into [Rep*Ave, Cha, Col]
+        data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col'), axes.index('Ave')))
+        data = numpy.reshape(data, (data.shape[0] * data.shape[3], data.shape[1], data.shape[2]))
+    elif 'Rep' in axes:
+        data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col')))
+    elif 'Ave' in axes:
+        data = numpy.transpose(data, (axes.index('Ave'), axes.index('Cha'), axes.index('Col')))
     data = numpy.conj(data)
 
     # parameters
