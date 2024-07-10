@@ -28,12 +28,11 @@ class MainFrame(LayoutFrame):
         
         self.current_step = 0
         self.show_editor = True
-        self.debug = True
         self.save_raw = False
         self.controlfile = None
         
-        # self.Bind(EVT_LOG, self.on_log)
         utils.init_logging(self.consoltext)
+        utils.set_debug(True)
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
@@ -57,7 +56,6 @@ class MainFrame(LayoutFrame):
         self.button_open_pipeline.Enable()
         self.DDstepselection.Clear()
         self.DDstepselection.AppendItems("")
-        self.DDstepselection
         if self.current_step >= len(self.steps):
             self.button_step_processing.SetBitmap(self.bmp_steppro)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)

@@ -23,6 +23,10 @@ def init_logging(text, _debug=False):
     debug = _debug
     text_dst.Bind(EVT_LOG, on_log)
 
+def set_debug(_debug):
+    global debug
+    debug = _debug
+
 def log_text( colour, *args):
         text = ""
         for arg in args: text += str(arg)
@@ -30,12 +34,8 @@ def log_text( colour, *args):
         wx.PostEvent(text_dst, evt)
 
 def on_log(event):
-    text = event.GetText()
-    current_datetime = datetime.now()
-    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")+": "+text
-    text=formatted_datetime+""
-    colour = event.GetColour()
-    text_dst.BeginTextColour(colour)
+    text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")+": " + event.GetText()
+    text_dst.BeginTextColour(event.GetColour())
     text_dst.WriteText(text)
     text_dst.EndTextColour()
     text_dst.Newline()
@@ -54,5 +54,4 @@ def log_warning(*args):
 
 def log_debug(*args):
     global debug
-    if not debug: return
-    log_text(DEBUG_COLOR, *args)
+    if debug: log_text(DEBUG_COLOR, *args)

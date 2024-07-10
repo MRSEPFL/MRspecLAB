@@ -1,4 +1,4 @@
-import os, sys, shutil, zipfile, time
+import os, sys, shutil, zipfile, time, subprocess
 import numpy as np
 import matplotlib
 import wx
@@ -123,15 +123,17 @@ def loadInput(self):
         csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
         table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
 
+dataDict = {}
+
 def processStep(self, step, nstep):
-    dataDict = {
-        "input": self.dataSteps[-1],
-        "wref": self.wrefSteps[-1],
-        "original": self.dataSteps[0],
-        "wref_original": self.wrefSteps[0],
-        "output": None,
-        "wref_output": None
-    }
+    global dataDict
+    dataDict["input"] = self.dataSteps[-1]
+    dataDict["wref"] = self.wrefSteps[-1]
+    dataDict["original"] = self.dataSteps[0]
+    dataDict["wref_original"] = self.wrefSteps[0]
+    dataDict["output"] = None
+    dataDict["wref_output"] = None
+    
     self.button_step_processing.Disable()
     if not self.fast_processing:
         self.button_auto_processing.Disable()
@@ -187,10 +189,8 @@ def saveDataPlot(self):
         utils.log_debug("Saved "+ str(name) +" to " + filepath)
         
 def analyseResults(self):
-    result = self.dataSteps[-1]
+    results = self.dataSteps[-1]
     wresult = self.wrefSteps[-1]
-    if len(result) == 1: result = result[0]
-    else: result = result[0].inherit(np.mean(result, axis=0))
 
     # basis file
     larmor = 0
@@ -200,10 +200,10 @@ def analyseResults(self):
             elif self.header[key] == "31P": larmor = 10.705
             elif self.header[key] == "23Na": larmor = 11.262
             break
-    tesla = round(result.f0 / larmor, 0)
+    tesla = round(results[0].f0 / larmor, 0)
     basisfile = None
     if self.sequence is not None:
-        strte = str(result.te)
+        strte = str(results[0].te)
         if strte.endswith(".0"): strte = strte[:-2]
         basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
         basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
@@ -235,32 +235,25 @@ def analyseResults(self):
         return False
 
     # lcmodel
+    params = None
     if self.controlfile is not None and os.path.exists(self.controlfile):
-        params = readControl(self.controlfile)
+        try: params = readControl(self.controlfile)
+        except: params = None
     else:
         self.controlfile = os.path.join(self.rootPath, "lcmodel", "default.CONTROL")
-        params = readControl(self.controlfile)
-        params.update({
-            "DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline # not good very bad code
-        })
+        try:
+            params = readControl(self.controlfile)
+            params.update({"DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline}) # not good very bad code
+        except: params = None
     if params is None:
         utils.log_error("Control file not found:\n\t", self.controlfile)
         return False
-    params.update({
-        "FILBAS": basisfile,
-        "FILCSV": "./result.csv",
-        "FILCOO": "./result.coord",
-        "FILPS": "./result.ps",
-        "DOWS": wresult is not None,
-        "NUNFIL": result.np,
-        "DELTAT": result.dt,
-        "ECHOT": result.te,
-        "HZPPPM": result.f0
-    })
     
-    controlfilepath = os.path.join(self.workpath, "result")
-    write_all_files(controlfilepath, result, wref_data=wresult, params=params) # write raw, h2o, control files to work folder
-    save_raw(os.path.join(self.workpath, "result.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
+    if "labels" in dataDict.keys(): labels = dataDict["labels"]
+    else: labels = [str(i) for i in range(len(results))]
+    print(labels)
+
+    # create work folder and copy lcmodel
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
@@ -275,30 +268,56 @@ def analyseResults(self):
         with zipfile.ZipFile(zippath, "r") as zip_ref:
             zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
 
-    if os.name == 'nt': command = f"""mkdir {self.workpath} & copy {lcmodelfile} {self.workpath} & cd {self.workpath} & lcmodel.exe < result_sl0.CONTROL & del lcmodel.exe"""
-    else: command = f"""mkdir {workpath} && cp {lcmodelfile} {workpath} && cd {workpath} && ./lcmodel < control_sl0.CONTROL && rm lcmodel"""
-    utils.log_debug("Running LCModel...\n\t", command)
-    os.system(command)
-    
-    command = ''
-    for f in os.listdir(self.workpath):
-        if os.name == 'nt': command += f" & move {os.path.join(self.workpath, f)} {self.lcmodelsavepath}"
-        else: command += f" && mv {os.path.join(workpath, f)} {lcmodelsavepath}"
-    command = command[3:]
-    utils.log_debug("Moving files...\n\t", command)
-    os.system(command)
+    if os.name == 'nt': command = f"""mkdir "{self.workpath}" & copy "{lcmodelfile}" "{self.workpath}" """
+    else: command = f"""mkdir "{self.workpath}" && cp "{lcmodelfile}" "{self.workpath}" """
+    subprocess.run(command, shell=True)
 
-    filepath = os.path.join(self.lcmodelsavepath, "result.coord")
-    if os.path.exists(filepath):
-        f = ReadlcmCoord(filepath)
-        figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
-        plot_coord(f, figure, title=filepath)
-        self.matplotlib_canvas.clear()
-        self.read_file(None, filepath) # also fills info panel
-        self.matplotlib_canvas.draw()
-        filepath = os.path.join(self.lcmodelsavepath, "lcmodel.png")
-        figure.savefig(filepath, dpi=600)
-    else: utils.log_warning("LCModel output not found")
+    for result, label in zip(results, labels):
+        rparams = params.copy()
+        rparams.update({
+            "FILBAS": basisfile,
+            "FILCSV": f"./{label}.csv",
+            "FILCOO": f"./{label}.coord",
+            "FILPS": f"./{label}.ps",
+            "DOWS": wresult is not None,
+            "NUNFIL": result.np,
+            "DELTAT": result.dt,
+            "ECHOT": result.te,
+            "HZPPPM": result.f0
+        })
+        
+        write_all_files(os.path.join(self.workpath, label), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
+        save_raw(os.path.join(self.workpath, f"{label}.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
+        if os.name == 'nt': command = f"""cd "{self.workpath}" & lcmodel.exe < {label}_sl0.CONTROL"""
+        else: command = f"""cd "{self.workpath}" && ./lcmodel < {label}_sl0.CONTROL"""
+        utils.log_debug(f"Running LCModel for {label}...\n\t", command)
+        subprocess.run(command, shell=True)
+
+        savepath = os.path.join(self.lcmodelsavepath, label)
+        os.mkdir(savepath)
+        command = ""
+        for f in os.listdir(self.workpath):
+            if "lcmodel" in f: continue
+            if os.name == 'nt': command += f""" & move "{os.path.join(self.workpath, f)}" "{savepath}" """
+            else: command += f""" && mv "{os.path.join(workpath, f)}" "{savepath}" """
+        command = command[3:]
+        utils.log_debug("Moving files...\n\t", command)
+        subprocess.run(command, shell=True)
+
+        filepath = os.path.join(savepath, f"{label}.coord")
+        if os.path.exists(filepath):
+            f = ReadlcmCoord(filepath)
+            figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
+            plot_coord(f, figure, title=filepath)
+            self.matplotlib_canvas.clear()
+            self.read_file(None, filepath) # also fills info panel
+            self.matplotlib_canvas.draw()
+            filepath = os.path.join(savepath, "lcmodel.png")
+            figure.savefig(filepath, dpi=600)
+        else: utils.log_warning("LCModel output not found")
+
+    shutil.rmtree(self.workpath) # delete work folder
+    utils.log_info("LCModel processing complete")
     
     # save nifti
     # rawpath = os.path.join(self.workpath, "result.RAW")
@@ -335,7 +354,6 @@ def analyseResults(self):
     #     print(GM[centre[0], centre[1], centre[2]])
     #     print(WM[centre[0], centre[1], centre[2]])
 
-    shutil.rmtree(self.workpath) # delete work folder
 
 def processPipeline(self):
     if self.current_step == 0:
