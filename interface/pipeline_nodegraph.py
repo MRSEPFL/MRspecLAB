@@ -221,7 +221,7 @@ class NodeGraphPanel(wx.Panel):
         # For testing during development
         # Add nodes to the node graph
         node1 = self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(0, 100))
-        node11 = self.nodegraph.AddNode("CoilCombinationSVD", nodeid= 'coil_combination_svd', pos=wx.Point(200, 100))
+        node11 = self.nodegraph.AddNode("CoilCombinationAdaptive", nodeid= 'coil_combination_svd', pos=wx.Point(200, 100))
         node2 = self.nodegraph.AddNode("ZeroPadding",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
         node3 = self.nodegraph.AddNode("LineBroadening", nodeid='linebroadening0',pos=wx.Point(600, 100))
         node4 = self.nodegraph.AddNode("FreqPhaseAlignment",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
