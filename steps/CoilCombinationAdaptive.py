@@ -81,7 +81,6 @@ class CoilCombinationAdaptive(ProcessingStep):
         ax = figure.add_subplot(2, 2, 2)
         self.plotData(ax, data["output"], False)
         ax.set_title("Output")
-        index += 1
         # freq
         ax = figure.add_subplot(2, 2, 3)
         self.plotData(ax, coils, True)
