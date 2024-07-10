@@ -21,6 +21,7 @@ class CoilCombinationSVD(ProcessingStep):
         if data["wref"] is not None:
             data["wref_output"] = combine_channels(data["wref"])
         data["original"] = data["output"] # very illegal but prevents problems in FreqPhaseAlignment
+        data["wref_original"] = data["wref_output"]
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):
@@ -29,26 +30,20 @@ class CoilCombinationSVD(ProcessingStep):
             self.plotData(figure.add_subplot(2, 1, 2), data["output"], True)
             figure.suptitle(self.__class__.__name__ + " (nothing done)")
             return
-        datain = np.array(data["input"]).transpose(1, 0, 2) # from (rep, coil, col) to (coil, rep, col)
-        datain = [data["input"][0].inherit(d) for d in datain] # turn back into MRSData objects
-        coils = []
-        for d in datain:
-            coils += [d.inherit(d[_]) for _ in range(0, d.shape[0])]
-        sx, sy = 2, 2
-        index = 1
+        datain = data["input"][0]
+        coils = [datain.inherit(datain[_]) for _ in range(datain.shape[0])]
         # time
-        ax = figure.add_subplot(sx, sy, index)
+        ax = figure.add_subplot(2, 2, 1)
         self.plotData(ax, coils, False)
-        ax.set_title("Input")
-        ax = figure.add_subplot(sx, sy, index + sy)
+        ax.set_title("Coils of first input")
+        ax = figure.add_subplot(2, 2, 2)
         self.plotData(ax, data["output"], False)
         ax.set_title("Output")
-        index += 1
         # freq
-        ax = figure.add_subplot(sx, sy, index)
+        ax = figure.add_subplot(2, 2, 3)
         self.plotData(ax, coils, True)
-        ax.set_title("Input")
-        ax = figure.add_subplot(sx, sy, index + sy)
+        ax.set_title("Coils of first input")
+        ax = figure.add_subplot(2, 2, 4)
         self.plotData(ax, data["output"], True)
         ax.set_title("Output")
         figure.suptitle(self.__class__.__name__)
