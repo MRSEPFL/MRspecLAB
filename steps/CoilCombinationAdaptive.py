@@ -60,7 +60,10 @@ class CoilCombinationAdaptive(ProcessingStep):
             data["output"] = data["input"]
             return
         data["output"] = [combine_channels(d) for d in data["input"]]
+        if data["wref"] is not None:
+            data["wref_output"] = combine_channels(data["wref"])
         data["original"] = data["output"] # very illegal but prevents problems in FreqPhaseAlignment
+        data["wref_original"] = data["wref_output"]
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):
