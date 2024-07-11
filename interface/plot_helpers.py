@@ -6,21 +6,17 @@ from inout.read_mrs import loadFile
 from inout.readcoord import ReadlcmCoord
 
 def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=False):
+    if isinstance(data, MRSData): data = [data]
+    if not isinstance(data, list): return
+    print(data[0].shape)
+    naverages = len(data)
     ncoils = 1
-    if isinstance(data, MRSData):
-        if len(data.shape) > 1: # plot each coil separately
-            ncoils = data.shape[0]
-            data = [data.inherit(data[i]) for i in range(data.shape[0])]
-        else:
-            data = [data]
-            if len(data[0].shape) > 1:
-                ncoils = data[0].shape[0]
-                data2 = []
-                for d in data:
-                    data2 = data2 + [d.inherit(d[i]) for i in range(d.shape[0])]
-                data = data2
-    if not (isinstance(data, list) and all(isinstance(d, MRSData) for d in data)):
-        return
+    if len(data[0].shape) > 1:
+        ncoils = data[0].shape[0]
+        data2 = []
+        for d in data:
+            data2 = data2 + [d.inherit(d[i]) for i in range(d.shape[0])]
+        data = data2
     if title is None: title = "Result"
     # canvas.clear()
     ax = figure.add_subplot(2, 1, 1)
@@ -41,7 +37,7 @@ def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=Fa
     info = ""
     if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
     info += f"\n\tNumber of coils: {ncoils}"
-    info += f"\n\tNumber of averages: {len(data)}"
+    info += f"\n\tNumber of averages: {naverages}"
     if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
     if hasattr(f, "dt"): info += f"\n\tDwell time (s): {f.dt}"
     if hasattr(f, "df"): info += f"\n\tFrequency delta (Hz): {f.df}"
@@ -49,9 +45,10 @@ def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=Fa
     if hasattr(f, "te"): info += f"\n\tEcho time (ms): {f.te}"
     if hasattr(f, "tr"): info += f"\n\tRepetition time (ms): {f.tr}"
     info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
-    try:
-        if hasattr(f, "centre"): info += f"\n\tCentre: {f.centre}"
-    except: pass
+    info += "\n"
+    if f.transform is not None:
+        info += f"\n\tTransform: {f.transform}"
+        info += f"\n\tCentre: {f.centre}"
     if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
     return info
 
@@ -125,11 +122,6 @@ def read_file(filepath, canvas, text, fit_gaussian=False):
         return
     else:
         f, _, _, _= loadFile(filepath)
-        for i in range(len(f)):
-            if len(f[i].shape) > 1:
-                from suspect.processing.channel_combination import combine_channels
-                f[i] = combine_channels(f[i])
-
         canvas.clear()
         info = plot_mrs(f, canvas.figure, title=filepath, fit_gaussian=fit_gaussian)
         canvas.draw()
