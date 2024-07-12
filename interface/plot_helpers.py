@@ -8,7 +8,6 @@ from inout.readcoord import ReadlcmCoord
 def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=False):
     if isinstance(data, MRSData): data = [data]
     if not isinstance(data, list): return
-    print(data[0].shape)
     naverages = len(data)
     ncoils = 1
     if len(data[0].shape) > 1:
@@ -71,7 +70,6 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     elif not isinstance(lcmdata, dict):
         return
     if title is None: title = ".coord file"
-    
     # canvas.clear()
     ax = figure.add_subplot(1, 1, 1)
     
@@ -92,7 +90,7 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     ax.text(4.25, np.mean(lcmdata["baseline"]) - offset, "Baseline", rotation=0, va='center', ha='right', color='b')
 
     offset += getOffset(lcmdata['subspec'][0], lcmdata['baseline']) + padding
-    for i, (metab, subspec) in enumerate(zip(lcmdata['metab'], lcmdata['subspec'])):
+    for metab, subspec in zip(lcmdata['metab'], lcmdata['subspec']):
         ax.plot(lcmdata['ppm'], [x - offset for x in subspec], 'k-', label=metab)
         ax.text(4.25, -offset, metab, rotation=0, va='center', ha='right', color='k')
         offset += padding
@@ -100,7 +98,6 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     ax.set_xlabel('ppm')
     ax.set_xlim((4.2, 1))
     ax.get_yaxis().set_visible(False)
-    
     figure.suptitle(title)
     figure.tight_layout()
 
@@ -119,7 +116,6 @@ def read_file(filepath, canvas, text, fit_gaussian=False):
         info = plot_coord(f, canvas.figure, title=filepath)
         canvas.draw()
         text.SetValue(f"File: {filepath}\n{info}")
-        return
     else:
         f, _, _, _= loadFile(filepath)
         canvas.clear()

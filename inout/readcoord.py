@@ -45,8 +45,18 @@ def ReadlcmCoord(filename):
         temp = next(words).removesuffix('%')
         if temp == "lines": break
         conc['SD'] = temp
-        conc['c_cr'] = float(next(words))
-        conc['name'] = next(words).strip()
+        word = next(words)
+        try: float(word)
+        except: # probably "number+Scyllo" without space
+            if '+' in word and word[0] != '+' and word[-1] != '+' and word[word.find('+') - 1].isdigit():
+                split = word.split('+', 1)
+                conc['c_cr'] = split[0]
+                conc['name'] = split[1]
+            else:
+                continue
+        else:
+            conc['c_cr'] = word
+            conc['name'] = next(words).strip()
         lcmdata['conc'].append(conc.copy())
         index += 1
 
@@ -90,7 +100,7 @@ def ReadlcmCoord(filename):
     k = 0
     for i in range(len(lcmdata['conc'])):
         key = next(words)
-        if key == "lines":
+        if key == "lines": # start of fitting warnings
             break
         index = -1
         for j in range(len(lcmdata['conc'])):
@@ -102,7 +112,7 @@ def ReadlcmCoord(filename):
         lcmdata['metab'].append(key)
         skipto("=")
         next(words)
-        subspec_values = [float(next(words)) for i in range(nbpoints)]
+        subspec_values = [float(next(words)) for _ in range(nbpoints)]
         lcmdata['subspec'].append([float(x) - lcmdata['baseline'][j] for j, x in enumerate(subspec_values)])
         k += 1
     lcmdata['nfit'] = k
