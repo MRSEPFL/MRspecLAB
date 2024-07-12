@@ -1,6 +1,7 @@
 from processing.ProcessingStep import ProcessingStep
 import gs.api as api
 import numpy as np
+from processing.processing_helpers import zero_phase_flip
 
 # translated from FID-A code
 def estimate_csm(data):
@@ -60,6 +61,7 @@ class CoilCombinationAdaptive(ProcessingStep):
             data["output"] = data["input"]
             return
         data["output"] = [combine_channels(d) for d in data["input"]]
+        zero_phase_flip(data["output"])
         if data["wref"] is not None:
             data["wref_output"] = combine_channels(data["wref"])
         data["original"] = data["output"] # very illegal but prevents problems in FreqPhaseAlignment

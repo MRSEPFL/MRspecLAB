@@ -27,7 +27,7 @@ class FreqPhaseAlignment(ProcessingStep):
             ),
             api.VectorProp( # tuple of length 3
                 idname="freqRange", 
-                default=(3, 3.2, 0), 
+                default=(1.8, 2.2, 0), 
                 labels=("Lower Bound", "Higher Bound"),
                 min_vals=(0, 0, 0), 
                 max_vals=(6, 6, 0),
