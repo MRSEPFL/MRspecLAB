@@ -55,7 +55,7 @@ class AverageBlock(ProcessingStep):
             output.append(data["input"][i].inherit(np.mean(to_average, axis=0)))
             current_block = int(i // block_length)
             current_average = i // step
-            labels.append(f"type{current_block % block_types}block{int(current_block // block_types)}average{current_average % block_averages}")
+            labels.append(f"type{current_block % block_types}block{int(current_block // block_types) + 1}average{current_average % block_averages + 1}")
             i += step
         data["output"] = output
         data["labels"] = labels
