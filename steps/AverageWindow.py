@@ -2,10 +2,10 @@ from processing.ProcessingStep import ProcessingStep
 import gs.api as api
 import numpy as np
 
-class AverageWindow(ProcessingStep):
+class AverageMoving(ProcessingStep):
     def __init__(self, nodegraph, id):
         self.meta_info = {
-            "label": "Window Averaging",
+            "label": "Moving Average",
             "author": "CIBM",
             "description": "Averages spectra with a moving window of a given length"
         }
@@ -36,4 +36,4 @@ class AverageWindow(ProcessingStep):
         data["output"] = output
         data["labels"] = labels
 
-api.RegisterNode(AverageWindow, "AverageWindow")
+api.RegisterNode(AverageMoving, "AverageMoving")
