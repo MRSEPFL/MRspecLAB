@@ -12,6 +12,7 @@ class FileDrop(wx.FileDropTarget):
 
     def OnDropFiles(self, x, y, filenames):
         self.Parent.on_drop_files(filenames)
+        return True
 
 class FilePanel(wx.Panel):
     def __init__(self, parent):
