@@ -1,5 +1,6 @@
 import numpy as np
 from suspect import MRSData
+from interface import utils
 
 def zero_phase_flip(data: list[MRSData], start=2., end=2.1):
     '''flip spectrum if marked region is negative'''
@@ -7,5 +8,6 @@ def zero_phase_flip(data: list[MRSData], start=2., end=2.1):
     if len(testrange) == 0: return
     spec = data[0].spectrum()[testrange]
     if np.mean(spec) < 0:
+        utils.log_warning("Flipping spectrum phase")
         for i in range(len(data)):
             data[i] = data[i].adjust_phase(np.pi)

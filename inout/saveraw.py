@@ -2,7 +2,6 @@ import numpy as np
 
 # adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
 def save_raw(filename, data, seq="PRESS"):
-    if seq is None: seq = "PRESS"
     with open(filename, 'w') as fout:
         fout.write(" $SEQPAR\n")
         fout.write(" ECHOT = {}\n".format(data.te))

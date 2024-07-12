@@ -222,7 +222,8 @@ def analyseResults(self):
             dlg.Destroy()
         return basisfile
 
-    if basisfile is not None and os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+    # if basisfile is not None and os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
+    if basisfile is not None and os.path.exists(basisfile):
         dlg = wx.MessageDialog(None, basisfile, "Basis set found, is it the right one?\n" + basisfile, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
         button_clicked = dlg.ShowModal()
         if button_clicked == wx.ID_NO: basisfile = request_basisfile()
@@ -233,6 +234,11 @@ def analyseResults(self):
     if basisfile is None:
         utils.log_error("No basis file specified")
         return False
+
+    for seq in utils.supported_sequences:
+        if seq.lower() in basisfile.lower():
+            self.sequence = seq
+            break
 
     # lcmodel
     params = None
@@ -278,7 +284,7 @@ def analyseResults(self):
             "FILCSV": f"./{label}.csv",
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
-            "FILRAW": f"./{label}.RAW",
+            # "FILRAW": f"./{label}.RAW"
             "DOWS": wresult is not None,
             "NUNFIL": result.np,
             "DELTAT": result.dt,

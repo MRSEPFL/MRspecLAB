@@ -36,7 +36,6 @@ def loadFile(filepath):
     if not isinstance(data, list): data = [data]
     return data, header, ext, vendor
 
-# adapted from suspect.io.load_twix to use mapVBVD for newer Siemens formats
 def loadVBVD(filepath):
     twixobj = mapvbvd.mapVBVD(filepath, quiet=True)
     if isinstance(twixobj, list):
