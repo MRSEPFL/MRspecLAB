@@ -251,7 +251,6 @@ def analyseResults(self):
     
     if "labels" in dataDict.keys(): labels = dataDict["labels"]
     else: labels = [str(i) for i in range(len(results))]
-    print(labels)
 
     # create work folder and copy lcmodel
     lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
@@ -279,6 +278,7 @@ def analyseResults(self):
             "FILCSV": f"./{label}.csv",
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
+            "FILRAW": f"./{label}.RAW",
             "DOWS": wresult is not None,
             "NUNFIL": result.np,
             "DELTAT": result.dt,
