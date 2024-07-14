@@ -9,7 +9,7 @@ from suspect.io.lcmodel import write_all_files
 # import pandas as pd
 
 from interface import utils
-from inout.read_mrs import loadFile
+from inout.read_mrs import load_file
 from inout.readcoord import ReadlcmCoord
 from inout.readheader import Table
 from inout.readcontrol import readControl
@@ -30,7 +30,7 @@ def loadInput(self):
     dtype = None
 
     for filepath in self.filepaths:
-        try: data, header, dtype, vendor = loadFile(filepath)
+        try: data, header, dtype, vendor = load_file(filepath)
         except: utils.log_warning("Error loading file: " + filepath + "\n\t" + str(sys.exc_info()[0]))
         else:
             if data is None:
@@ -58,7 +58,7 @@ def loadInput(self):
     if len(self.Waterfiles.filepaths) == 0: utils.log_warning("No water reference given")
     else: wrefpath = self.Waterfiles.filepaths[0]
     if wrefpath is not None:
-        try: self.originalWref, _, _, _ = loadFile(wrefpath)
+        try: self.originalWref, _, _, _ = load_file(wrefpath)
         except: utils.log_warning("Error loading water reference: " + wrefpath + "\n\t" + str(sys.exc_info()[0]))
         else:
             if self.originalWref is None: utils.log_warning("Couldn't load water reference: " + wrefpath)
@@ -70,7 +70,7 @@ def loadInput(self):
     # check coil combination
     if len(self.originalData[0].shape) > 1:
         if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
-            utils.log_warning("Coil combination needed for multi-coil data; performing basic SVD coil combination")
+            utils.log_warning("Coil combination needed for multi-coil data; performing adaptive coil combination")
             # from suspect.processing.channel_combination import combine_channels
             from steps.CoilCombinationAdaptive import combine_channels
             self.originalData = [combine_channels(d) for d in self.originalData]

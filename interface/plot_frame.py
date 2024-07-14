@@ -9,7 +9,7 @@ class PlotFrame(wx.Frame):
         self.filepath = filepath
         if title is None: title = filepath
         self.SetTitle(title)
-        self.SetIcon(wx.Icon("resources/icon_32p.png"))
+        # self.SetIcon(wx.Icon("resources/icon_32p.png"))
         self.SetBackgroundColour(wx.Colour(XISLAND1)) 
         self.SetSize((1200, 800))
         self.Show(True)

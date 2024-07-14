@@ -21,6 +21,7 @@ class FilePanel(wx.Panel):
         self.SetDropTarget(self.drop_target)
         self.filepaths = []
         self.root = ""
+        self.is_viewer = False
 
         self.label = wx.StaticText(self, wx.ID_ANY, "Import MRS files here", style=wx.ALIGN_CENTRE_VERTICAL)
         self.label.SetForegroundColour(wx.Colour(BLACK_WX))
@@ -37,7 +38,7 @@ class FilePanel(wx.Panel):
         self.list = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_SINGLE | wx.LB_NEEDED_SB | wx.HSCROLL | wx.LB_OWNERDRAW)
         self.list.SetBackgroundColour(wx.Colour(XISLAND4)) 
         
-        self.number_label = wx.StaticText(self, wx.ID_ANY, "0 Files imported", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
+        self.number_label = wx.StaticText(self, wx.ID_ANY, "0 files", style=wx.ALIGN_TOP|wx.ALIGN_RIGHT)
         self.number_label.SetForegroundColour(wx.Colour(BLACK_WX))
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -108,14 +109,15 @@ class FilePanel(wx.Panel):
     def on_dclick(self, event):
         filepath = self.filepaths[self.list.GetSelection()]
         if filepath is None or filepath == "" or not os.path.exists(filepath):
+            utils.log_error("File not found")
             return
         if not any([filepath.lower().endswith(ext) for ext in utils.supported_files]):
+            utils.log_error("Invalid file type")
             return
-        
         child = PlotFrame(filepath)
         canvas = child.canvas
         text = child.text
-        read_file(filepath, canvas, text)
+        read_file(filepath, canvas, text, self.is_viewer)
         event.Skip()
     
     def on_drop_files(self, filenames):

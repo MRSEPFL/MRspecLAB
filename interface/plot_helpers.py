@@ -2,16 +2,14 @@ import os
 import numpy as np
 import matplotlib.pyplot
 from suspect import MRSData
-from inout.read_mrs import loadFile
+from inout.read_mrs import load_file
 from inout.readcoord import ReadlcmCoord
+from steps.CoilCombinationAdaptive import combine_channels
 
 def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=False):
     if isinstance(data, MRSData): data = [data]
     if not isinstance(data, list): return
-    naverages = len(data)
-    ncoils = 1
-    if len(data[0].shape) > 1:
-        ncoils = data[0].shape[0]
+    if len(data[0].shape) > 1: # separate coils
         data2 = []
         for d in data:
             data2 = data2 + [d.inherit(d[i]) for i in range(d.shape[0])]
@@ -32,11 +30,18 @@ def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=Fa
     figure.suptitle(title)
     figure.tight_layout()
 
+
+def get_mrs_info(data):
     f = data[0]
     info = ""
+    if len(data[0].shape) == 1: # if coils are combined
+        if len(data) == 1: info += f"\n\tSNR: {str(estimate_snr(data[0]))}"
+        else: info += f"Mean SNR: {str(np.mean(np.array([estimate_snr(d) for d in data])))}"
+    info += "\n"
     if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
-    info += f"\n\tNumber of coils: {ncoils}"
-    info += f"\n\tNumber of averages: {naverages}"
+    info += f"\n\tNumber of coils: {data[0].shape[0] if len(data[0].shape) > 1 else 1}"
+    info += f"\n\tNumber of averages: {len(data)}"
+    info += "\n"
     if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
     if hasattr(f, "dt"): info += f"\n\tDwell time (s): {f.dt}"
     if hasattr(f, "df"): info += f"\n\tFrequency delta (Hz): {f.df}"
@@ -55,10 +60,22 @@ def estimate_snr(data: MRSData):
     ppms = data.frequency_axis_ppm()
     spec = data.spectrum()
     naapeak = np.max(np.real(spec[np.where(np.logical_and(ppms > 1.8, ppms < 2.2))]))
+    return naapeak / estimate_noise_std(data)
+
+def estimate_water_snr(data: MRSData):
+    ppms = data.frequency_axis_ppm()
+    spec = data.spectrum()
+    water = np.real(spec[np.where(np.logical_and(ppms > 4.2, ppms < 5.2))])
+    return np.max(water) / estimate_noise_std(data)
+
+def estimate_noise_std(data: MRSData):
+    ppms = data.frequency_axis_ppm()
+    spec = data.spectrum()
     noise = np.real(spec[np.where(np.logical_and(ppms > 0, ppms < 0.5))])
+    noise[np.isnan(noise)] = 0
     poly = np.polynomial.polynomial.Polynomial.fit(range(len(noise)), noise, 5)
     noise -= poly(range(len(noise)))
-    return naapeak / np.std(noise)
+    return np.std(noise)
 
 def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     if isinstance(lcmdata, str):
@@ -101,6 +118,7 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     figure.suptitle(title)
     figure.tight_layout()
 
+def get_coord_info(lcmdata):
     dtab = '\n\t\t'
     info = (
         f"\n\tNumber of points: {len(lcmdata['ppm'])}\n\tNumber of metabolites: {len(lcmdata['conc'])} ({lcmdata['nfit']} fitted)\n\t0th-order phase: {lcmdata['ph0']}"
@@ -109,16 +127,22 @@ def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
     )
     return info
 
-def read_file(filepath, canvas, text, fit_gaussian=False):
+def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
     if filepath.lower().endswith(".coord"):
         f = ReadlcmCoord(filepath)
+        text.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
         canvas.clear()
-        info = plot_coord(f, canvas.figure, title=filepath)
+        plot_coord(f, canvas.figure, title=filepath)
         canvas.draw()
-        text.SetValue(f"File: {filepath}\n{info}")
     else:
-        f, _, _, _= loadFile(filepath)
+        f, _, _, _= load_file(filepath)
+        text.SetValue(f"File: {filepath}\n{get_mrs_info(f)}")
+        if is_viewer: 
+            if len(f[0].shape) > 1:
+                f = [combine_channels(_) for _ in f]
+            if estimate_water_snr(f[0]) > 200: # probably water
+                f = [f[0].inherit(np.mean(f, axis=0))]
+        title = filepath.rsplit(os.path.sep, 1)[1]
         canvas.clear()
-        info = plot_mrs(f, canvas.figure, title=filepath, fit_gaussian=fit_gaussian)
+        plot_mrs(f, canvas.figure, title=title, fit_gaussian=fit_gaussian)
         canvas.draw()
-        text.SetValue(f"File: {filepath}\n{info}")

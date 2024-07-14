@@ -32,7 +32,8 @@ def RegisterNode(node, idname=""):
     else:
         if idname in NODE_REGISTRY:
             # raise NodeExistsError(idname)
-            print(f"Node with idname '{idname}' already exists in the registry.")
+            # print(f"Node with idname '{idname}' already exists in the registry.")
+            return
 
         NODE_REGISTRY[idname] = node
 

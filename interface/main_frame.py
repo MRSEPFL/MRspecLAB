@@ -6,12 +6,11 @@ import importlib.util
 import threading
 import pickle
 
-from . import utils
+from . import utils, pipeline_window
 from .main_layout import LayoutFrame
-from .plot_helpers import read_file
 from processing import processingPipeline
-from .plot_frame import PlotFrame
-from . import pipeline_window
+from inout.readcoord import ReadlcmCoord
+from interface.plot_helpers import plot_coord, get_coord_info
 from interface.colours import(XISLAND1,XISLAND2)
     
 class MainFrame(LayoutFrame):
@@ -142,16 +141,6 @@ class MainFrame(LayoutFrame):
         self.Layout()
         if event is not None: event.Skip()
 
-    def on_read_coord(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="coord files (*.coord)|*.coord", defaultDir=self.rootPath, style=wx.FD_OPEN)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPaths()[0]
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error(f"File not found:\n\t{filepath}")
-            return
-        self.read_file(None, filepath)
-        event.Skip()
-    
     def on_button_step_processing(self, event):
         self.pipelineWindow.Hide()
         self.button_open_pipeline.Disable()
@@ -223,29 +212,6 @@ class MainFrame(LayoutFrame):
         self.controlfile = filepath
         utils.log_info(f"Control file set to:\n\t{filepath}")
         event.Skip()
-
-    def read_file(self, event, filepath=None, new_window=False):
-        if filepath is None:
-            index = self.inputwref_drag_and_drop_list.GetSelection()
-            if index == wx.NOT_FOUND: return
-            filepath = self.MRSfiles.filepaths[index]
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error(f"File not found:\n\t{filepath}")
-            return
-        if not any([filepath.lower().endswith(ext) for ext in utils.supported_files]):
-            utils.log_error("Invalid file type")
-            return
-        
-        if new_window:
-            child = PlotFrame(filepath)
-            canvas = child.canvas
-            text = child.text
-        else:
-            canvas = self.matplotlib_canvas
-            text = self.infotext
-        
-        read_file(filepath, canvas, text)
-        if event is not None: event.Skip()
         
     def on_DDstepselection_select(self, event):
         selected_item = self.DDstepselection.GetValue()
@@ -255,8 +221,10 @@ class MainFrame(LayoutFrame):
             filepath = os.path.join(self.lcmodelsavepath, "result.coord")
             if os.path.exists(filepath):
                 self.matplotlib_canvas.clear()
-                self.read_file(None, filepath)
+                f = ReadlcmCoord(filepath)
+                plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
                 self.matplotlib_canvas.draw()
+                self.infotext.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
             else:
                 utils.log_warning("LCModel output not found")
         else:

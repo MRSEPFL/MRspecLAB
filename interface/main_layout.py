@@ -33,14 +33,10 @@ class LayoutFrame(wx.Frame):
         menuBar.Append(fileMenu, "&File")
         self.SetMenuBar(menuBar)
 
-        open_coord = wx.MenuItem(fileMenu, wx.ID_ANY, "&Open COORD file", "Open .coord file")
         load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
         save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
-        fileMenu.Append(open_coord)
-        fileMenu.AppendSeparator()
         fileMenu.Append(load_pipeline)
         fileMenu.Append(save_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_read_coord, open_coord)
         self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
         self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
 

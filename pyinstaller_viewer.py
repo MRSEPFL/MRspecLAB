@@ -4,7 +4,7 @@ import sys ; sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 PyInstaller.__main__.run([
     'MRSviewer.py',
     '--noconfirm',
-    '--onefile', # doesn't run
+    '--onefile',
     # own files
     # external libraries
     '--hidden-import', 'pydicom.encoders.gdcm',

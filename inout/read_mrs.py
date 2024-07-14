@@ -9,7 +9,7 @@ from suspect.io.twix import calculate_orientation
 from suspect._transforms import rotation_matrix
 from .readheader import DataReaders
 
-def loadFile(filepath):
+def load_file(filepath):
     header = None
     ext = os.path.splitext(filepath)[-1][1:].lower()
     if ext == "ima":
