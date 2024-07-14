@@ -73,7 +73,7 @@ class MainFrame(LayoutFrame):
         processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
-            if module_name == "__init__": continue
+            if module_name.startswith("_"): continue
             spec = importlib.util.spec_from_file_location(module_name, file)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
@@ -151,10 +151,12 @@ class MainFrame(LayoutFrame):
         for filepath in self.MRSfiles.filepaths:
             if not os.path.exists(filepath):
                 utils.log_error(f"File not found:\n\t{filepath}")
+                self.reset()
                 return
         for filepath in self.Waterfiles.filepaths:
             if not os.path.exists(filepath):
                 utils.log_error(f"File not found:\n\t{filepath}")
+                self.reset()
                 return
 
         thread_processing = threading.Thread(target=processingPipeline.processPipeline, args=[self])

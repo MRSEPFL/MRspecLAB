@@ -1,12 +1,11 @@
 import os
 import numpy as np
-import matplotlib.pyplot
 from suspect import MRSData
 from inout.read_mrs import load_file
 from inout.readcoord import ReadlcmCoord
-from steps.CoilCombinationAdaptive import combine_channels
+from steps._CoilCombinationAdaptive import combine_channels
 
-def plot_mrs(data, figure: matplotlib.pyplot.figure, title=None, fit_gaussian=False):
+def plot_mrs(data, figure, title=None, fit_gaussian=False):
     if isinstance(data, MRSData): data = [data]
     if not isinstance(data, list): return
     if len(data[0].shape) > 1: # separate coils
@@ -77,7 +76,7 @@ def estimate_noise_std(data: MRSData):
     noise -= poly(range(len(noise)))
     return np.std(noise)
 
-def plot_coord(lcmdata, figure: matplotlib.figure, title=None):
+def plot_coord(lcmdata, figure, title=None):
     if isinstance(lcmdata, str):
         filepath = lcmdata
         if filepath == "" or not os.path.exists(filepath):

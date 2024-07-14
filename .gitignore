@@ -8,4 +8,4 @@ lcmodel/lcmodel.exe
 *.spec
 build/
 dist/
-# !dist/*.zip
+env_*

@@ -34,6 +34,8 @@ def log_text( colour, *args):
         wx.PostEvent(text_dst, evt)
 
 def on_log(event):
+    global text_dst
+    if not text_dst: return
     text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")+": " + event.GetText()
     text_dst.BeginTextColour(event.GetColour())
     text_dst.WriteText(text)

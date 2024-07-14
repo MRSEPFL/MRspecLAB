@@ -13,5 +13,8 @@ PyInstaller.__main__.run([
     '--collect-submodules', 'ometa._generated',
     '--collect-submodules', 'terml._generated',
     '--hidden-import', 'wx',
-    '--hidden-import', 'wx._xml'
+    # '--hidden-import', 'wx._xml'
+    # exclude
+    '--exclude-module', 'cv2',
+    '--exclude-module', 'babel',
 ])

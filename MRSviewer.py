@@ -1,4 +1,4 @@
-import os, sys, wx
+import wx
 from interface.file_panel import FilePanel
 
 class MainApp(wx.App):
