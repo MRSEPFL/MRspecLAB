@@ -51,8 +51,8 @@ def loadVBVD(filepath):
         if axes[i] not in ["Col", "Cha", "Ave", "Rep"]:
             data = numpy.mean(data, axis=i) # violence
     if 'Ave' in axes and 'Rep' in axes: # transform [Col, Cha, Ave, Rep] into [Rep*Ave, Cha, Col]
-        data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col'), axes.index('Ave')))
-        data = numpy.reshape(data, (data.shape[0] * data.shape[3], data.shape[1], data.shape[2]))
+        data = numpy.transpose(data, (axes.index('Rep'), axes.index('Ave'), axes.index('Cha'), axes.index('Col')))
+        data = numpy.reshape(data, (data.shape[0] * data.shape[1], data.shape[2], data.shape[3]))
     elif 'Rep' in axes:
         data = numpy.transpose(data, (axes.index('Rep'), axes.index('Cha'), axes.index('Col')))
     elif 'Ave' in axes:

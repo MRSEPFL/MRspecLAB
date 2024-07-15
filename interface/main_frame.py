@@ -53,8 +53,8 @@ class MainFrame(LayoutFrame):
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
         self.button_open_pipeline.Enable()
-        self.DDstepselection.Clear()
-        self.DDstepselection.AppendItems("")
+        # self.DDstepselection.Clear()
+        # self.DDstepselection.AppendItems("")
         if self.current_step >= len(self.steps):
             self.button_step_processing.SetBitmap(self.bmp_steppro)
         self.button_auto_processing.SetBitmap(self.bmp_autopro)
@@ -83,54 +83,6 @@ class MainFrame(LayoutFrame):
                     processing_steps[name] = obj
         return processing_steps, rootPath
 
-    def on_save_pipeline(self, event, filepath=None):
-        if self.steps == []:
-            utils.log_warning("No pipeline to save")
-            return
-        if filepath is None:
-            fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_SAVE)
-            if fileDialog.ShowModal() == wx.ID_CANCEL: return
-            filepath = fileDialog.GetPath()
-        if filepath == "":
-            utils.log_error(f"File not found")
-            return
-        tosave = []
-        nodes = dict(self.pipelineWindow.pipelinePanel.nodegraph.nodes)
-        for n in nodes.keys():
-            params = [(v.idname, v.value) for k, v in nodes[n].properties.items()]
-            tosave.append([nodes[n].idname, nodes[n].id, nodes[n].pos, params])
-        tosave = [tosave]
-        wires = list(self.pipelineWindow.pipelinePanel.nodegraph.wires)
-        tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
-        # print(tosave)
-        with open(filepath, 'wb') as f:
-            pickle.dump(tosave, f)
-        if event is not None: event.Skip()
-
-    def on_load_pipeline(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.rootPath, style=wx.FD_OPEN)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPath()
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error("File not found: " + filepath)
-            return
-        with open(filepath, 'rb') as f:
-            toload = pickle.load(f)
-        self.pipelineWindow.pipelinePanel.nodegraph.nodes = {}
-        self.pipelineWindow.pipelinePanel.nodegraph.wires = []
-        for data in toload[0]:
-            self.pipelineWindow.pipelinePanel.nodegraph.AddNode(data[0], data[1], data[2])
-            for p in data[3]:
-                self.pipelineWindow.pipelinePanel.nodegraph.nodes[data[1]].properties[p[0]].value = p[1]
-        for data in toload[1]:
-            src = self.pipelineWindow.pipelinePanel.nodegraph.nodes[data[0]].FindSocket(data[1])
-            dst = self.pipelineWindow.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
-            self.pipelineWindow.pipelinePanel.nodegraph.ConnectNodes(src, dst)
-        self.pipelineWindow.pipelinePanel.nodegraph.Refresh()
-        self.retrieve_pipeline()
-        self.update_statusbar()
-        event.Skip()
-
     def update_statusbar(self):
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
 
@@ -143,7 +95,6 @@ class MainFrame(LayoutFrame):
 
     def on_button_step_processing(self, event):
         self.pipelineWindow.Hide()
-        self.button_open_pipeline.Disable()
         self.button_step_processing.Disable()
         self.button_auto_processing.Disable()
         if 0 < self.current_step:
@@ -164,6 +115,8 @@ class MainFrame(LayoutFrame):
         event.Skip()
         
     def on_autorun_processing(self, event):
+        self.DDstepselection.Clear()
+        self.DDstepselection.AppendItems("")
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.bmp_autopro)

@@ -1,5 +1,4 @@
 import wx
-
 from gs.registry import NODE_REGISTRY
 from .node_add import AddNodeMenu
 from interface.colours import(XISLAND1)
@@ -9,7 +8,6 @@ import ctypes
 try: ctypes.windll.shcore.SetProcessDpiAwareness(True)
 except Exception: pass
 
-#Added for MRS software to fix a bug in the UI (disable connection from input to output)
 from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_ADDNODEBTN)
 from gsnodegraph.constants import SOCKET_INPUT
         
@@ -24,7 +22,6 @@ class Output(object):
         self.visible = visible
 
 class InputNode(NodeBase):
-    """ Example node showing an input node. """
     def __init__(self, nodegraph, _id):
         NodeBase.__init__(self, nodegraph, _id)
 
@@ -36,76 +33,53 @@ class InputNode(NodeBase):
             "Output": Output(idname="transients", datatype="TRANSIENTS", label="Output")
         }
 
-class NodeGraph(NodeGraphBase): # modified for MRS software
+class NodeGraph(NodeGraphBase):
     def __init__(self, parent, registry, config, *args, **kwargs):
         NodeGraphBase.__init__(self, parent, registry, config, *args, **kwargs)
 
     def OnLeftUp(self, event):
         pnt = event.GetPosition()
         winpnt = self.CalcMouseCoords(pnt)
-
-        # Clear selection bbox and set nodes as selected
         if self.bbox_rect != None:
             self.sel_nodes = self.BoxSelectHitTest(self.bbox_rect)
             for node in self.sel_nodes:
                 if node.IsSelected() != True and node.IsActive() != True:
                     node.SetSelected(True)
-
-        # Attempt to make a connection
         if self.src_node != None:
             dst_node = self.HitTest(winpnt)
-            
             if dst_node is not None:
                 dst_socket = dst_node.HitTest(winpnt)
-
-                # Make sure not to allow different datatypes or
-                # the same 'socket type' to be connected!
                 if dst_socket is not None:
                     if (self.src_socket.direction != dst_socket.direction
                         and self.src_socket.datatype == dst_socket.datatype
                         and self.src_node != dst_node):
-
-                        # Only allow a single wire to be connected to any one input.
-                        if self.SocketHasWire(dst_socket) is not True:
-                            #Added for MRS software to fix a bug in the UI (disable connection from input to output)
-
+                        if self.SocketHasWire(dst_socket) is not True: # Only allow a single wire to be connected to any one input.
                             if dst_socket.direction is SOCKET_INPUT:
                                 self.ConnectNodes(self.src_socket, dst_socket)
-
-                        # If there is already a connection,
-                        # but a wire is "dropped" into the socket
-                        # disconnect the last connection and
-                        # connect the current wire.
-                        else:
+                        else: # If there is already a connection but a wire is "dropped" into the socket, disconnect the last connection and connect the current wire.
                             for wire in self.wires:
                                 if wire.dstsocket == dst_socket:
                                     dst = wire.dstsocket
                                     src = wire.srcsocket
                                     self.DisconnectNodes(src, dst)
-
                             self.ConnectNodes(self.src_socket, dst_socket)
-
             # Send event to update the properties panel
             if self.last_active_node is None:
                 self.SendNodeSelectEvent()
             if self.last_active_node is not self.src_node:
                 self.SendNodeSelectEvent()
             self.last_active_node = self.src_node
-
-
         # Reset all values
         self.src_node = None
         self.src_socket = None
         self.tmp_wire = None
         self.bbox_start = None
         self.bbox_rect = None
-
         # Update add node button and send button event if it was clicked
         pnt = event.GetPosition()
         if self.MouseInAddNodeBtn(pnt) is True:
             self.addnode_btn.SetClicked(False)
             self.SendAddNodeBtnEvent()
-
         # Refresh the nodegraph
         self.UpdateNodeGraph()
 
@@ -129,8 +103,7 @@ class NodeGraph(NodeGraphBase): # modified for MRS software
             if (node.IsOutputNode() != True and not isinstance(node, InputNode)):##Changed for MRS
                 self.DeleteNode(node)
             else:
-                # In the case that this is an output node, we
-                # want to deselect it, not delete it. :)
+                # In the case that this is an output node, we want to deselect it, not delete it. :)
                 node.SetSelected(False)
         self.sel_nodes = []
 
@@ -138,31 +111,20 @@ class NodeGraph(NodeGraphBase): # modified for MRS software
             self.active_node.IsOutputNode() != True and not isinstance(node, InputNode)):##Changed for MRS
             self.DeleteNode(self.active_node)
             self.active_node = None
-
-        # Update the properties panel so that the deleted
-        # nodes' properties are not still shown!
+        # Update the properties panel so that the deleted nodes' properties are not still shown!
         self.SendNodeSelectEvent()
-
         self.UpdateNodeGraph()
 
     def DuplicateNode(self, node):
-        """ Duplicates the given ``Node`` object with its properties.
-        :param node: the ``Node`` object to duplicate
-        :returns: the duplicate ``Node`` object
-        """
-        if (node.IsOutputNode() is not True and not isinstance(node, InputNode)): #changed for MRS softfare
+        if (node.IsOutputNode() is not True and not isinstance(node, InputNode)):
             duplicate_node = self.AddNode(node.GetIdname(), location="CURSOR")
-
             # TODO: Assign the same properties to the duplicate node object
-
             self.UpdateNodeGraph()
             return duplicate_node
     
-    def GetInputNode(self): ##added for MRS Software
-        """ Return the input node object. """
+    def GetInputNode(self):
         for node_id in self.nodes:
             node = self.nodes[node_id]
-            # if node.IsInputNode():
             if isinstance(node, InputNode):
                 return node
     
@@ -170,10 +132,9 @@ class NodeGraph(NodeGraphBase): # modified for MRS software
         for wire in self.wires:
             if wire.srcsocket is src_socket and wire.dstsocket is dst_socket:
                 self.wires.remove(wire)
-                src_socket.wires.remove(wire)        #Added for MRS software, because when there is a  disconnection the list of the socket does not suppress the wire
-                dst_socket.wires.remove(wire)        #Added for MRS software, because when there is a  disconnection the list of the socket does not suppress the wire
+                src_socket.wires.remove(wire)
+                dst_socket.wires.remove(wire)
                 wire.dstsocket.node.EditConnection(wire.dstsocket.idname, None, None)
-
         self.SendNodeDisconnectEvent()
 
 class NodeGraphPanel(wx.Panel):
@@ -192,7 +153,6 @@ class NodeGraphPanel(wx.Panel):
         topbar_sizer.AddGrowableCol(2)
         topbar.SetSizer(topbar_sizer)
         self.available_registery_nodes = NODE_REGISTRY
-        # print(self.available_registery_nodes)
         self.available_registery_nodes = dict(sorted(self.available_registery_nodes.items()))
         self.registry =self.available_registery_nodes.copy()
         self.registry["input_nodeid"] = InputNode
@@ -217,52 +177,32 @@ class NodeGraphPanel(wx.Panel):
         }
 
         self.nodegraph = NodeGraph(self, registry=self.registry, config=config, size=(-1, self.Size[0]-20))
-
-        # For testing during development
-        # Add nodes to the node graph
-        node1 = self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(0, 100))
-        node11 = self.nodegraph.AddNode("CoilCombinationAdaptive", nodeid= 'coil_combination_svd', pos=wx.Point(200, 100))
-        node2 = self.nodegraph.AddNode("ZeroPadding",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
-        node3 = self.nodegraph.AddNode("LineBroadening", nodeid='linebroadening0',pos=wx.Point(600, 100))
-        node4 = self.nodegraph.AddNode("FreqPhaseAlignment",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
-        node5 = self.nodegraph.AddNode("EddyCurrentCorrection",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
-        node6 = self.nodegraph.AddNode("RemoveBadAverages",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
-        node7 = self.nodegraph.AddNode("Average", nodeid='average0', pos=wx.Point(1400, 100))
-        # Connect the nodes by default
-        # self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['coil_combination_svd'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['coil_combination_svd'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['zeropadding_node0'].GetSockets()[0],self.nodegraph.nodes['linebroadening0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['linebroadening0'].GetSockets()[0],self.nodegraph.nodes['freqphasealignement0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['freqphasealignement0'].GetSockets()[0],self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[0],self.nodegraph.nodes['removebadaverages0'].GetSockets()[1])
-        self.nodegraph.ConnectNodes(self.nodegraph.nodes['removebadaverages0'].GetSockets()[0],self.nodegraph.nodes['average0'].GetSockets()[1])
-
+        self.load_default_pipeline()
         main_sizer.Add(topbar, flag=wx.EXPAND | wx.LEFT | wx.RIGHT)
         main_sizer.Add(self.nodegraph, 1, flag=wx.EXPAND | wx.BOTH)
         self.SetSizer(main_sizer)
         self.nodegraph.Bind(EVT_GSNODEGRAPH_NODESELECT, self.UpdateNodePropertiesPnl)
         self.nodegraph.Bind(EVT_GSNODEGRAPH_ADDNODEBTN, self.OnAddNodeMenuButton) 
 
-    @property
-    def AUIManager(self):
-        return self.parent._mgr
+    # @property
+    # def AUIManager(self):
+    #     return self.parent._mgr
 
-    @property
-    def NodeGraph(self):
-        return self.nodegraph
+    # @property
+    # def NodeGraph(self):
+    #     return self.nodegraph
 
     @property
     def PropertiesPanel(self):
         return self.parent.Parent.prop_pnl ##changed for MRSoftware
 
-    @property
-    def GLSLRenderer(self):
-        return self.parent.glsl_renderer
+    # @property
+    # def GLSLRenderer(self):
+    #     return self.parent.glsl_renderer
 
-    @property
-    def ImageViewport(self):
-        return self.parent.imageviewport_pnl
+    # @property
+    # def ImageViewport(self):
+    #     return self.parent.imageviewport_pnl
 
     def AddNode(self, idname, nodeid, pos, location):
         return self.nodegraph.AddNode(idname, nodeid, pos, location)
@@ -286,19 +226,22 @@ class NodeGraphPanel(wx.Panel):
         self.PopupAddNodeMenu(pos)
         
     def OnAddNodeMenuButton(self, event):
-        pos = (8, self.nodegraph.GetRect()[3]-310)
+        pos = wx.GetMousePosition()
         self.PopupAddNodeMenu(pos)
-        # current_node= self.nodegraph.GetInputNode()
-        # pipeline =[]
-        # while current_node is not None:
-        #     for socket in current_node.GetSockets():
-        #         if socket.direction == 1:
-        #             if len(socket.GetWires())==0:
-        #                 current_node = None
-        #             elif len(socket.GetWires())>1:
-        #                 print("Error: Only allow serial pipeline for now (each node must be connected to only one another)")
-        #                 current_node = None
-        #             else:
-        #                 for wire in socket.GetWires():
-        #                     current_node = wire.dstsocket.node
-        #                     pipeline.append(get_node_type(wire.dstsocket.node))
+    
+    def load_default_pipeline(self):
+        self.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(0, 100))
+        self.nodegraph.AddNode("CoilCombinationAdaptive", nodeid= 'coil_combination_svd', pos=wx.Point(200, 100))
+        self.nodegraph.AddNode("ZeroPadding",nodeid='zeropadding_node0', pos=wx.Point(400, 120))
+        self.nodegraph.AddNode("LineBroadening", nodeid='linebroadening0',pos=wx.Point(600, 100))
+        self.nodegraph.AddNode("FreqPhaseAlignment",nodeid='freqphasealignement0', pos=wx.Point(800, 120))
+        self.nodegraph.AddNode("EddyCurrentCorrection",nodeid='eddyccurentcorrection0', pos=wx.Point(1000, 100))
+        self.nodegraph.AddNode("RemoveBadAverages",nodeid='removebadaverages0', pos=wx.Point(1200, 120))
+        self.nodegraph.AddNode("Average", nodeid='average0', pos=wx.Point(1400, 100))
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['input0'].GetSockets()[0],self.nodegraph.nodes['coil_combination_svd'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['coil_combination_svd'].GetSockets()[0],self.nodegraph.nodes['zeropadding_node0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['zeropadding_node0'].GetSockets()[0],self.nodegraph.nodes['linebroadening0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['linebroadening0'].GetSockets()[0],self.nodegraph.nodes['freqphasealignement0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['freqphasealignement0'].GetSockets()[0],self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['eddyccurentcorrection0'].GetSockets()[0],self.nodegraph.nodes['removebadaverages0'].GetSockets()[1])
+        self.nodegraph.ConnectNodes(self.nodegraph.nodes['removebadaverages0'].GetSockets()[0],self.nodegraph.nodes['average0'].GetSockets()[1])

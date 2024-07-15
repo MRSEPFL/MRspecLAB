@@ -1,7 +1,6 @@
-import os, sys, shutil, zipfile, time, subprocess
-import numpy as np
-import matplotlib
 import wx
+import os, sys, shutil, zipfile, time, subprocess
+import matplotlib
 from suspect.io.lcmodel import write_all_files
 # from spec2nii.other_formats import lcm_raw
 # import nibabel
@@ -14,7 +13,7 @@ from inout.readcoord import ReadlcmCoord
 from inout.readheader import Table
 from inout.readcontrol import readControl
 from inout.saveraw import save_raw
-from interface.plot_helpers import plot_mrs, plot_coord
+from interface.plot_helpers import plot_mrs, plot_coord, read_file
 
 def loadInput(self):
     self.filepaths = []
@@ -121,6 +120,7 @@ def loadInput(self):
         table.populate(vendor, dtype, self.header)
         csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
         table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
+    return True
 
 dataDict = {}
 
@@ -314,9 +314,7 @@ def analyseResults(self):
             f = ReadlcmCoord(filepath)
             figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
             plot_coord(f, figure, title=filepath)
-            self.matplotlib_canvas.clear()
-            self.read_file(None, filepath) # also fills info panel
-            self.matplotlib_canvas.draw()
+            read_file(filepath, self.matplotlib_canvas, self.infotext)
             filepath = os.path.join(savepath, "lcmodel.png")
             figure.savefig(filepath, dpi=600)
         else: utils.log_warning("LCModel output not found")
@@ -362,14 +360,16 @@ def analyseResults(self):
 
 def processPipeline(self):
     if self.current_step == 0:
-        valid_input = loadInput(self)
-        if valid_input == False:
+        wx.CallAfter(self.DDstepselection.Clear)
+        wx.CallAfter(self.DDstepselection.AppendItems, "")
+        if not loadInput(self):
             utils.log_error("Error loading input")
             wx.CallAfter(self.reset)
             return
         
     if 0 <= self.current_step and self.current_step <= len(self.steps) - 1:
-        processStep(self,self.steps[self.current_step], self.current_step + 1)
+        self.retrieve_pipeline() # bad way to update any changed parameters
+        processStep(self, self.steps[self.current_step], self.current_step + 1)
         wx.CallAfter(self.DDstepselection.AppendItems, str(self.current_step + 1) + self.steps[self.current_step].__class__.__name__)
         if not self.fast_processing:
             wx.CallAfter(self.button_step_processing.Enable)
@@ -377,10 +377,13 @@ def processPipeline(self):
         self.current_step += 1
 
     elif self.current_step == len(self.steps):
-        self.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
+        self.button_step_processing.SetBitmap(self.bmpRunLCModel)
+        self.pipelineWindow.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
         saveDataPlot(self)
-        wx.CallAfter(self.button_step_processing.SetBitmap, self.bmpRunLCModel)
-        valid_analysis = analyseResults(self)
+        if not analyseResults(self):
+            utils.log_error("Error analysing results")
+            wx.CallAfter(self.reset)
+            return
         wx.CallAfter(self.DDstepselection.AppendItems, "lcmodel")
         if self.fast_processing:
             wx.CallAfter(self.button_auto_processing.SetBitmap, self.bmp_autopro)

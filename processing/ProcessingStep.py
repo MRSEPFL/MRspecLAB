@@ -94,6 +94,6 @@ class ProcessingStep(api.Node):
             ax.set_ylabel('Amplitude')
         else:
             for d in data:
-                ax.plot(d.time_axis(), d)
+                ax.plot(d.time_axis(), np.real(d))
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Intensity')

@@ -1,23 +1,10 @@
 import wx
+import os
+import pickle
+from . import utils
 from .pipeline_nodegraph import NodeGraphPanel
 from .node_properties import NodePropertiesPanel
-
-### adapted from Gimel Studio
-# ----------------------------------------------------------------------------
-# Gimel Studio Copyright 2019-2023 by the Gimel Studio project contributors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ----------------------------------------------------------------------------
+from .colours import XISLAND1
 class NodeGraphDropTarget(wx.DropTarget):
     def __init__(self, window, *args, **kwargs):
         super(NodeGraphDropTarget, self).__init__(*args, **kwargs)
@@ -78,6 +65,19 @@ class PipelineWindow(wx.Frame):
         
         self.pipelinesizer.Add(self.pipelinePanel, 1, wx.ALL | wx.EXPAND, 5)
         self.pipelinesizer.Add(self.prop_pnl, 0, wx.ALL | wx.EXPAND, 5)
+
+        fileMenu = wx.Menu()
+        menuBar = wx.MenuBar()
+        menuBar.SetBackgroundColour(wx.Colour(XISLAND1))
+        menuBar.Append(fileMenu, "&File")
+        self.SetMenuBar(menuBar)
+
+        load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
+        save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
+        fileMenu.Append(load_pipeline)
+        fileMenu.Append(save_pipeline)
+        self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
+        self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
         
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.SetIcon(wx.Icon("resources/icon_32p.png"))
@@ -87,4 +87,50 @@ class PipelineWindow(wx.Frame):
         self.Parent.update_statusbar()
         self.Hide()
         
-        
+    def on_save_pipeline(self, event, filepath=None):
+        self.Parent.retrieve_pipeline()
+        if self.Parent.steps == []:
+            utils.log_warning("No pipeline to save")
+            return
+        if filepath is None:
+            fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.Parent.rootPath, style=wx.FD_SAVE)
+            if fileDialog.ShowModal() == wx.ID_CANCEL: return
+            filepath = fileDialog.GetPath()
+        if filepath == "":
+            utils.log_error(f"File not found")
+            return
+        tosave = []
+        nodes = dict(self.pipelinePanel.nodegraph.nodes)
+        for n in nodes.keys():
+            params = [(v.idname, v.value) for k, v in nodes[n].properties.items()]
+            tosave.append([nodes[n].idname, nodes[n].id, nodes[n].pos, params])
+        tosave = [tosave]
+        wires = list(self.pipelinePanel.nodegraph.wires)
+        tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
+        with open(filepath, 'wb') as f:
+            pickle.dump(tosave, f)
+        if event is not None: event.Skip()
+
+    def on_load_pipeline(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.Parent.rootPath, style=wx.FD_OPEN)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPath()
+        if filepath == "" or not os.path.exists(filepath):
+            utils.log_error("File not found: " + filepath)
+            return
+        with open(filepath, 'rb') as f:
+            toload = pickle.load(f)
+        self.pipelinePanel.nodegraph.nodes = {}
+        self.pipelinePanel.nodegraph.wires = []
+        for data in toload[0]:
+            self.pipelinePanel.nodegraph.AddNode(data[0], data[1], data[2])
+            for p in data[3]:
+                self.pipelinePanel.nodegraph.nodes[data[1]].properties[p[0]].value = p[1]
+        for data in toload[1]:
+            src = self.pipelinePanel.nodegraph.nodes[data[0]].FindSocket(data[1])
+            dst = self.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
+            self.pipelinePanel.nodegraph.ConnectNodes(src, dst)
+        self.pipelinePanel.nodegraph.Refresh()
+        self.Parent.retrieve_pipeline()
+        self.Parent.update_statusbar()
+        event.Skip()

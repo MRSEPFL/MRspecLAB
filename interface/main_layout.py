@@ -27,19 +27,6 @@ class LayoutFrame(wx.Frame):
         self.SetSize((1200, 800))
         self.SetTitle("MRSprocessing")
 
-        fileMenu = wx.Menu()
-        menuBar = wx.MenuBar()
-        menuBar.SetBackgroundColour(wx.Colour(XISLAND1))
-        menuBar.Append(fileMenu, "&File")
-        self.SetMenuBar(menuBar)
-
-        load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
-        save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
-        fileMenu.Append(load_pipeline)
-        fileMenu.Append(save_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
-
         self.mainSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.rightSplitter = wx.SplitterWindow(self.mainSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         self.consoleinfoSplitter = wx.SplitterWindow(self.rightSplitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)

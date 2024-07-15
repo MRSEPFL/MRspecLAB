@@ -17,7 +17,7 @@ def plot_mrs(data, figure, title=None, fit_gaussian=False):
     # canvas.clear()
     ax = figure.add_subplot(2, 1, 1)
     for d in data:
-        ax.plot(d.time_axis(), np.absolute(d))
+        ax.plot(d.time_axis(), np.real(d))
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Signal Intensity')
     ax = figure.add_subplot(2, 1, 2)
@@ -127,12 +127,11 @@ def get_coord_info(lcmdata):
     return info
 
 def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
+    canvas.clear()
     if filepath.lower().endswith(".coord"):
         f = ReadlcmCoord(filepath)
         text.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
-        canvas.clear()
         plot_coord(f, canvas.figure, title=filepath)
-        canvas.draw()
     else:
         f, _, _, _= load_file(filepath)
         text.SetValue(f"File: {filepath}\n{get_mrs_info(f)}")
@@ -142,6 +141,5 @@ def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
             if estimate_water_snr(f[0]) > 200: # probably water
                 f = [f[0].inherit(np.mean(f, axis=0))]
         title = filepath.rsplit(os.path.sep, 1)[1]
-        canvas.clear()
         plot_mrs(f, canvas.figure, title=title, fit_gaussian=fit_gaussian)
-        canvas.draw()
+    canvas.draw()
