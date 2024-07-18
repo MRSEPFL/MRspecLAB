@@ -70,9 +70,10 @@ def loadInput(self):
     if len(self.originalData[0].shape) > 1:
         if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
             utils.log_warning("Coil combination needed for multi-coil data; performing adaptive coil combination")
-            from steps._CoilCombinationAdaptive import combine_channels
-            self.originalData = [combine_channels(d) for d in self.originalData]
-            if self.originalWref is not None: self.originalWref = combine_channels(self.originalWref)
+            from steps.CoilCombinationAdaptive import coil_combination_adaptive
+            coil_combination_adaptive({"input": self.originalData, "output": [], "wref": self.originalWref, "wref_output": None})
+            self.originalData = coil_combination_adaptive["output"]
+            self.originalWref = coil_combination_adaptive["wref_output"]
     
     self.dataSteps = [self.originalData]
     self.wrefSteps = [self.originalWref]

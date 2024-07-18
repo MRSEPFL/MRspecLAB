@@ -1,7 +1,7 @@
 from processing.ProcessingStep import ProcessingStep
 import gs.api as api
 from processing.processing_helpers import zero_phase_flip
-from steps._CoilCombinationAdaptive import combine_channels
+from steps._CoilCombinationAdaptive import coil_combination_adaptive
 
 class CoilCombinationAdaptive(ProcessingStep):
     def __init__(self, nodegraph, id):
@@ -17,12 +17,7 @@ class CoilCombinationAdaptive(ProcessingStep):
         if len(data["input"][0].shape) == 1: # single coil data
             data["output"] = data["input"]
             return
-        data["output"] = [combine_channels(d) for d in data["input"]]
-        zero_phase_flip(data["output"])
-        if data["wref"] is not None:
-            data["wref_output"] = combine_channels(data["wref"])
-        data["original"] = data["output"] # very illegal but prevents problems in FreqPhaseAlignment
-        data["wref_original"] = data["wref_output"]
+        coil_combination_adaptive(data)
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):

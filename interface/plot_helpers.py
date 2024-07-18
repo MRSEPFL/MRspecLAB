@@ -3,7 +3,7 @@ import numpy as np
 from suspect import MRSData
 from inout.read_mrs import load_file
 from inout.readcoord import ReadlcmCoord
-from steps._CoilCombinationAdaptive import combine_channels
+from steps.CoilCombinationAdaptive import coil_combination_adaptive
 
 def plot_mrs(data, figure, title=None, fit_gaussian=False):
     if isinstance(data, MRSData): data = [data]
@@ -112,7 +112,7 @@ def plot_coord(lcmdata, figure, title=None):
         offset += padding
 
     ax.set_xlabel('ppm')
-    ax.set_xlim((4.2, 1))
+    ax.set_xlim((4.2, 0.5))
     ax.get_yaxis().set_visible(False)
     figure.suptitle(title)
     figure.tight_layout()
@@ -137,7 +137,7 @@ def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
         text.SetValue(f"File: {filepath}\n{get_mrs_info(f)}")
         if is_viewer: 
             if len(f[0].shape) > 1:
-                f = [combine_channels(_) for _ in f]
+                coil_combination_adaptive({"input": f, "output": []})
             if estimate_water_snr(f[0]) > 200: # probably water
                 f = [f[0].inherit(np.mean(f, axis=0))]
         title = filepath.rsplit(os.path.sep, 1)[1]
