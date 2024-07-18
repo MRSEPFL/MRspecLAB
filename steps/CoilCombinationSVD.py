@@ -1,6 +1,5 @@
 from processing.ProcessingStep import ProcessingStep
 import gs.api as api
-import numpy as np
 from suspect.processing.channel_combination import combine_channels
 from processing.processing_helpers import zero_phase_flip
 
@@ -22,8 +21,6 @@ class CoilCombinationSVD(ProcessingStep):
         zero_phase_flip(data["output"])
         if data["wref"] is not None:
             data["wref_output"] = combine_channels(data["wref"])
-        data["original"] = data["output"] # very illegal but prevents problems in FreqPhaseAlignment
-        data["wref_original"] = data["wref_output"]
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):

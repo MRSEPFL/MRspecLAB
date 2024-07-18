@@ -128,9 +128,7 @@ def processStep(self, step, nstep):
     global dataDict
     dataDict["input"] = self.dataSteps[-1]
     dataDict["wref"] = self.wrefSteps[-1]
-    dataDict["original"] = self.dataSteps[0]
-    dataDict["wref_original"] = self.wrefSteps[0]
-    dataDict["output"] = None
+    dataDict["output"] = []
     dataDict["wref_output"] = None
     
     self.button_step_processing.Disable()
@@ -142,7 +140,6 @@ def processStep(self, step, nstep):
     step.process(dataDict)
     utils.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
-    self.dataSteps[0] = dataDict["original"] # very illegal but allows coil combination steps
     if dataDict["wref_output"] is not None:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
@@ -321,6 +318,7 @@ def analyseResults(self):
 
     shutil.rmtree(self.workpath) # delete work folder
     utils.log_info("LCModel processing complete")
+    return True
     
     # save nifti
     # rawpath = os.path.join(self.workpath, "result.RAW")

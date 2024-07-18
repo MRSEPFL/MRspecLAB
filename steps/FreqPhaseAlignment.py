@@ -11,6 +11,24 @@ class FreqPhaseAlignment(ProcessingStep):
             "description": "Performs frequency and phase alignment"
         }
         self.parameters = [
+            api.IntegerProp(
+                idname="zp_factor",
+                default=3,
+                min_val=0,
+                max_val=10,
+                show_p=True,
+                exposed=False,
+                fpb_label="Zero-padding factor"
+            ),
+            api.IntegerProp(
+                idname="lb_factor",
+                default=5,
+                min_val=0,
+                max_val=50,
+                show_p=True,
+                exposed=False,
+                fpb_label="Line-broadening factor (e^(-f*pi))"
+            ),
             api.ChoiceProp(
                 idname="alignFreq",
                 default="True",
@@ -58,22 +76,42 @@ class FreqPhaseAlignment(ProcessingStep):
         if not self.get_parameter("alignFreq") and not self.get_parameter("alignPhase"):
             data["output"] = data["input"]
             return
+        _data = data["input"]
+
+        # zero padding
+        if self.get_parameter("zp_factor") != 0:
+            output = []
+            for d in _data:
+                padding = np.zeros(int((np.floor(len(d) * self.get_parameter("zp_factor")))))
+                output.append(d.inherit(np.concatenate((d, padding), axis=None)))
+            _data = output
+        
+        # line broadening
+        if self.get_parameter("lb_factor") != 0:
+            exp = np.exp(-_data[0].time_axis() * np.pi * self.get_parameter("lb_factor"))
+            output = []
+            for d in _data:
+                output.append(d.inherit(d * exp))
+            _data = output
+        self.freq_in = _data
+
+        # frequency and phase alignment
         freqRange = self.get_parameter("freqRange")[:-1]
-        freqRange = [data["input"][0].ppm_to_hertz(f) for f in freqRange]
+        freqRange = [_data[0].ppm_to_hertz(f) for f in freqRange]
         freqRange.sort()
         freqRange = tuple(freqRange)
-        if self.get_parameter("median"): target = data["input"][0].inherit(np.median(data["input"], axis=0))
-        elif self.get_parameter("target") in range(len(data["input"])): target = data["input"][self.get_parameter("target")]
-        else: target = data["input"][0]
+        if self.get_parameter("median"): target = _data[0].inherit(np.median(_data, axis=0))
+        elif self.get_parameter("target") in range(len(_data)): target = _data[self.get_parameter("target")]
+        else: target = _data[0]
         self.freqShifts = []
         self.phaseShifts = []
         output = []
-        for i in range(len(data["input"])):
+        for i in range(len(_data)):
             # adapted from suspect.processing.frequency_correction.spectral_registration
-            spectral_weights = np.logical_and(freqRange[0] < data["input"][i].frequency_axis(), freqRange[1] > data["input"][i].frequency_axis())
+            spectral_weights = np.logical_and(freqRange[0] < _data[i].frequency_axis(), freqRange[1] > _data[i].frequency_axis())
 
             def residual(input_vector):
-                transformed_data = data["input"][i]
+                transformed_data = _data[i]
                 if self.get_parameter("alignFreq"): transformed_data = transformed_data.adjust_frequency(-input_vector[0])
                 if self.get_parameter("alignPhase"): transformed_data = transformed_data.adjust_phase(-input_vector[1])
                 residual_data = transformed_data - target
@@ -91,33 +129,34 @@ class FreqPhaseAlignment(ProcessingStep):
 
             self.freqShifts.append(freqShift)
             self.phaseShifts.append(phaseShift)
-            output.append(data["original"][i].adjust_frequency(-freqShift).adjust_phase(-phaseShift))
+            output.append(data["input"][i].adjust_frequency(-freqShift).adjust_phase(-phaseShift))
         data["output"] = output
 
     def plot(self, figure, data):
         figure.suptitle(self.__class__.__name__)
+        xlim = (np.max(self.freq_in[0].frequency_axis_ppm()), np.min(self.freq_in[0].frequency_axis_ppm()))
         ax = figure.add_subplot(2, 6, (1, 3))
         for d in data["input"]:
             ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
         ax.set_title("Input")
-        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
+        ax.set_xlim(xlim)
         ax = figure.add_subplot(2, 6, (4, 6))
         for d in data["output"]:
             ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
-        ax.set_title("Shifts applied to original data (output)")
-        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
+        ax.set_title("Shifts applied to input data (output)")
+        ax.set_xlim(xlim)
         ax = figure.add_subplot(2, 6, (7, 8))
-        for i, d in enumerate(data["input"]):
+        for i, d in enumerate(self.freq_in):
             d = d.adjust_frequency(-self.freqShifts[i]).adjust_phase(-self.phaseShifts[i])
             ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
         ax.set_xlabel('Chemical shift (ppm)')
         ax.set_ylabel('Amplitude')
-        ax.set_title("Shifts applied to input data")
-        ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
+        ax.set_title("Shifts applied to data after ZP and LB")
+        ax.set_xlim(xlim)
         ax = figure.add_subplot(2, 6, (9, 10))
         ax.plot(self.freqShifts)
         ax.set_xlabel('Index')

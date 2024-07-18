@@ -189,8 +189,6 @@ class MainFrame(LayoutFrame):
                     dataDict = {
                         "input": self.dataSteps[index-1],
                         "wref": self.wrefSteps[index-1],
-                        "original": self.dataSteps[0],
-                        "wref_original": self.wrefSteps[0],
                         "output": self.dataSteps[index],
                         "wref_output": self.wrefSteps[index]
                     }
