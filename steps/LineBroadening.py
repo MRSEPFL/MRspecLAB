@@ -24,7 +24,6 @@ class LineBroadening(ProcessingStep):
         self.plotSpectrum = False
 
     def process(self, data):
-        if self.get_parameter("factor") <= 0: return data
         self.exp = np.exp(-data["input"][0].time_axis() * np.pi * self.get_parameter("factor"))
         output = []
         self.dmax = 0
@@ -37,14 +36,14 @@ class LineBroadening(ProcessingStep):
         figure.suptitle(self.__class__.__name__)
         ax = figure.add_subplot(2, 1, 1)
         for d in data["input"]:
-            ax.plot(d.time_axis(), d)
+            ax.plot(d.time_axis(), np.real(d))
         ax.plot(d.time_axis(), self.exp * self.dmax, ':k')
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Intensity')
         ax.set_title("Input and apodisation function")
         ax = figure.add_subplot(2, 1, 2)
         for d in data["output"]:
-            ax.plot(d.time_axis(), d)
+            ax.plot(d.time_axis(), np.real(d))
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Intensity')
         ax.set_title("Output")
