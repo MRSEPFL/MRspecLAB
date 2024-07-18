@@ -2,12 +2,6 @@ import wx
 from gs.registry import NODE_REGISTRY
 from .node_add import AddNodeMenu
 from interface.colours import(XISLAND1)
-
-ID_ADDNODEMENU = wx.NewIdRef()
-import ctypes
-try: ctypes.windll.shcore.SetProcessDpiAwareness(True)
-except Exception: pass
-
 from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_ADDNODEBTN)
 from gsnodegraph.constants import SOCKET_INPUT
         
@@ -24,11 +18,9 @@ class Output(object):
 class InputNode(NodeBase):
     def __init__(self, nodegraph, _id):
         NodeBase.__init__(self, nodegraph, _id)
-
         self.label = "Input"
         self.category = "INPUT"
         self.is_input = True
-
         self.outputs = {
             "Output": Output(idname="transients", datatype="TRANSIENTS", label="Output")
         }
@@ -140,11 +132,9 @@ class NodeGraph(NodeGraphBase):
 class NodeGraphPanel(wx.Panel):
     def __init__(self, parent, *args, **kwargs):
         wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.NO_BORDER | wx.TAB_TRAVERSAL)
-        self.parent = parent
+        # self.parent = parent
         self.SetBackgroundColour(XISLAND1)
-        self.BuildUI()
-
-    def BuildUI(self):
+        
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         topbar = wx.Panel(self)
         topbar.SetBackgroundColour(XISLAND1)
@@ -184,25 +174,17 @@ class NodeGraphPanel(wx.Panel):
         self.nodegraph.Bind(EVT_GSNODEGRAPH_NODESELECT, self.UpdateNodePropertiesPnl)
         self.nodegraph.Bind(EVT_GSNODEGRAPH_ADDNODEBTN, self.OnAddNodeMenuButton) 
 
-    # @property
-    # def AUIManager(self):
-    #     return self.parent._mgr
+    @property
+    def AUIManager(self):
+        return self.parent._mgr
 
-    # @property
-    # def NodeGraph(self):
-    #     return self.nodegraph
+    @property
+    def NodeGraph(self):
+        return self.nodegraph
 
     @property
     def PropertiesPanel(self):
-        return self.parent.Parent.prop_pnl ##changed for MRSoftware
-
-    # @property
-    # def GLSLRenderer(self):
-    #     return self.parent.glsl_renderer
-
-    # @property
-    # def ImageViewport(self):
-    #     return self.parent.imageviewport_pnl
+        return self.Parent.Parent.prop_pnl
 
     def AddNode(self, idname, nodeid, pos, location):
         return self.nodegraph.AddNode(idname, nodeid, pos, location)
