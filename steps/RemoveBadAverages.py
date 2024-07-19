@@ -65,7 +65,7 @@ class RemoveBadAverages(ProcessingStep):
         for i, d in enumerate(data["input"]):
             if i in self.removed: colour = "red"
             else: colour = (0, 0, 0, 1/len(data["input"]))
-            ax.plot(d.time_axis(), d, c=colour)
+            ax.plot(d.time_axis(), np.real(d), c=colour)
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Intensity')
         ax.set_title("Removed data: " + str(self.removed))
