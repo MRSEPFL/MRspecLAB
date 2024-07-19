@@ -147,24 +147,25 @@ def processStep(self, step, nstep):
 
     utils.log_debug("Plotting ", step.__class__.__name__)
     start_time = time.time()
-    steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
-    if not os.path.exists(steppath): os.mkdir(steppath)
-    figure = matplotlib.figure.Figure(figsize=(12, 9))
-    # step plot
-    step.plot(figure, dataDict)
-    figure.suptitle(step.__class__.__name__)
-    filepath = os.path.join(steppath, "step.png")
-    figure.savefig(filepath, dpi=600)
-    utils.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
-    # data plot
-    figure.clear()
-    plot_mrs(dataDict["output"], figure)
-    figure.suptitle("Result of " + step.__class__.__name__)
-    filepath = os.path.join(steppath, "result.png")
-    figure.savefig(filepath, dpi=600)
-    utils.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
+    if self.save_plots_button.GetValue():
+        steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
+        if not os.path.exists(steppath): os.mkdir(steppath)
+        figure = matplotlib.figure.Figure(figsize=(12, 9))
+        # step plot
+        step.plot(figure, dataDict)
+        figure.suptitle(step.__class__.__name__)
+        filepath = os.path.join(steppath, "step.png")
+        figure.savefig(filepath, dpi=600)
+        utils.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
+        # data plot
+        figure.clear()
+        plot_mrs(dataDict["output"], figure)
+        figure.suptitle("Result of " + step.__class__.__name__)
+        filepath = os.path.join(steppath, "result.png")
+        figure.savefig(filepath, dpi=600)
+        utils.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
     # raw
-    if self.save_raw:
+    if self.save_raw_button.GetValue():
         filepath = os.path.join(steppath, "data")
         if not os.path.exists(filepath): os.mkdir(filepath)
         for i, d in enumerate(dataDict["output"]): save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
@@ -176,14 +177,13 @@ def processStep(self, step, nstep):
         self.matplotlib_canvas.draw()
     utils.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
-def saveDataPlot(self): 
-    for d, name in zip([self.dataSteps[0], self.dataSteps[-1]], ["Original (after coil combination)", "Result"]):
-        filepath = os.path.join(self.outputpath, name + ".png")
-        figure = matplotlib.figure.Figure(figsize=(12, 9))
-        plot_mrs(d, figure)
-        figure.suptitle(name)
-        figure.savefig(filepath, dpi=600)
-        utils.log_debug("Saved "+ str(name) +" to " + filepath)
+def saveDataPlot(self):
+    filepath = os.path.join(self.outputpath, "Result.png")
+    figure = matplotlib.figure.Figure(figsize=(12, 9))
+    plot_mrs(self.dataSteps[-1], figure)
+    figure.suptitle("Result")
+    figure.savefig(filepath, dpi=600)
+    utils.log_debug("Saved result to " + filepath)
         
 def analyseResults(self):
     results = self.dataSteps[-1]

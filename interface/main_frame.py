@@ -27,11 +27,11 @@ class MainFrame(LayoutFrame):
         
         self.current_step = 0
         self.show_editor = True
-        self.save_raw = False
         self.controlfile = None
         
         utils.init_logging(self.consoltext)
         utils.set_debug(True)
+        
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
@@ -138,18 +138,6 @@ class MainFrame(LayoutFrame):
             output_folder = os.path.join(self.rootPath, "output")
             if not os.path.exists(output_folder): os.mkdir(output_folder)
             os.startfile(output_folder)
-        event.Skip()        
-
-    def on_toggle_save_raw(self, event):
-        self.save_raw = self.button_toggle_save_raw.GetValue()
-        if(self.save_raw):
-            self.button_toggle_save_raw.SetWindowStyleFlag(wx.SIMPLE_BORDER)
-            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND2))
-            utils.log_info("Saving Raw data Enabled")
-        else:
-            self.button_toggle_save_raw.SetWindowStyleFlag(wx.NO_BORDER)
-            self.button_toggle_save_raw.SetBackgroundColour(wx.Colour(XISLAND1))
-            utils.log_info("Saving Raw data Disabled")
         event.Skip()
 
     def on_open_pipeline(self, event):
