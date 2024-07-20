@@ -14,7 +14,7 @@ def plot_mrs(data, figure, title=None, fit_gaussian=False):
             data2 = data2 + [d.inherit(d[i]) for i in range(d.shape[0])]
         data = data2
     if title is None: title = "Result"
-    # canvas.clear()
+    
     ax = figure.add_subplot(2, 1, 1)
     for d in data:
         ax.plot(d.time_axis(), np.real(d))
@@ -28,7 +28,6 @@ def plot_mrs(data, figure, title=None, fit_gaussian=False):
     ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
     figure.suptitle(title)
     figure.tight_layout()
-
 
 def get_mrs_info(data):
     f = data[0]
@@ -86,7 +85,7 @@ def plot_coord(lcmdata, figure, title=None):
     elif not isinstance(lcmdata, dict):
         return
     if title is None: title = ".coord file"
-    # canvas.clear()
+    
     ax = figure.add_subplot(1, 1, 1)
     
     def getOffset(data, prevdata):

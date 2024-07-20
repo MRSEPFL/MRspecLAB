@@ -178,6 +178,13 @@ def processStep(self, step, nstep):
     utils.log_info("Time to plot " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     
 def saveDataPlot(self):
+    dlg = wx.MessageDialog(None, "Do you want to manually adjust frequency and phase shifts of the result?", "", wx.YES_NO | wx.ICON_INFORMATION)
+    button_clicked = dlg.ShowModal()
+    if button_clicked == wx.ID_YES:
+        from processing.manual_adjustment import ManualAdjustment
+        manual_adjustment = ManualAdjustment(self.dataSteps[-1], self.matplotlib_canvas)
+        self.dataSteps.append(manual_adjustment.run())
+    # save result plot
     filepath = os.path.join(self.outputpath, "Result.png")
     figure = matplotlib.figure.Figure(figsize=(12, 9))
     plot_mrs(self.dataSteps[-1], figure)
