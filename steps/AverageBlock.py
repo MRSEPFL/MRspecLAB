@@ -7,7 +7,7 @@ class AverageBlock(ProcessingStep):
         self.meta_info = {
             "label": "Block Averaging",
             "author": "CIBM",
-            "description": "Averages every N spectra into one"
+            "description": "Averages every N spectra into one and labels them according to block type and number"
         }
         self.parameters = [
             api.IntegerProp(
