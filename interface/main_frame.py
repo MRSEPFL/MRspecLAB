@@ -20,16 +20,19 @@ class MainFrame(LayoutFrame):
 
         self.processing_steps, self.rootPath = self.retrieve_steps() # dictionary of processing steps definitions
         self.pipelineWindow = pipeline_window.PipelineWindow(parent=self) # /!\ put this after retrieve_steps
-        self.retrieve_pipeline() # list of processing step instances in pipeline, should be changed to strings only
+        self.retrieve_pipeline()
 
         self.CreateStatusBar(1)
         self.update_statusbar()
         
         self.current_step = 0
         self.show_editor = True
+        self.basisfile = None
+        self.basisfile_user = None
         self.controlfile = None
+        self.segmentationfile = None
         
-        utils.init_logging(self.consoltext)
+        utils.init_logging(self.info_text)
         utils.set_debug(True)
         
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
@@ -44,6 +47,19 @@ class MainFrame(LayoutFrame):
         self.bmpterminatecolor = wx.Bitmap("resources/terminate.png")
         self.bmpRunLCModel = wx.Bitmap("resources/run_lcmodel.png")
 
+        self.Bind(wx.EVT_BUTTON, self.reset, self.button_terminate_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
+        self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.folder_button)
+        self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.pipeline_button)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_show_config, self.config_button)
+        self.Bind(wx.EVT_BUTTON, self.on_set_basis, self.basis_button)
+        self.Bind(wx.EVT_BUTTON, self.on_set_control, self.control_button)
+        self.Bind(wx.EVT_BUTTON, self.on_set_segmentation, self.segmentation_button)
+        self.Bind(wx.EVT_SIZE,self.OnResize)
+        self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
+        self.Bind(wx.EVT_COMBOBOX, self.on_DDstepselection_select)
+
+        self.on_show_config(None)
         self.reset()
 
     def reset(self, event=None):
@@ -52,7 +68,7 @@ class MainFrame(LayoutFrame):
         self.button_terminate_processing.Disable()
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
-        self.button_open_pipeline.Enable()
+        self.pipeline_button.Enable()
         # self.DDstepselection.Clear()
         # self.DDstepselection.AppendItems("")
         if self.current_step >= len(self.steps):
@@ -115,8 +131,8 @@ class MainFrame(LayoutFrame):
         event.Skip()
         
     def on_autorun_processing(self, event):
-        self.DDstepselection.Clear()
-        self.DDstepselection.AppendItems("")
+        self.plot_box.Clear()
+        self.plot_box.AppendItems("")
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.bmp_autopro)
@@ -145,6 +161,31 @@ class MainFrame(LayoutFrame):
         self.Layout()
         if event is not None: event.Skip()
         
+    def on_show_config(self, event):
+        if self.config_button.GetValue():
+            self.basis_button.Show()
+            self.control_button.Show()
+            self.segmentation_button.Show()
+            self.config_button.SetLabel("Hide fitting options")
+        else:
+            self.basis_button.Hide()
+            self.control_button.Hide()
+            self.segmentation_button.Hide()
+            self.config_button.SetLabel("Show fitting options")
+        self.Layout()
+        if event is not None: event.Skip()
+
+    def on_set_basis(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".basis file (*.basis)|*.basis", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            utils.log_error(f"File not found:\n\t{filepath}")
+        else:
+            self.basisfile_user = filepath
+            utils.log_info(f"Basis file set to:\n\t{filepath}")
+        event.Skip()
+
     def on_set_control(self, event):
         fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
@@ -155,9 +196,20 @@ class MainFrame(LayoutFrame):
         self.controlfile = filepath
         utils.log_info(f"Control file set to:\n\t{filepath}")
         event.Skip()
+
+    def on_set_segmentation(self, event):
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".nii file (*.nii)|*.nii", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if fileDialog.ShowModal() == wx.ID_CANCEL: return
+        filepath = fileDialog.GetPaths()[0]
+        if filepath == "" or not os.path.exists(filepath):
+            utils.log_error(f"File not found:\n\t{filepath}")
+            return
+        self.segmentationfile = filepath
+        utils.log_info(f"Segmentation file set to:\n\t{filepath}")
+        event.Skip()
         
     def on_DDstepselection_select(self, event):
-        selected_item = self.DDstepselection.GetValue()
+        selected_item = self.plot_box.GetValue()
         if(selected_item==""):
             self.matplotlib_canvas.clear()
         elif(selected_item=="lcmodel"):
@@ -167,11 +219,11 @@ class MainFrame(LayoutFrame):
                 f = ReadlcmCoord(filepath)
                 plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
                 self.matplotlib_canvas.draw()
-                self.infotext.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
+                self.file_text.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
             else:
                 utils.log_warning("LCModel output not found")
         else:
-            index = self.DDstepselection.GetSelection()
+            index = self.plot_box.GetSelection()
             for step in self.steps:
                 if step.__class__.__name__ in selected_item:
                     dataDict = {

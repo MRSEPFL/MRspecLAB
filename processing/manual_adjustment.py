@@ -7,9 +7,12 @@ class ManualAdjustment:
         self.done = False
         self.initial_data = data
         self.data = data
+        xlim = np.max(np.abs(np.real(data[0].frequency_axis_ppm())))
+        self.xlim = (-xlim, xlim)
+        self.ylim = (np.min(np.real(self.initial_data[0].spectrum())), np.max(np.real(self.initial_data[0].spectrum())))
         self.fig = canvas.figure
         self.ax = self.fig.add_subplot(1, 1, 1)
-        self.fig.subplots_adjust(left=0, bottom=0.3)
+        self.fig.subplots_adjust(bottom=0.3)
 
         freq_ax = self.fig.add_axes([0.1, 0.05, 0.325, 0.03])
         self.freq_slider = Slider(
@@ -48,14 +51,14 @@ class ManualAdjustment:
             self.ax.plot(self.data[i].frequency_axis_ppm(), np.real(self.data[i].spectrum()))
         self.ax.set_xlabel('Chemical shift (ppm)')
         self.ax.set_ylabel('Amplitude')
-        self.ax.set_xlim((np.max(self.initial_data[0].frequency_axis_ppm()), np.min(self.initial_data[0].frequency_axis_ppm())))
-        self.ax.set_ylim((np.min(np.real(self.initial_data[0].spectrum())), np.max(np.real(self.initial_data[0].spectrum()))))
         self.ax.grid(which='major', linestyle='-', linewidth='0.5', color='black')
         self.ax.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
         self.ax.minorticks_on()
         self.ax.tick_params(axis='x', which='both', bottom=True, top=False, direction='inout')
         self.ax.tick_params(axis='y', which='both', left=True, right=False, direction='inout')
         self.fig.suptitle("Adjust frequency and phase shifts")
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
         self.fig.canvas.draw_idle()
 
     def on_reset(self, event):

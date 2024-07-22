@@ -71,9 +71,10 @@ def loadInput(self):
         if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
             utils.log_warning("Coil combination needed for multi-coil data; performing adaptive coil combination")
             from steps.CoilCombinationAdaptive import coil_combination_adaptive
-            coil_combination_adaptive({"input": self.originalData, "output": [], "wref": self.originalWref, "wref_output": None})
-            self.originalData = coil_combination_adaptive["output"]
-            self.originalWref = coil_combination_adaptive["wref_output"]
+            datadict = {"input": self.originalData, "output": [], "wref": self.originalWref, "wref_output": None}
+            coil_combination_adaptive(datadict)
+            self.originalData = datadict["output"]
+            self.originalWref = datadict["wref_output"]
     
     self.dataSteps = [self.originalData]
     self.wrefSteps = [self.originalWref]
@@ -181,6 +182,7 @@ def saveDataPlot(self):
     dlg = wx.MessageDialog(None, "Do you want to manually adjust frequency and phase shifts of the result?", "", wx.YES_NO | wx.ICON_INFORMATION)
     button_clicked = dlg.ShowModal()
     if button_clicked == wx.ID_YES:
+        self.matplotlib_canvas.clear()
         from processing.manual_adjustment import ManualAdjustment
         manual_adjustment = ManualAdjustment(self.dataSteps[-1], self.matplotlib_canvas)
         self.dataSteps.append(manual_adjustment.run())
@@ -195,6 +197,7 @@ def saveDataPlot(self):
 def analyseResults(self):
     results = self.dataSteps[-1]
     wresult = self.wrefSteps[-1]
+    self.basisfile = None
 
     # basis file
     larmor = 0
@@ -205,12 +208,12 @@ def analyseResults(self):
             elif self.header[key] == "23Na": larmor = 11.262
             break
     tesla = round(results[0].f0 / larmor, 0)
-    basisfile = None
+    basisfile_gen = None
     if self.sequence is not None:
         strte = str(results[0].te)
         if strte.endswith(".0"): strte = strte[:-2]
-        basisfile = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
-        basisfile = os.path.join(self.rootPath, "lcmodel", basisfile)
+        basisfile_gen = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
+        basisfile_gen = os.path.join(self.rootPath, "lcmodel", basisfile_gen)
     else: utils.log_warning("Sequence not found, basis file not generated")
 
     def request_basisfile():
@@ -225,22 +228,29 @@ def analyseResults(self):
             basisfile = dlg.GetPath()
             dlg.Destroy()
         return basisfile
+    
+    if self.basisfile_user is not None: # user specified basis file
+        if not os.path.exists(self.basisfile_user):
+            utils.log_warning("Basis set not found:\n\t", self.basisfile)
+            self.basisfile = None
+        else: self.basisfile = self.basisfile_user
 
-    # if basisfile is not None and os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-    if basisfile is not None and os.path.exists(basisfile):
-        dlg = wx.MessageDialog(None, basisfile, "Basis set found, is it the right one?\n" + basisfile, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
+    if self.basisfile is None and os.path.exists(basisfile_gen): # generated basis file
+        dlg = wx.MessageDialog(None, basisfile_gen, "Basis set found, is it the right one?\n" + basisfile_gen, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
         button_clicked = dlg.ShowModal()
-        if button_clicked == wx.ID_NO: basisfile = request_basisfile()
+        if button_clicked == wx.ID_YES: self.basisfile = basisfile_gen
         elif button_clicked == wx.ID_CANCEL: return False
-    else:
-        utils.log_warning("Basis set not found:\n\t", basisfile)
-        basisfile = request_basisfile()
-    if basisfile is None:
+    
+    if self.basisfile is None:
+        utils.log_warning("Basis set not found:\n\t", self.basisfile)
+        self.basisfile = request_basisfile()
+
+    if self.basisfile is None:
         utils.log_error("No basis file specified")
         return False
 
     for seq in utils.supported_sequences:
-        if seq.lower() in basisfile.lower():
+        if seq.lower() in self.basisfile.lower():
             self.sequence = seq
             break
 
@@ -284,7 +294,7 @@ def analyseResults(self):
     for result, label in zip(results, labels):
         rparams = params.copy()
         rparams.update({
-            "FILBAS": basisfile,
+            "FILBAS": self.basisfile,
             "FILCSV": f"./{label}.csv",
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
@@ -319,7 +329,7 @@ def analyseResults(self):
             f = ReadlcmCoord(filepath)
             figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
             plot_coord(f, figure, title=filepath)
-            read_file(filepath, self.matplotlib_canvas, self.infotext)
+            read_file(filepath, self.matplotlib_canvas, self.file_text)
             filepath = os.path.join(savepath, "lcmodel.png")
             figure.savefig(filepath, dpi=600)
         else: utils.log_warning("LCModel output not found")
@@ -366,8 +376,8 @@ def analyseResults(self):
 
 def processPipeline(self):
     if self.current_step == 0:
-        wx.CallAfter(self.DDstepselection.Clear)
-        wx.CallAfter(self.DDstepselection.AppendItems, "")
+        wx.CallAfter(self.plot_box.Clear)
+        wx.CallAfter(self.plot_box.AppendItems, "")
         if not loadInput(self):
             utils.log_error("Error loading input")
             wx.CallAfter(self.reset)
@@ -376,7 +386,7 @@ def processPipeline(self):
     if 0 <= self.current_step and self.current_step <= len(self.steps) - 1:
         self.retrieve_pipeline() # bad way to update any changed parameters
         processStep(self, self.steps[self.current_step], self.current_step + 1)
-        wx.CallAfter(self.DDstepselection.AppendItems, str(self.current_step + 1) + self.steps[self.current_step].__class__.__name__)
+        wx.CallAfter(self.plot_box.AppendItems, str(self.current_step + 1) + self.steps[self.current_step].__class__.__name__)
         if not self.fast_processing:
             wx.CallAfter(self.button_step_processing.Enable)
             wx.CallAfter(self.button_auto_processing.Enable)
@@ -390,14 +400,14 @@ def processPipeline(self):
             utils.log_error("Error analysing results")
             wx.CallAfter(self.reset)
             return
-        wx.CallAfter(self.DDstepselection.AppendItems, "lcmodel")
+        wx.CallAfter(self.plot_box.AppendItems, "lcmodel")
         if self.fast_processing:
             wx.CallAfter(self.button_auto_processing.SetBitmap, self.bmp_autopro)
             wx.CallAfter(self.button_auto_processing.Disable)
             wx.CallAfter(self.button_terminate_processing.Enable)
         self.current_step += 1
         
-    wx.CallAfter(self.DDstepselection.SetSelection, self.current_step)
+    wx.CallAfter(self.plot_box.SetSelection, self.current_step)
     if not self.fast_processing:
         wx.CallAfter(self.button_terminate_processing.Enable)
 
