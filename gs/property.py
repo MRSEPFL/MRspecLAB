@@ -20,8 +20,7 @@ from wx import stc
 from wx.lib.embeddedimage import PyEmbeddedImage
 import gswidgetkit.foldpanelbar as fpbar
 from gswidgetkit import (NumberField, EVT_NUMBERFIELD, TextCtrl, DropDown, EVT_DROPDOWN)
-
-PROP_BG_COLOR = "#272E35"
+from interface.colours import PROP_BG_COLOR
 
 ICON_ARROW_DOWN = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAHJJ'
@@ -333,7 +332,7 @@ class IntegerProp(Property):
 
         self.numberfield = NumberField(fold_panel,
                                        default_value=self.GetValue(),
-                                       label=self.GetLabel(),
+                                       label="", # self.GetLabel(),
                                        min_value=self.GetMinValue(),
                                        max_value=self.GetMaxValue(),
                                        suffix=self.lbl_suffix, show_p=self.GetP(),
@@ -390,7 +389,7 @@ class FloatProp(Property):
 
         self.numberfield = NumberField(fold_panel,
                                        default_value=self.GetValue(),
-                                       label=self.GetLabel(),
+                                       label="", # self.GetLabel(),
                                        type_="FLOAT",
                                        min_value=self.GetMinValue(),
                                        max_value=self.GetMaxValue(),

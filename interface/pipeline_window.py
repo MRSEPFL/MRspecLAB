@@ -44,7 +44,7 @@ class NodeGraphDropTarget(wx.DropTarget):
         return wx.DragCopy
 
     def ShowError(self, error=""):
-        dlg = wx.MessageDialog(None, "\n {}!".format(str(error)), _("Error!"), style=wx.ICON_ERROR)
+        dlg = wx.MessageDialog(None, "\n {}!".format(str(error)), "Error!", style=wx.ICON_ERROR)
         dlg.ShowModal()
         return False
 
@@ -55,10 +55,11 @@ class PipelineWindow(wx.Frame):
         self.splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
         self.pipelinePanel = NodeGraphPanel(self.splitter, size=(100, 100))
         self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
-        self.prop_pnl = NodePropertiesPanel(self.splitter, size=(600, 500))
-        self.splitter.SplitVertically(self.pipelinePanel, self.prop_pnl, -150)
+        self.prop_pnl = NodePropertiesPanel(self.splitter)
+        self.prop_pnl.SetMinSize((300, -1))
+        self.splitter.SplitVertically(self.pipelinePanel, self.prop_pnl, -100)
         self.splitter.SetMinimumPaneSize(100)
-        self.splitter.SetSashGravity(0.5)
+        self.splitter.SetSashGravity(1)
 
         fileMenu = wx.Menu()
         menuBar = wx.MenuBar()

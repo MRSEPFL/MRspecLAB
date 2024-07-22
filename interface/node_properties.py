@@ -68,7 +68,7 @@ class NodePropertiesPanel(wx.Panel):
         self.caption_style.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
         self.selected_node = None
 
-        bmp_reset= wx.Bitmap("resources/reset_parameters_btn.png", wx.BITMAP_TYPE_PNG)
+        bmp_reset = wx.Bitmap("resources/reset_parameters_btn.png", wx.BITMAP_TYPE_PNG)
         self.reset_button = Button(self, label="", flat=True, bmp=(bmp_reset, 'left'))
         self.reset_button.SetToolTip("Reset parameters of the selected node to their default values")
 

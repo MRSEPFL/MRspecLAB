@@ -48,7 +48,8 @@ class LayoutFrame(wx.Frame):
 
         self.Waterfiles = FilePanel(self.leftPanel)
         self.Waterfiles.SetFont(font1)
-        self.Waterfiles.label.SetLabel("Import water reference here (optional)")
+        self.Waterfiles.label.SetLabel("Import water reference file here (optional)")
+        self.Waterfiles.list.SetMaxSize((-1, 50))
         self.Waterfiles.Layout()
 
         self.leftSizer.Add(self.MRSfiles, 1, wx.ALL | wx.EXPAND, 5)
