@@ -51,7 +51,7 @@ class FreqPhaseAlignment(ProcessingStep):
                 max_vals=(6, 6, 0),
                 exposed=False,
                 show_p=False, 
-                fpb_label="Frequency range to optimise alignment on (in ppm)"
+                fpb_label="Reference peak range (ppm)"
             ),
             api.ChoiceProp(
                 idname="median",

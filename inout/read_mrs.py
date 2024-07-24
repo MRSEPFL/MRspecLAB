@@ -47,10 +47,12 @@ def loadVBVD(filepath):
     data = numpy.squeeze(data)
     axes = twixobj.image.sqzDims
     
+    ave_per_rep = 1
     for i in range(len(axes)-1, -1, -1):
         if axes[i] not in ["Col", "Cha", "Ave", "Rep"]:
             data = numpy.mean(data, axis=i) # violence
     if 'Ave' in axes and 'Rep' in axes: # transform [Col, Cha, Ave, Rep] into [Rep*Ave, Cha, Col]
+        ave_per_rep = data.shape[axes.index('Ave')]
         data = numpy.transpose(data, (axes.index('Rep'), axes.index('Ave'), axes.index('Cha'), axes.index('Col')))
         data = numpy.reshape(data, (data.shape[0] * data.shape[1], data.shape[2], data.shape[3]))
     elif 'Rep' in axes:
@@ -69,7 +71,9 @@ def loadVBVD(filepath):
     tr = float(twixobj.hdr["Meas"]["alTR"].split()[0]) * 1e-3 # us to ms
 
     transform = get_transform(twixobj)
-    metadata = None # not used
+    metadata = {
+        "ave_per_rep": ave_per_rep
+    }
     
     return [MRSData(data[i], dt, f0, te=te, tr=tr, transform=transform, metadata=metadata) for i in range(data.shape[0])] # separate repetitions
 

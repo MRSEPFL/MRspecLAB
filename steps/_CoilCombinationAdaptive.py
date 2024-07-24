@@ -1,6 +1,6 @@
 # this file exists to allow coil combination in MRSviewer without also including the nodegraph libraries
 import numpy as np
-from processing.processing_helpers import zero_phase_flip
+from interface import utils
 
 # translated from FID-A code
 def estimate_csm(data):
@@ -31,23 +31,27 @@ def eig_power(R):
     v = np.conj(v)
     return v, d
 
-def coil_combination_adaptive(data):
-    if data["wref"] is not None:
-        ref = data["wref"][:, 1] # 2nd timepoints of all coils of the water reference
-    else: ref = data["input"][0][:, 1] # 2nd timepoints of all coils of the first fid
+def coil_combination_adaptive(data, p=0):
+    if p == 0: p = data["input"][0].metadata["ave_per_rep"]
+    ref = "wref" if len(data["wref"]) != 0 else "input"
+    if ref == "input": utils.log_warning("No water reference provided, using averaged FIDs as reference")
+    ref = np.mean(np.array(data[ref]), 0)[:, 0]
     phase = np.exp(-1j*np.angle(ref))
     csm = np.array(estimate_csm(ref * phase)[0][0])
     csmsq = np.sum(csm * np.conj(csm), 0)
     csm[csm < np.finfo(float).eps] = 1
+    output = []
     for d in data["input"]:
-        output = []
+        output2 = []
         for i in range(0, d.shape[-1]):
-            output.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
-        data["output"].append(d.inherit(np.array(output)))
-    data["output"] = zero_phase_flip(data["output"])
-    if data["wref"] is not None:
+            output2.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
+        output.append(d.inherit(np.array(output2)))
+    data["output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0, len(output), p)]
+    if len(data["wref"]) != 0:
         output = []
-        for i in range(0, data["wref"].shape[-1]):
-            output.append(np.sum(np.conj(csm) * data["wref"][:, i] * phase, 0) / csmsq)
-        data["wref_output"] = data["wref"].inherit(np.array(output))
-        data["wref_output"] = zero_phase_flip([data["wref_output"]])[0]
+        for d in data["wref"]:
+            output2 = []
+            for i in range(0, d.shape[-1]):
+                output2.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
+            output.append(d.inherit(np.array(output2)))
+        data["wref_output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0, len(output), p)]

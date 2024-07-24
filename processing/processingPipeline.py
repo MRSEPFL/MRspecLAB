@@ -1,4 +1,5 @@
 import wx
+import numpy as np
 import os, sys, shutil, zipfile, time, subprocess
 import matplotlib
 from suspect.io.lcmodel import write_all_files
@@ -61,8 +62,7 @@ def loadInput(self):
         except: utils.log_warning("Error loading water reference: " + wrefpath + "\n\t" + str(sys.exc_info()[0]))
         else:
             if self.originalWref is None: utils.log_warning("Couldn't load water reference: " + wrefpath)
-            self.originalWref = self.originalWref[0]
-            utils.log_debug("Loaded water reference: " + filepath)
+            else: utils.log_debug("Loaded water reference: " + filepath)
 
     utils.log_info(len(self.originalData), " MRS files and ", "no" if self.originalWref is None else "1", " water reference file loaded")
 
@@ -131,7 +131,7 @@ def processStep(self, step, nstep):
     dataDict["input"] = self.dataSteps[-1]
     dataDict["wref"] = self.wrefSteps[-1]
     dataDict["output"] = []
-    dataDict["wref_output"] = None
+    dataDict["wref_output"] = []
     
     self.button_step_processing.Disable()
     if not self.fast_processing:
@@ -142,7 +142,7 @@ def processStep(self, step, nstep):
     step.process(dataDict)
     utils.log_info("Time to process " + step.__class__.__name__ + ": {:.3f}".format(time.time() - start_time))
     self.dataSteps.append(dataDict["output"])
-    if dataDict["wref_output"] is not None:
+    if len(dataDict["wref_output"]) != 0:
         self.wrefSteps.append(dataDict["wref_output"])
     else: self.wrefSteps.append(dataDict["wref"])
 
@@ -170,7 +170,7 @@ def processStep(self, step, nstep):
         filepath = os.path.join(steppath, "data")
         if not os.path.exists(filepath): os.mkdir(filepath)
         for i, d in enumerate(dataDict["output"]): save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
-        save_raw(os.path.join(filepath, "wref.RAW"), self.wrefSteps[-1], seq=self.sequence)
+        for i, d in enumerate(dataDict["wref_output"]): save_raw(os.path.join(filepath, "wref_" + str(i) + ".RAW"), d, seq=self.sequence)
     # canvas plot
     if not self.fast_processing:
         self.matplotlib_canvas.clear()
@@ -196,7 +196,7 @@ def saveDataPlot(self):
         
 def analyseResults(self):
     results = self.dataSteps[-1]
-    wresult = self.wrefSteps[-1]
+    wresult = self.wrefSteps[-1][0].inherit(np.mean(np.array(self.wrefSteps[-1]), 0))
     self.basisfile = None
 
     # basis file
@@ -235,7 +235,7 @@ def analyseResults(self):
             self.basisfile = None
         else: self.basisfile = self.basisfile_user
 
-    if self.basisfile is None and os.path.exists(basisfile_gen): # generated basis file
+    if self.basisfile is None and basisfile_gen is not None and os.path.exists(basisfile_gen): # generated basis file
         dlg = wx.MessageDialog(None, basisfile_gen, "Basis set found, is it the right one?\n" + basisfile_gen, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
         button_clicked = dlg.ShowModal()
         if button_clicked == wx.ID_YES: self.basisfile = basisfile_gen
@@ -298,6 +298,7 @@ def analyseResults(self):
             "FILCSV": f"./{label}.csv",
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
+            "FILTAB": f"./{label}.table",
             # "FILRAW": f"./{label}.RAW"
             "DOWS": wresult is not None,
             "NUNFIL": result.np,

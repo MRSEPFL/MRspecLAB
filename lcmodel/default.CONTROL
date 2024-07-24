@@ -40,4 +40,5 @@
  NSIMUL = 0
  NCALIB = 0
  PGNORM = 'US'
+ NSIMUL = 0
  $END

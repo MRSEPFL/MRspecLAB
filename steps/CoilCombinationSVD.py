@@ -1,7 +1,6 @@
 from processing.ProcessingStep import ProcessingStep
 import gs.api as api
 from suspect.processing.channel_combination import combine_channels
-from processing.processing_helpers import zero_phase_flip
 
 class CoilCombinationSVD(ProcessingStep):
     def __init__(self, nodegraph, id):
@@ -18,9 +17,8 @@ class CoilCombinationSVD(ProcessingStep):
             data["output"] = data["input"]
             return
         data["output"] = [combine_channels(d) for d in data["input"]]
-        zero_phase_flip(data["output"])
-        if data["wref"] is not None:
-            data["wref_output"] = combine_channels(data["wref"])
+        if len(data["wref"]) != 0:
+            data["wref_output"] = [combine_channels(d) for d in data["wref"]]
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):
