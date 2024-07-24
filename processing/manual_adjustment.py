@@ -8,8 +8,9 @@ class ManualAdjustment:
         self.initial_data = data
         self.data = data
         xlim = np.max(np.abs(np.real(data[0].frequency_axis_ppm())))
-        self.xlim = (-xlim, xlim)
-        self.ylim = (np.min(np.real(self.initial_data[0].spectrum())), np.max(np.real(self.initial_data[0].spectrum())))
+        self.xlim = (xlim, -xlim)
+        ylim = np.max(np.abs(np.real(data[0].spectrum())))
+        self.ylim = (-ylim, ylim)
         self.fig = canvas.figure
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.fig.subplots_adjust(bottom=0.3)
@@ -27,12 +28,22 @@ class ManualAdjustment:
         phase_ax = self.fig.add_axes([0.5, 0.05, 0.325, 0.03])
         self.phase_slider = Slider(
             ax=phase_ax,
-            label="Phase [rad]",
+            label="0th-order phase [rad]",
             valmin=-3.15,
             valmax=3.15,
             valinit=0,
         )
         self.phase_slider.on_changed(self.update)
+
+        phase1_ax = self.fig.add_axes([0.5, 0.1, 0.325, 0.03])
+        self.phase1_slider = Slider(
+            ax=phase1_ax,
+            label="1st-order phase [rad]",
+            valmin=-0.02,
+            valmax=0.02,
+            valinit=0,
+        )
+        self.phase1_slider.on_changed(self.update)
 
         reset_ax = self.fig.add_axes([0.85, 0.07, 0.1, 0.04])
         self.reset_button = Button(reset_ax, 'Reset', hovercolor='0.975')
@@ -47,7 +58,7 @@ class ManualAdjustment:
         self.data = []
         self.ax.clear()
         for i in range(len(self.initial_data)):
-            self.data.append(self.initial_data[i].adjust_frequency(self.freq_slider.val).adjust_phase(self.phase_slider.val))
+            self.data.append(self.initial_data[i].adjust_frequency(self.freq_slider.val).adjust_phase(self.phase_slider.val, first_phase=self.phase1_slider.val))
             self.ax.plot(self.data[i].frequency_axis_ppm(), np.real(self.data[i].spectrum()))
         self.ax.set_xlabel('Chemical shift (ppm)')
         self.ax.set_ylabel('Amplitude')
@@ -64,6 +75,7 @@ class ManualAdjustment:
     def on_reset(self, event):
         self.freq_slider.reset()
         self.phase_slider.reset()
+        self.phase1_slider.reset()
 
     def on_done(self, event):
         self.done = True
