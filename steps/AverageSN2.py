@@ -42,6 +42,7 @@ class AverageSN2(ProcessingStep):
             to_average = datain[i:i+step]
             if len(to_average) == 0: break
             weights = [d[1] / np.std(d[-noise_prop:])**2 for d in to_average]
+            weights /= np.sum(weights)
             output.append(data["input"][i].inherit(np.average(to_average, axis=0, weights=weights)))
             i += step
         data["output"] = output

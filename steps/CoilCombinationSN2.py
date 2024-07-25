@@ -68,6 +68,7 @@ class CoilCombinationSN2(ProcessingStep):
             noisestd = np.std(datain[i][-noise_prop:])
             rmax = np.max(np.real(datain[i]))
             weights[i] = rmax / noisestd**2
+        weights /= np.sum(weights)
         output = np.average(np.array(output), 1, weights=weights)
         woutput = np.average(np.array(woutput), 1, weights=weights)
         
