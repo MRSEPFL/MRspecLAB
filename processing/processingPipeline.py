@@ -394,8 +394,7 @@ def processPipeline(self):
         self.current_step += 1
 
     elif self.current_step == len(self.steps):
-        self.button_step_processing.SetBitmap(self.bmpRunLCModel)
-        self.pipelineWindow.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
+        self.pipeline_frame.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
         saveDataPlot(self)
         if not analyseResults(self):
             utils.log_error("Error analysing results")
@@ -403,7 +402,7 @@ def processPipeline(self):
             return
         wx.CallAfter(self.plot_box.AppendItems, "lcmodel")
         if self.fast_processing:
-            wx.CallAfter(self.button_auto_processing.SetBitmap, self.bmp_autopro)
+            wx.CallAfter(self.button_auto_processing.SetBitmap, self.autorun_bmp)
             wx.CallAfter(self.button_auto_processing.Disable)
             wx.CallAfter(self.button_terminate_processing.Enable)
         self.current_step += 1

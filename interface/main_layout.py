@@ -1,9 +1,9 @@
 import wx
 import wx.richtext
+from . import images
 from .plot_canvas import MatplotlibCanvas
 from .file_panel import FilePanel
-from interface.colours import(BLACK_WX,XISLAND1,XISLAND2)
-from resources import folder_img, pipeline_img
+from .colours import(BLACK_WX,XISLAND1,XISLAND2)
 
 class ButtonNoBorder(wx.Button):
     def __init__(self, *args, **kwargs):
@@ -57,6 +57,7 @@ class LayoutFrame(wx.Frame):
         font1 = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False)
         self.SetSize((1200, 800))
         self.SetTitle("MRSprocessing")
+        self.SetIcon(images.icon_img_32.GetIcon())
 
         main_splitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
         right_splitter = wx.SplitterWindow(main_splitter, wx.ID_ANY, style=wx.SP_3D | wx.SP_LIVE_UPDATE)
@@ -74,12 +75,12 @@ class LayoutFrame(wx.Frame):
 
         self.MRSfiles = FilePanel(self.left_panel)
         self.MRSfiles.SetFont(font1)
-        self.MRSfiles.label.SetLabel("Import MRS files here")
+        self.MRSfiles.label.SetLabel("MRS files")
         self.MRSfiles.Layout()
 
         self.Waterfiles = FilePanel(self.left_panel)
         self.Waterfiles.SetFont(font1)
-        self.Waterfiles.label.SetLabel("Import water reference file here (optional)")
+        self.Waterfiles.label.SetLabel("Water reference file (optional)")
         self.Waterfiles.list.SetMaxSize((-1, 50))
         self.Waterfiles.Layout()
 
@@ -88,13 +89,13 @@ class LayoutFrame(wx.Frame):
         left_sizer.Add(self.Waterfiles, 1, wx.ALL | wx.EXPAND, 5)
         
         ### WINDOW BUTTONS ###
-        folder_bmp = folder_img.getBitmap().ConvertToImage().Rescale(50, 50).ConvertToBitmap()
+        folder_bmp = images.folder_img.GetBitmap().ConvertToImage().Rescale(50, 50).ConvertToBitmap()
         self.folder_button = BtmButtonNoBorder(self.right_panel, wx.ID_ANY, folder_bmp)
         self.folder_button.SetBackgroundColour(wx.Colour(XISLAND1))
         self.folder_button.SetMinSize((50, 50))
         self.folder_button.SetToolTip("Open output folder")
 
-        pipeline_bmp = pipeline_img.getBitmap().ConvertToImage().Rescale(50, 50).ConvertToBitmap()
+        pipeline_bmp = images.pipeline_img.GetBitmap().ConvertToImage().Rescale(50, 50).ConvertToBitmap()
         self.pipeline_button = BtmButtonNoBorder(self.right_panel, wx.ID_ANY, pipeline_bmp)
         self.pipeline_button.SetBackgroundColour(wx.Colour(XISLAND1))
         self.pipeline_button.SetMinSize((50, 50))
@@ -104,21 +105,18 @@ class LayoutFrame(wx.Frame):
         bmp_sizer.Add(self.folder_button, 0, wx.ALL | wx.EXPAND, 2)
         bmp_sizer.Add(self.pipeline_button, 0, wx.ALL | wx.EXPAND, 2)
 
-        # bmp_logo=wx.Bitmap("resources/logobig.png", wx.BITMAP_TYPE_PNG)
-        # self.logo_image=wx.StaticBitmap(self.rightPanel, wx.ID_ANY, bitmap=bmp_logo)
-
         ### PLOT BUTTONS ###
-        self.save_plots_button = wx.CheckBox(self.right_panel, wx.ID_ANY, "Save plots")
+        self.save_plots_button = wx.CheckBox(self.right_panel, wx.ID_ANY, "Save plots", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.save_plots_button.SetValue(True)
         self.save_plots_button.SetMinSize((-1, 25))
-        self.save_plots_button.SetToolTip("Enable/Disable saving plots in the output folder")
+        self.save_plots_button.SetToolTip("Toggle saving plots in the output folder")
 
-        self.save_raw_button = wx.CheckBox(self.right_panel, wx.ID_ANY, "Save .raw files")
+        self.save_raw_button = wx.CheckBox(self.right_panel, wx.ID_ANY, "Save .raw files", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.save_raw_button.SetValue(False)
         self.save_raw_button.SetMinSize((-1, 25))
-        self.save_raw_button.SetToolTip("Enable/Disable saving raw data in the output folder")
+        self.save_raw_button.SetToolTip("Toggle saving raw data in the output folder")
         
-        plot_label =  wx.StaticText(self.right_panel, wx.ID_ANY, "Show plot of node:", style=wx.ALIGN_CENTRE_VERTICAL)
+        plot_label = wx.StaticText(self.right_panel, wx.ID_ANY, "Show plot of node:", style=wx.ALIGN_CENTRE_VERTICAL)
         plot_label.SetForegroundColour(wx.Colour(BLACK_WX))
         plot_label.SetMinSize((-1, 25))
 
@@ -132,11 +130,11 @@ class LayoutFrame(wx.Frame):
         plot_sizer.Add(self.plot_box, 0, wx.ALL | wx.EXPAND, 0)
 
         ### CONFIG BUTTONS ###
-        self.config_button = ToggleButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
-        self.config_button.SetBackgroundColour(wx.Colour(XISLAND1))
-        self.config_button.SetValue(False)
-        self.config_button.SetMinSize((-1, 25))
-        self.config_button.SetToolTip("Show fitting options for LCModel")
+        self.show_config_button = ToggleButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
+        self.show_config_button.SetBackgroundColour(wx.Colour(XISLAND1))
+        self.show_config_button.SetValue(False)
+        self.show_config_button.SetMinSize((-1, 25))
+        self.show_config_button.SetToolTip("Show fitting options for LCModel")
 
         self.basis_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Set .basis file", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.basis_button.SetBackgroundColour(wx.Colour(XISLAND2))
@@ -154,10 +152,32 @@ class LayoutFrame(wx.Frame):
         self.segmentation_button.SetToolTip("Override segmentation file for LCModel")
 
         config_sizer = wx.BoxSizer(wx.VERTICAL)
-        config_sizer.Add(self.config_button, 0, wx.ALL | wx.EXPAND, 0)
+        config_sizer.Add(self.show_config_button, 0, wx.ALL | wx.EXPAND, 0)
         config_sizer.Add(self.basis_button, 0, wx.ALL | wx.EXPAND, 0)
         config_sizer.Add(self.control_button, 0, wx.ALL | wx.EXPAND, 0)
         config_sizer.Add(self.segmentation_button, 0, wx.ALL | wx.EXPAND, 0)
+
+        ### DEBUG BUTTONS ###
+        self.show_debug_button = ToggleButtonNoBorder(self.right_panel, wx.ID_ANY, "Show debug options", style=wx.BORDER_NONE | wx.BU_LEFT)
+        self.show_debug_button.SetBackgroundColour(wx.Colour(XISLAND1))
+        self.show_debug_button.SetValue(False)
+        self.show_debug_button.SetMinSize((-1, 25))
+        self.show_debug_button.SetToolTip("Show debug options")
+
+        self.debug_button = wx.CheckBox(self.right_panel, wx.ID_ANY, "Log debug messages", style=wx.BORDER_NONE | wx.BU_LEFT)
+        self.debug_button.SetBackgroundColour(wx.Colour(XISLAND2))
+        self.debug_button.SetMinSize((-1, 25))
+        self.debug_button.SetToolTip("Write debug information in the log window")
+
+        self.reload_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Rescan node folder", style=wx.BORDER_NONE | wx.BU_LEFT)
+        self.reload_button.SetBackgroundColour(wx.Colour(XISLAND2))
+        self.reload_button.SetMinSize((-1, 25))
+        self.reload_button.SetToolTip("Reload all nodes from the node folder")
+
+        debug_sizer = wx.BoxSizer(wx.VERTICAL)
+        debug_sizer.Add(self.show_debug_button, 0, wx.ALL | wx.EXPAND, 0)
+        debug_sizer.Add(self.debug_button, 0, wx.ALL | wx.EXPAND, 0)
+        debug_sizer.Add(self.reload_button, 0, wx.ALL | wx.EXPAND, 0)
 
         ### PLAYER BUTTONS ###
         self.player_panel = wx.Panel(self.right_panel, wx.ID_ANY)
@@ -165,24 +185,21 @@ class LayoutFrame(wx.Frame):
         player_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.player_panel.SetSizer(player_sizer)
         
-        self.bmp_steppro = wx.Bitmap("resources/run.png", wx.BITMAP_TYPE_PNG)  
-        self.bmp_steppro_greyed= wx.Bitmap("resources/run_greyed.png", wx.BITMAP_TYPE_PNG) 
-        self.button_step_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.bmp_steppro)
+        self.run_bmp = images.run_img.GetBitmap()
+        self.button_step_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.run_bmp)
         self.button_step_processing.SetBackgroundColour(wx.Colour(XISLAND2))
         self.button_step_processing.SetMinSize((-1, 100))
-        self.button_step_processing.SetToolTip("Run next step of the pipeline \nand show its results plot") 
+        self.button_step_processing.SetToolTip("Run and plot next node in the pipeline") 
         
-        self.bmp_autopro = wx.Bitmap("resources/autorun.png", wx.BITMAP_TYPE_PNG)
-        self.bmp_autopro_greyed = wx.Bitmap("resources/autorun_greyed.png", wx.BITMAP_TYPE_PNG)
-        self.bmp_pause = wx.Bitmap("resources/pause.png", wx.BITMAP_TYPE_PNG) 
-        self.button_auto_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.bmp_autopro)
+        self.autorun_bmp = images.autorun_img.GetBitmap()
+        self.pause_bmp = images.pause_img.GetBitmap()
+        self.button_auto_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.autorun_bmp)
         self.button_auto_processing.SetBackgroundColour(wx.Colour(XISLAND2))
         self.button_auto_processing.SetMinSize((-1, 100))
-        self.button_auto_processing.SetToolTip("Run all the steps after one another until desactivation, \nshow only plot of the last step processed") 
+        self.button_auto_processing.SetToolTip("Keep running nodes in the pipeline without plotting") 
 
-        self.bmp_terminate = wx.Bitmap("resources/terminate.png", wx.BITMAP_TYPE_PNG)
-        self.bmp_terminate_greyed = wx.Bitmap("resources/terminate_greyed.png", wx.BITMAP_TYPE_PNG)
-        self.button_terminate_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.bmp_terminate)
+        self.terminate_bmp = images.terminate_img.GetBitmap()
+        self.button_terminate_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.terminate_bmp)
         self.button_terminate_processing.SetBackgroundColour(wx.Colour(XISLAND2))
         self.button_terminate_processing.SetMinSize((-1, 100))
         self.button_terminate_processing.SetToolTip("Reset processing of the current pipeline")
@@ -198,6 +215,7 @@ class LayoutFrame(wx.Frame):
         button_sizer.Add(plot_sizer, 0, wx.ALL | wx.EXPAND, 0)
         button_sizer.Add(wx.StaticLine(self.right_panel, wx.ID_ANY, style=wx.LI_VERTICAL), 0, wx.ALL | wx.EXPAND, 5)
         button_sizer.Add(config_sizer, 0, wx.ALL | wx.EXPAND, 0)
+        button_sizer.Add(debug_sizer, 0, wx.ALL | wx.EXPAND, 0)
         button_sizer.AddStretchSpacer(1)
         button_sizer.Add(self.player_panel, 0, wx.ALL | wx.EXPAND, 0)
         right_sizer.Add(button_sizer, 0, wx.ALL | wx.EXPAND, 0)

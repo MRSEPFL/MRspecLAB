@@ -30,9 +30,6 @@ class NodesVListBox(wx.VListBox):
     def GetItemText(self, item):
         return self.GetNodeObject(item).GetLabel()
 
-    def GetItemColor(self, item):
-        return self.GetNodeObject(item).GetLabel()
-
     def GetNodeObject(self, node_type):
         return self.NodeRegistry[self.NodeRegistryMap[node_type]](None, None)
 
@@ -53,10 +50,7 @@ class NodesVListBox(wx.VListBox):
             dropSource = wx.DropSource(self)
             dropSource.SetData(data)
             result = dropSource.DoDragDrop()
-
-            # Reset the focus back to the search input so that after a user dnd a node, they can search again straight-away.
             if result:
-                self.parent.search_bar.SetFocus()
                 self.SetSelection(-1)
 
     def OnDrawItem(self, dc, rect, n):
@@ -89,26 +83,6 @@ class NodesVListBox(wx.VListBox):
         dc.SetBrush(wx.Brush(color, wx.SOLID))
         dc.DrawRoundedRectangle(rect, 4)
 
-    def SearchNodeRegistry(self, node_label, search_string):
-        label = node_label.lower()
-        if search_string in label: return True
-        else: return False
-
-    def UpdateForSearch(self, search_string):
-        self.parent._nodeRegistryMapping = {}
-        i = 0
-        for item in self.NodeRegistry:
-            if item != "corenode_outputcomposite":
-                lbl = self.NodeRegistry[item](None, None).GetLabel()
-                if self.SearchNodeRegistry(lbl, search_string.lower()):
-                    self.NodeRegistryMap[i] = item
-                    i += 1
-        size = len(self.NodeRegistryMap)
-        if size == 1: self.SetSelection(0)
-        else: self.SetSelection(-1)
-        self.SetItemCount(size)
-        self.Refresh()
-
 class AddNodeMenu(wx.PopupTransientWindow):
     def __init__(self, parent, node_registry, size,style=wx.BORDER_NONE | wx.PU_CONTAINS_CONTROLS):
         wx.PopupTransientWindow.__init__(self, parent, style)
@@ -129,10 +103,6 @@ class AddNodeMenu(wx.PopupTransientWindow):
 
     def InitAddNodeMenuUI(self):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.search_bar = wx.TextCtrl(self, style=wx.BORDER_SIMPLE, size=(-1, 26))
-        self.search_bar.SetFocus()
-        main_sizer.Add(self.search_bar, flag=wx.EXPAND | wx.ALL, border=5)
-        main_sizer.AddSpacer(5)
 
         # Nodes list box
         self.nodes_listbox = NodesVListBox(self, size=self._size, style=wx.BORDER_NONE)
@@ -142,16 +112,12 @@ class AddNodeMenu(wx.PopupTransientWindow):
         self.SetSizer(main_sizer)
 
         # Bindings
-        self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnDoSearch, self.search_bar)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.OnClickSelectItem, self.nodes_listbox)
         self.Bind(wx.EVT_LISTBOX, self.OnClickSelectItem, self.nodes_listbox)
 
     @property
     def NodeGraph(self):
         return self.parent
-
-    def OnDoSearch(self, event):
-        self.nodes_listbox.UpdateForSearch(event.GetString())
 
     def OnClickSelectItem(self, event):
         pass

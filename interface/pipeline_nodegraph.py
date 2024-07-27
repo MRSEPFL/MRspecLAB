@@ -130,9 +130,9 @@ class NodeGraph(NodeGraphBase):
         self.SendNodeDisconnectEvent()
 
 class NodeGraphPanel(wx.Panel):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, prop_panel, *args, **kwargs):
         wx.Panel.__init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.NO_BORDER | wx.TAB_TRAVERSAL)
-        # self.parent = parent
+        self.PropertiesPanel = prop_panel
         self.SetBackgroundColour(XISLAND1)
         
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -181,10 +181,6 @@ class NodeGraphPanel(wx.Panel):
     @property
     def NodeGraph(self):
         return self.nodegraph
-
-    @property
-    def PropertiesPanel(self):
-        return self.Parent.Parent.prop_pnl
 
     def AddNode(self, idname, nodeid, pos, location):
         return self.nodegraph.AddNode(idname, nodeid, pos, location)

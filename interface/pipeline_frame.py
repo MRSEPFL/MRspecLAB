@@ -5,6 +5,8 @@ from . import utils
 from .pipeline_nodegraph import NodeGraphPanel
 from .node_properties import NodePropertiesPanel
 from .colours import XISLAND1
+import interface.images as images
+
 class NodeGraphDropTarget(wx.DropTarget):
     def __init__(self, window, *args, **kwargs):
         super(NodeGraphDropTarget, self).__init__(*args, **kwargs)
@@ -48,33 +50,51 @@ class NodeGraphDropTarget(wx.DropTarget):
         dlg.ShowModal()
         return False
 
-class PipelineWindow(wx.Frame):
+class PipelineFrame(wx.Frame):
     def __init__(self, *args, **kw):
-        super(PipelineWindow, self).__init__(*args, **kw)
+        super(PipelineFrame, self).__init__(*args, **kw)
         self.SetSize(wx.Size(1200, 500))
+
         self.splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
-        self.pipelinePanel = NodeGraphPanel(self.splitter, size=(100, 100))
-        self.pipelinePanel.SetDropTarget(NodeGraphDropTarget(self.pipelinePanel))
-        self.prop_pnl = NodePropertiesPanel(self.splitter)
-        self.prop_pnl.SetMinSize((300, -1))
-        self.splitter.SplitVertically(self.pipelinePanel, self.prop_pnl, -100)
+        self.panel = wx.Panel(self.splitter)
+        self.panel.SetBackgroundColour(wx.Colour(XISLAND1)) 
+        self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.load_button = wx.Button(self.panel, wx.ID_ANY, "Load")
+        self.load_button.SetMinSize((-1, 25))
+        self.load_button.SetToolTip("Load a pipeline from a .pipe file")
+        
+        self.save_button = wx.Button(self.panel, wx.ID_ANY, "Save")
+        self.save_button.SetMinSize((-1, 25))
+        self.save_button.SetToolTip("Save the pipeline to a .pipe file")
+        
+        self.clear_button = wx.Button(self.panel, wx.ID_ANY, "Clear")
+        self.clear_button.SetMinSize((-1, 25))
+        self.clear_button.SetToolTip("Clear the pipeline")
+        
+        self.button_sizer.Add(self.load_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.button_sizer.Add(self.save_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.button_sizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.node_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.panel.SetSizer(self.node_sizer)
+        self.prop_panel = NodePropertiesPanel(self.splitter)
+        self.prop_panel.SetMinSize((300, -1))
+        self.node_panel = NodeGraphPanel(self.panel, self.prop_panel, size=(100, 100))
+        self.node_panel.SetDropTarget(NodeGraphDropTarget(self.node_panel))
+        self.node_sizer.Add(self.button_sizer, 0, wx.EXPAND, 0)
+        self.node_sizer.Add(self.node_panel, 1, wx.EXPAND, 0)
+
+
+        self.splitter.SplitVertically(self.panel, self.prop_panel, -100)
         self.splitter.SetMinimumPaneSize(100)
         self.splitter.SetSashGravity(1)
 
-        fileMenu = wx.Menu()
-        menuBar = wx.MenuBar()
-        menuBar.SetBackgroundColour(wx.Colour(XISLAND1))
-        menuBar.Append(fileMenu, "&File")
-        self.SetMenuBar(menuBar)
-
-        load_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Load Pipeline", "Load .pipe file")
-        save_pipeline = wx.MenuItem(fileMenu, wx.ID_ANY, "&Save Pipeline", "Save .pipe file")
-        fileMenu.Append(load_pipeline)
-        fileMenu.Append(save_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_load_pipeline, load_pipeline)
-        self.Bind(wx.EVT_MENU, self.on_save_pipeline, save_pipeline)
+        self.Bind(wx.EVT_BUTTON, self.on_load_pipeline, self.load_button)
+        self.Bind(wx.EVT_BUTTON, self.on_save_pipeline, self.save_button)
+        self.Bind(wx.EVT_BUTTON, self.on_clear, self.clear_button)
         self.Bind(wx.EVT_CLOSE, self.on_close)
-        self.SetIcon(wx.Icon("resources/icon_32p.png"))
+        self.SetIcon(images.icon_img_32.GetIcon())
 
     def on_close(self, event):
         self.Parent.retrieve_pipeline()
@@ -94,12 +114,12 @@ class PipelineWindow(wx.Frame):
             utils.log_error(f"File not found")
             return
         tosave = []
-        nodes = dict(self.pipelinePanel.nodegraph.nodes)
+        nodes = dict(self.node_panel.nodegraph.nodes)
         for n in nodes.keys():
             params = [(v.idname, v.value) for k, v in nodes[n].properties.items()]
             tosave.append([nodes[n].idname, nodes[n].id, nodes[n].pos, params])
         tosave = [tosave]
-        wires = list(self.pipelinePanel.nodegraph.wires)
+        wires = list(self.node_panel.nodegraph.wires)
         tosave.append([[w.srcsocket.node.id, w.srcsocket.idname, w.dstsocket.node.id, w.dstsocket.idname] for w in wires])
         with open(filepath, 'wb') as f:
             pickle.dump(tosave, f)
@@ -114,17 +134,26 @@ class PipelineWindow(wx.Frame):
             return
         with open(filepath, 'rb') as f:
             toload = pickle.load(f)
-        self.pipelinePanel.nodegraph.nodes = {}
-        self.pipelinePanel.nodegraph.wires = []
+        self.node_panel.nodegraph.nodes = {}
+        self.node_panel.nodegraph.wires = []
         for data in toload[0]:
-            self.pipelinePanel.nodegraph.AddNode(data[0], data[1], data[2])
+            self.node_panel.nodegraph.AddNode(data[0], data[1], data[2])
             for p in data[3]:
-                self.pipelinePanel.nodegraph.nodes[data[1]].properties[p[0]].value = p[1]
+                self.node_panel.nodegraph.nodes[data[1]].properties[p[0]].value = p[1]
         for data in toload[1]:
-            src = self.pipelinePanel.nodegraph.nodes[data[0]].FindSocket(data[1])
-            dst = self.pipelinePanel.nodegraph.nodes[data[2]].FindSocket(data[3])
-            self.pipelinePanel.nodegraph.ConnectNodes(src, dst)
-        self.pipelinePanel.nodegraph.Refresh()
+            src = self.node_panel.nodegraph.nodes[data[0]].FindSocket(data[1])
+            dst = self.node_panel.nodegraph.nodes[data[2]].FindSocket(data[3])
+            self.node_panel.nodegraph.ConnectNodes(src, dst)
+        self.node_panel.nodegraph.Refresh()
+        self.Parent.retrieve_pipeline()
+        self.Parent.update_statusbar()
+        event.Skip()
+
+    def on_clear(self, event):
+        self.node_panel.nodegraph.nodes = {}
+        self.node_panel.nodegraph.wires = []
+        self.node_panel.nodegraph.AddNode("input_nodeid", nodeid= 'input0', pos=wx.Point(0, 100))
+        self.node_panel.nodegraph.Refresh()
         self.Parent.retrieve_pipeline()
         self.Parent.update_statusbar()
         event.Skip()

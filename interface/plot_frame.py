@@ -2,6 +2,7 @@ import wx
 from .plot_helpers import read_file
 from .plot_canvas import MatplotlibCanvas
 from interface.colours import XISLAND1
+import interface.images as images
 
 class PlotFrame(wx.Frame):
     def __init__(self, filepath, title=None):
@@ -9,7 +10,7 @@ class PlotFrame(wx.Frame):
         self.filepath = filepath
         if title is None: title = filepath
         self.SetTitle(title)
-        # self.SetIcon(wx.Icon("resources/icon_32p.png"))
+        self.SetIcon(images.icon_img_32.GetIcon())
         self.SetBackgroundColour(wx.Colour(XISLAND1)) 
         self.SetSize((1200, 800))
         self.Show(True)

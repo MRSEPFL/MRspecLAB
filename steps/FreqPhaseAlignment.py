@@ -124,7 +124,7 @@ class FreqPhaseAlignment(ProcessingStep):
                 return_vector[len(residual_data):] = residual_data.imag
                 return return_vector
             
-            out = scipy.optimize.leastsq(residual, (0, 0))
+            out = scipy.optimize.leastsq(residual, (0, 0), maxfev=200)
             [freqShift, phaseShift] = out[0][:2]
 
             self.freqShifts.append(freqShift)

@@ -19,7 +19,7 @@ import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 from gswidgetkit import Label, Button, EVT_BUTTON
 import gswidgetkit.foldpanelbar as fpb
-from interface.colours import AREA_BG_COLOR, AREA_TOPBAR_COLOR, TEXT_COLOR, PROP_BG_COLOR
+from interface.colours import AREA_BG_COLOR, TEXT_COLOR, PROP_BG_COLOR
 
 ICON_HELP = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAYJJ'
@@ -68,9 +68,8 @@ class NodePropertiesPanel(wx.Panel):
         self.caption_style.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
         self.selected_node = None
 
-        bmp_reset = wx.Bitmap("resources/reset_parameters_btn.png", wx.BITMAP_TYPE_PNG)
-        self.reset_button = Button(self, label="", flat=True, bmp=(bmp_reset, 'left'))
-        self.reset_button.SetToolTip("Reset parameters of the selected node to their default values")
+        self.reset_button = Button(self, label="RESET PARAMETERS", flat=True)
+        self.reset_button.SetToolTip("Reset node parameters to their default values")
 
         node_panel = wx.Panel(self)
         self.info_panel = NodeInfoPanel(node_panel)
@@ -78,10 +77,10 @@ class NodePropertiesPanel(wx.Panel):
         self.props_sizer = wx.BoxSizer(wx.VERTICAL)
         self.props_panel.SetSizer(self.props_sizer)
         
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        node_panel.SetSizer(main_sizer)
-        main_sizer.Add(self.info_panel, flag=wx.EXPAND | wx.BOTH)
-        main_sizer.Add(self.props_panel, 1, flag=wx.EXPAND | wx.BOTH)
+        node_sizer = wx.BoxSizer(wx.VERTICAL)
+        node_panel.SetSizer(node_sizer)
+        node_sizer.Add(self.info_panel, flag=wx.EXPAND | wx.BOTH)
+        node_sizer.Add(self.props_panel, 1, flag=wx.EXPAND | wx.BOTH)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.reset_button, flag=wx.EXPAND | wx.LEFT | wx.RIGHT)
         main_sizer.Add(node_panel, 1, flag=wx.EXPAND | wx.BOTH)
