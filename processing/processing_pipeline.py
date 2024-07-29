@@ -81,19 +81,21 @@ def loadInput(self):
     self.last_wref = None
 
     # get sequence for proper raw file saving
-    seqkey = None
+    seqstr = None
     for key in ["SequenceString", "Sequence"]:
         if key in self.header.keys():
-            seqkey = key
+            seqstr = self.header[key]
             break
     self.sequence = None
-    if seqkey is None: utils.log_warning("Sequence not found in header")
+    if seqstr is None: utils.log_warning("Sequence not found in header")
     else:
-        for seq in utils.supported_sequences:
-            if seq.lower() in self.header[seqkey].lower():
-                self.sequence = seq
-                break
-        if self.sequence is None: utils.log_warning("Sequence not supported: " + self.header[seqkey])
+        for k, v in utils.supported_sequences.items():
+            for seq in v:
+                if seq in seqstr:
+                    self.sequence = k
+                    break
+        if self.sequence is None: utils.log_warning("Sequence not supported: " + seqstr)
+        else: utils.log_info("Sequence detected: ", self.sequence)
 
     # create output and work folders
     allfiles = [os.path.basename(f) for f in self.filepaths]

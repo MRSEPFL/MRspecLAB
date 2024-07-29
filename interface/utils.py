@@ -3,7 +3,12 @@ from datetime import datetime
 from .colours import INFO_COLOR, WARNING_COLOR, ERROR_COLOR, DEBUG_COLOR
 
 supported_files = ["ima", "dcm", "dat", "sdat", "rda", "coord"]
-supported_sequences = ["PRESS", "STEAM", "sSPECIAL", "MEGA"]
+supported_sequences = {
+    "PRESS": ["PRESS", "press"],
+    "STEAM": ["STEAM", "steam"],
+    "sSPECIAL": ["sSPECIAL", "sspecial", "sS"],
+    "MEGA": ["MEGA", "mega"]
+}
 last_directory = None
 
 myEVT_LOG = wx.NewEventType()
