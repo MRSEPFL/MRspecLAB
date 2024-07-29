@@ -1,5 +1,5 @@
 import wx
-from gs.registry import NODE_REGISTRY
+from processing.api.registry import NODE_REGISTRY
 from .node_add import AddNodeMenu
 from interface.colours import(XISLAND1)
 from gsnodegraph import (NodeBase, NodeGraphBase, EVT_GSNODEGRAPH_NODESELECT, EVT_GSNODEGRAPH_ADDNODEBTN)

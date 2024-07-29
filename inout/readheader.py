@@ -562,7 +562,7 @@ class Table():
 		self.MRSinMRS_Table        = pd.read_csv('{}/MRSinMRS.csv'.format(self.cwd))
 		self.latex_file            = '{}/MRSinMRS.tex'.format(self.cwd) 						# Generic LaTeX File
 
-		print('Read in MRSinMRS Table')
+		# print('Read in MRSinMRS Table')
 
 	def table_clean(self, vendor, datatype, MRSinMRS): 										# Differences Across Datatype Version
 		vendor                 = vendor.lower()

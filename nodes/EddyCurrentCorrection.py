@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class EddyCurrentCorrection(ProcessingStep):
+class EddyCurrentCorrection(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Eddy Current Correction",
@@ -15,8 +14,6 @@ class EddyCurrentCorrection(ProcessingStep):
                 default=32,
                 min_val=0,
                 max_val=100,
-                show_p=True,
-                exposed=False,
                 fpb_label="Gaussian width of the phase smoothing window"
             )
         ]

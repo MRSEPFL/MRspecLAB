@@ -9,7 +9,7 @@ import pickle
 from . import utils
 from .pipeline_frame import PipelineFrame
 from .main_layout import LayoutFrame
-from processing import processingPipeline
+from processing import processing_pipeline
 from inout.readcoord import ReadlcmCoord
 from interface.plot_helpers import plot_coord, get_coord_info
 from interface.colours import(XISLAND1,XISLAND2)
@@ -82,10 +82,10 @@ class MainFrame(LayoutFrame):
         rootPath = os.path.dirname(__file__)
         while not os.path.exists(os.path.join(rootPath, "lcmodel")):
             if rootPath == "":
-                utils.log_error("Steps folder not found")
+                utils.log_error("Nodes folder not found")
                 return
             rootPath = os.path.dirname(rootPath)
-        processing_files = glob.glob(os.path.join(rootPath, "steps", "*.py"))
+        processing_files = glob.glob(os.path.join(rootPath, "nodes", "*.py"))
         processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
@@ -123,7 +123,7 @@ class MainFrame(LayoutFrame):
                 self.reset()
                 return
 
-        thread_processing = threading.Thread(target=processingPipeline.processPipeline, args=[self])
+        thread_processing = threading.Thread(target=processing_pipeline.processPipeline, args=[self])
         thread_processing.start()
         event.Skip()
         
@@ -140,7 +140,7 @@ class MainFrame(LayoutFrame):
             utils.log_info("AUTORUN ACTIVATED")
             if 0 < self.current_step:
                 self.button_terminate_processing.Disable()
-            thread_processing = threading.Thread(target=processingPipeline.autorun_pipeline_exe, args=[self])
+            thread_processing = threading.Thread(target=processing_pipeline.autorun_pipeline_exe, args=[self])
             thread_processing.start()
         event.Skip()
 

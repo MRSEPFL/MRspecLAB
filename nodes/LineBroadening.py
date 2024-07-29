@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class LineBroadening(ProcessingStep):
+class LineBroadening(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Line Broadening",
@@ -15,8 +14,6 @@ class LineBroadening(ProcessingStep):
                 default=5,
                 min_val=1,
                 max_val=50,
-                show_p=True,
-                exposed=False,
                 fpb_label="Factor"
             )
         ]

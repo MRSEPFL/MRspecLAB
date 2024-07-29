@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class AverageSN2(ProcessingStep):
+class AverageSN2(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "S/N² Averaging",
@@ -15,8 +14,6 @@ class AverageSN2(ProcessingStep):
                 default=16,
                 min_val=1,
                 max_val=100,
-                show_p=True,
-                exposed=False,
                 fpb_label="Number of measurements in a repetition"
             ),
             api.FloatProp(
@@ -24,8 +21,6 @@ class AverageSN2(ProcessingStep):
                 default=0.25,
                 min_val=0,
                 max_val=1,
-                show_p=True,
-                exposed=False,
                 fpb_label="Proportion from the end of the FID to use as noise"
             )
         ]

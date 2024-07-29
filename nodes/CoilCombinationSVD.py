@@ -1,38 +1,27 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
-from steps._CoilCombinationAdaptive import coil_combination_adaptive
+import processing.api as api
+from suspect.processing.channel_combination import combine_channels
 
-class CoilCombinationAdaptive(ProcessingStep):
+class CoilCombinationSVD(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
-            "label": "Adaptive Coil Combination",
+            "label": "SVD Coil Combination",
             "author": "CIBM",
-            "description": "Performs adaptive coil combination",
+            "description": "Performs basic SVD coil combination",
             "category": "COIL_COMBINATION" # important
         }
-        self.parameters = [
-            api.IntegerProp(
-                idname="Shots per measurement",
-                default=0,
-                min_val=0,
-                max_val=16,
-                show_p=True,
-                exposed=False,
-                fpb_label="Number of shots per measurement; 0 uses header data"
-            )
-        ]
         super().__init__(nodegraph, id)
 
     def process(self, data):
         if len(data["input"][0].shape) == 1: # single coil data
             data["output"] = data["input"]
             return
-        p = self.get_parameter("Shots per measurement")
-        coil_combination_adaptive(data, p)
+        data["output"] = [combine_channels(d) for d in data["input"]]
+        if len(data["wref"]) != 0:
+            data["wref_output"] = [combine_channels(d) for d in data["wref"]]
     
     # default plotter doesn't handle multi-coil data
     def plot(self, figure, data):
-        if len(data["input"][0].shape) == 1: # single coil data
+        if len(data["input"][0].shape) == 1:
             self.plotData(figure.add_subplot(2, 1, 1), data["input"], False)
             self.plotData(figure.add_subplot(2, 1, 2), data["output"], True)
             figure.suptitle(self.__class__.__name__ + " (nothing done)")
@@ -56,4 +45,4 @@ class CoilCombinationAdaptive(ProcessingStep):
         figure.suptitle(self.__class__.__name__)
         figure.tight_layout()
 
-api.RegisterNode(CoilCombinationAdaptive, "CoilCombinationAdaptive")
+api.RegisterNode(CoilCombinationSVD, "CoilCombinationSVD")

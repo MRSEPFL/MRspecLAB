@@ -52,7 +52,7 @@ class NodeInfoPanel(wx.Panel):
         if node is None: return
         propertystr = ""
         for p in node.parameters:
-            propertystr += str(type(p))[20:-6] + ": " + p.label + "\n"
+            propertystr += str(type(p)).split('.')[-1][:-6] + ": " + p.label + "\n"
         dlg = wx.MessageDialog(None, node.NodeMeta["description"] + "\n\nParameters: \n" + propertystr,
                                caption=node.GetLabel() + " by " + node.GetAuthor() + " v" + str(node.GetVersion()), style=wx.ICON_INFORMATION)
         dlg.ShowModal()

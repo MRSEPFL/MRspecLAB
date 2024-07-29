@@ -1,20 +1,25 @@
+import matplotlib.figure
 import numpy as np
 import matplotlib
-import gs.api as api
+from processing.api.node import Node, Output
+from processing.api.property import TransientsProp
 
-class ProcessingStep(api.Node):
+class ProcessingNode(Node):
     def __init__(self, nodegraph, id):
-        if self.meta_info is not None:
-            if "label" not in self.meta_info: self.meta_info["label"] = self.__class__.__name__
-            if "author" not in self.meta_info: self.meta_info["author"] = ""
-            if "version" not in self.meta_info: self.meta_info["version"] = (0, 0, 0)
-            if "category" not in self.meta_info: self.meta_info["category"] = "PROCESSING"
-            if "description" not in self.meta_info: self.meta_info["description"] = ""
+        if self.meta_info is None: self.meta_info = {}
+        if "label" not in self.meta_info: self.meta_info["label"] = self.__class__.__name__
+        if "author" not in self.meta_info: self.meta_info["author"] = ""
+        if "version" not in self.meta_info: self.meta_info["version"] = (0, 0, 0)
+        if "category" not in self.meta_info: self.meta_info["category"] = "PROCESSING"
+        if "description" not in self.meta_info: self.meta_info["description"] = ""
         if nodegraph is not None:
-            api.Node.__init__(self, nodegraph, id)
+            Node.__init__(self, nodegraph, id)
         self.defaultParameters = {}
         if hasattr(self, "parameters"):
-            for p in self.parameters: self.defaultParameters[p.idname] = p.value
+            for p in self.parameters:
+                p.exposed = False
+                p.show_p = False
+                self.defaultParameters[p.idname] = p.value
         else: self.parameters = []
         self.plotTime = True # set these if you don't override plot()
         self.plotSpectrum = True
@@ -32,7 +37,7 @@ class ProcessingStep(api.Node):
         return self.meta_info
 
     def NodeInitProps(self):
-        transients = api.TransientsProp(
+        transients = TransientsProp(
             idname="in_transients"
         )
         self.NodeAddProp(transients)
@@ -41,7 +46,7 @@ class ProcessingStep(api.Node):
 
     def NodeInitOutputs(self):
         self.outputs = {
-            "transients": api.Output(idname="Output", datatype="TRANSIENTS", label="Output")
+            "transients": Output(idname="Output", datatype="TRANSIENTS", label="Output")
         }
 
     def get_parameter(self, key: str):

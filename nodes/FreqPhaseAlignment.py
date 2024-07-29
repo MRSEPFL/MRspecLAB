@@ -1,9 +1,8 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 import scipy
 
-class FreqPhaseAlignment(ProcessingStep):
+class FreqPhaseAlignment(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Frequency and Phase Alignment",
@@ -16,8 +15,6 @@ class FreqPhaseAlignment(ProcessingStep):
                 default=3,
                 min_val=0,
                 max_val=10,
-                show_p=True,
-                exposed=False,
                 fpb_label="Zero-padding factor"
             ),
             api.IntegerProp(
@@ -25,22 +22,18 @@ class FreqPhaseAlignment(ProcessingStep):
                 default=5,
                 min_val=0,
                 max_val=50,
-                show_p=True,
-                exposed=False,
                 fpb_label="Line-broadening factor (e^(-f*pi))"
             ),
             api.ChoiceProp(
                 idname="alignFreq",
                 default="True",
                 choices=["True", "False"],
-                exposed=False,
                 fpb_label="Perform frequency alignment"
             ),
             api.ChoiceProp(
                 idname="alignPhase",
                 default="True",
                 choices=["True", "False"],
-                exposed=False,
                 fpb_label="Perform phase alignment"
             ),
             api.VectorProp( # tuple of length 3
@@ -49,15 +42,12 @@ class FreqPhaseAlignment(ProcessingStep):
                 labels=("Lower Bound", "Higher Bound"),
                 min_vals=(0, 0, 0), 
                 max_vals=(6, 6, 0),
-                exposed=False,
-                show_p=False, 
                 fpb_label="Reference peak range (ppm)"
             ),
             api.ChoiceProp(
                 idname="median",
                 default="True",
                 choices=["True", "False"],
-                exposed=False,
                 fpb_label="Set target to median of input data"
             ),
             api.IntegerProp(
@@ -65,8 +55,6 @@ class FreqPhaseAlignment(ProcessingStep):
                 default=0,
                 min_val=0,
                 max_val=1000,
-                show_p=True,
-                exposed=False,
                 fpb_label="Set target to index of input data (if not median)"
             )
         ]

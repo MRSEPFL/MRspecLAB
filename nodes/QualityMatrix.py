@@ -1,5 +1,4 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 from interface.plot_helpers import estimate_snr
 from scipy.optimize import curve_fit
@@ -7,7 +6,7 @@ from scipy.optimize import curve_fit
 def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
 
-class QualityMatrix(ProcessingStep):
+class QualityMatrix(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Quality Matrix",

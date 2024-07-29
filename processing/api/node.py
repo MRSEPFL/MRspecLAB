@@ -194,3 +194,9 @@ class Node(NodeBase):
         """ Force a refresh of the Node Properties panel. """
         wx.CallAfter(self.nodegraph.parent.PropertiesPanel.UpdatePanelContents, self)
         
+class Output(object):
+    def __init__(self, idname, datatype, label, visible=True):
+        self.idname = idname
+        self.datatype = datatype
+        self.label = label 
+        self.visible = visible

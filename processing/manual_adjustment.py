@@ -7,15 +7,14 @@ class ManualAdjustment:
         self.done = False
         self.initial_data = data
         self.data = data
-        xlim = np.max(np.abs(np.real(data[0].frequency_axis_ppm())))
-        self.xlim = (xlim, -xlim)
+        self.xlim = (np.max(data[0].frequency_axis_ppm()), np.min(data[0].frequency_axis_ppm()))
         ylim = np.max(np.abs(np.real(data[0].spectrum())))
         self.ylim = (-ylim, ylim)
         self.fig = canvas.figure
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.fig.subplots_adjust(bottom=0.3)
 
-        freq_ax = self.fig.add_axes([0.1, 0.05, 0.325, 0.03])
+        freq_ax = self.fig.add_axes([0.1, 0.05, 0.3, 0.03])
         self.freq_slider = Slider(
             ax=freq_ax,
             label='Frequency [Hz]',
@@ -25,7 +24,7 @@ class ManualAdjustment:
         )
         self.freq_slider.on_changed(self.update)
 
-        phase_ax = self.fig.add_axes([0.5, 0.05, 0.325, 0.03])
+        phase_ax = self.fig.add_axes([0.5, 0.05, 0.3, 0.03])
         self.phase_slider = Slider(
             ax=phase_ax,
             label="0th-order phase [rad]",
@@ -35,7 +34,7 @@ class ManualAdjustment:
         )
         self.phase_slider.on_changed(self.update)
 
-        phase1_ax = self.fig.add_axes([0.5, 0.1, 0.325, 0.03])
+        phase1_ax = self.fig.add_axes([0.55, 0.1, 0.3, 0.03])
         self.phase1_slider = Slider(
             ax=phase1_ax,
             label="1st-order phase [rad]",
@@ -45,10 +44,10 @@ class ManualAdjustment:
         )
         self.phase1_slider.on_changed(self.update)
 
-        reset_ax = self.fig.add_axes([0.85, 0.07, 0.1, 0.04])
+        reset_ax = self.fig.add_axes([0.9, 0.07, 0.1, 0.04])
         self.reset_button = Button(reset_ax, 'Reset', hovercolor='0.975')
         self.reset_button.on_clicked(self.on_reset)
-        done_ax = self.fig.add_axes([0.85, 0.025, 0.1, 0.04])
+        done_ax = self.fig.add_axes([0.9, 0.025, 0.1, 0.04])
         self.done_button = Button(done_ax, 'Done', hovercolor='0.975')
         self.done_button.on_clicked(self.on_done)
 

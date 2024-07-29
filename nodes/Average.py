@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class Average(ProcessingStep):
+class Average(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Averaging",

@@ -70,7 +70,7 @@ def loadInput(self):
     if len(self.originalData[0].shape) > 1:
         if len(self.steps) == 0 or self.steps[0].GetCategory() != "COIL_COMBINATION":
             utils.log_warning("Coil combination needed for multi-coil data; performing adaptive coil combination")
-            from steps.CoilCombinationAdaptive import coil_combination_adaptive
+            from nodes._CoilCombinationAdaptive import coil_combination_adaptive
             datadict = {"input": self.originalData, "output": [], "wref": self.originalWref, "wref_output": None}
             coil_combination_adaptive(datadict)
             self.originalData = datadict["output"]
@@ -155,7 +155,7 @@ def processStep(self, step, nstep):
         # step plot
         step.plot(figure, dataDict)
         figure.suptitle(step.__class__.__name__)
-        filepath = os.path.join(steppath, "step.png")
+        filepath = os.path.join(steppath, step.__class__.__name__ + ".png")
         figure.savefig(filepath, dpi=600)
         utils.log_debug("Saved "+ str(step.__class__.__name__) + " to " + filepath)
         # data plot
@@ -164,7 +164,7 @@ def processStep(self, step, nstep):
         figure.suptitle("Result of " + step.__class__.__name__)
         filepath = os.path.join(steppath, "result.png")
         figure.savefig(filepath, dpi=600)
-        utils.log_debug("Saved "+ "Result of " + step.__class__.__name__ + " to " + filepath)
+        utils.log_debug("Saved result of " + step.__class__.__name__ + " to " + filepath)
     # raw
     if self.save_raw_button.GetValue():
         filepath = os.path.join(steppath, "data")

@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class RemoveBadAverages(ProcessingStep):
+class RemoveBadAverages(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Remove Bad Averages",
@@ -15,15 +14,12 @@ class RemoveBadAverages(ProcessingStep):
                 default=3,
                 min_val=1,
                 max_val=10,
-                show_p=True,
-                exposed=False,
                 fpb_label="stddev threshold outside of which to remove the data"
             ),
             api.ChoiceProp(
                 idname="domain",
                 default="time",
                 choices=["time", "freq"],
-                exposed=False,
                 fpb_label="Domain to perform the z-test on"
             ),
             api.FloatProp(
@@ -31,7 +27,6 @@ class RemoveBadAverages(ProcessingStep):
                 default=0.4,
                 min_val=0.1,
                 max_val=20.0,
-                exposed=False,
                 fpb_label="Time value up to which to perform the z-test (if domain is time)"
             )
         ]

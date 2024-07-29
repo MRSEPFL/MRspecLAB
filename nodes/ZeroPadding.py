@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class ZeroPadding(ProcessingStep):
+class ZeroPadding(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "Zero padding",
@@ -15,8 +14,6 @@ class ZeroPadding(ProcessingStep):
                 default=3,
                 min_val=1,
                 max_val=10,
-                show_p=True,
-                exposed=False,
                 fpb_label="Factor"
             )
         ]

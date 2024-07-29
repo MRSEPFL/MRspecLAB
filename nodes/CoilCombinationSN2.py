@@ -1,8 +1,7 @@
-from processing.ProcessingStep import ProcessingStep
-import gs.api as api
+import processing.api as api
 import numpy as np
 
-class CoilCombinationSN2(ProcessingStep):
+class CoilCombinationSN2(api.ProcessingNode):
     def __init__(self, nodegraph, id):
         self.meta_info = {
             "label": "S/N² Coil Combination",
@@ -16,8 +15,6 @@ class CoilCombinationSN2(ProcessingStep):
                 default=0,
                 min_val=0,
                 max_val=16,
-                show_p=True,
-                exposed=False,
                 fpb_label="Number of shots per measurement; 0 uses header data"
             ),
             api.FloatProp(
@@ -25,8 +22,6 @@ class CoilCombinationSN2(ProcessingStep):
                 default=0.25,
                 min_val=0,
                 max_val=1,
-                show_p=True,
-                exposed=False,
                 fpb_label="Proportion from the end of the FID to use as noise"
             )
         ]
