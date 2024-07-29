@@ -27,9 +27,11 @@ class FilePanel(wx.Panel):
         self.label.SetForegroundColour(wx.Colour(BLACK_WX))
 
         self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.clear_button = wx.Button(self, wx.ID_ANY, "Clear")
         self.plus_button = wx.Button(self, wx.ID_ANY, "+")
+        self.plus_button.SetMaxSize(wx.Size(40, -1))
         self.minus_button = wx.Button(self, wx.ID_ANY, "-")
+        self.minus_button.SetMaxSize(wx.Size(40, -1))
+        self.clear_button = wx.Button(self, wx.ID_ANY, "Clear")
 
         self.button_sizer.Add(self.plus_button, 0, wx.ALL | wx.EXPAND, 5)
         self.button_sizer.Add(self.minus_button, 0, wx.ALL | wx.EXPAND, 5)

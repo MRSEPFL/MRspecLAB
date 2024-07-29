@@ -75,18 +75,22 @@ class LayoutFrame(wx.Frame):
 
         self.MRSfiles = FilePanel(self.left_panel)
         self.MRSfiles.SetFont(font1)
-        self.MRSfiles.label.SetLabel("MRS files")
+        self.MRSfiles.label.SetLabel("Metabolite files")
         self.MRSfiles.Layout()
 
         self.Waterfiles = FilePanel(self.left_panel)
         self.Waterfiles.SetFont(font1)
-        self.Waterfiles.label.SetLabel("Water reference file (optional)")
+        self.Waterfiles.label.SetLabel("Water file (optional)")
         self.Waterfiles.list.SetMaxSize((-1, 50))
         self.Waterfiles.Layout()
 
-        left_sizer.Add(self.MRSfiles, 1, wx.ALL | wx.EXPAND, 5)
+        cibm_bmp = wx.StaticBitmap(self.left_panel, wx.ID_ANY, images.cibm_logo_img.GetBitmap())
+        left_sizer.Add(self.MRSfiles, 3, wx.ALL | wx.EXPAND, 5)
         left_sizer.AddSpacer(20)
-        left_sizer.Add(self.Waterfiles, 1, wx.ALL | wx.EXPAND, 5)
+        left_sizer.Add(self.Waterfiles, 0, wx.ALL | wx.EXPAND, 5)
+        left_sizer.AddStretchSpacer(2)
+        left_sizer.Add(cibm_bmp, 0, wx.ALL | wx.ALIGN_LEFT, 0)
+        self.left_panel.SetMinSize((cibm_bmp.GetSize().x, -1))
         
         ### WINDOW BUTTONS ###
         folder_bmp = images.folder_img.GetBitmap().ConvertToImage().Rescale(50, 50).ConvertToBitmap()
@@ -124,10 +128,11 @@ class LayoutFrame(wx.Frame):
         self.plot_box.SetMinSize((150, 25))
 
         plot_sizer = wx.BoxSizer(wx.VERTICAL)
-        plot_sizer.Add(self.save_plots_button, 0, wx.ALL | wx.EXPAND, 0)
-        plot_sizer.Add(self.save_raw_button, 0, wx.ALL | wx.EXPAND, 0)
-        plot_sizer.Add(plot_label, 0, wx.ALL | wx.EXPAND, 0)
-        plot_sizer.Add(self.plot_box, 0, wx.ALL | wx.EXPAND, 0)
+        plot_sizer.Add(self.save_plots_button, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        plot_sizer.Add(self.save_raw_button, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        plot_sizer.AddSpacer(5)
+        plot_sizer.Add(plot_label, 0, wx.ALL | wx.ALIGN_CENTER, 0)
+        plot_sizer.Add(self.plot_box, 0, wx.ALL | wx.ALIGN_CENTER, 0)
 
         ### CONFIG BUTTONS ###
         self.show_config_button = ToggleButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
