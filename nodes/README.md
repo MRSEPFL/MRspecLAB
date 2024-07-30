@@ -1,4 +1,4 @@
-# Processing steps
+# Processing nodes
 Processing nodes derive from the `ProcessingNode` class and implement a `process` method to modify incoming data in suspect's `MRSData` format, with an optional `plot` method to write to a matplotlib figure. Some common processing steps are included in this repository and can serve as references.
 
 ## MRSData
