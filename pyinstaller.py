@@ -1,13 +1,15 @@
 import PyInstaller.__main__
+import sys ; sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 PyInstaller.__main__.run([
     'MRSprocessing.py',
     '--noconfirm',
-    # '--onefile', # doesn't run
+    '--onefile',
     # own files
-    '--hidden-import', 'processing.ProcessingStep',
+    '--hidden-import', 'processing.processing_node',
     '--add-data', 'inout:inout',
-    '--add-data', 'resources:resources',
+    '--add-data', 'lcmodel:lcmodel',
+    '--add-data', 'nodes:nodes',
     # external libraries
     '--hidden-import', 'pydicom.encoders.gdcm',
     '--hidden-import', 'pydicom.encoders.pylibjpeg',
@@ -19,18 +21,5 @@ PyInstaller.__main__.run([
     # exclude
     '--exclude-module', 'cv2',
     '--exclude-module', 'babel',
+    '--exclude-module', 'PyQt5',
 ])
-
-# zip the contents of dist/MRSprocessing into dist/MRSprocessing.zip
-import zipfile
-import os
-import shutil
-with zipfile.ZipFile('dist/MRSprocessing.zip', 'w') as z:
-    for root, dirs, files in os.walk('dist/MRSprocessing'):
-        for file in files:
-            z.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), 'dist/MRSprocessing'))
-        # add resources directory so that the program can access it
-        z.write('resources', 'resources')
-    
-# remove the dist/MRSprocessing directory
-shutil.rmtree('dist/MRSprocessing')

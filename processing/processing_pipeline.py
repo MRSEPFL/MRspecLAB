@@ -3,9 +3,8 @@ import numpy as np
 import os, sys, shutil, zipfile, time, subprocess
 import matplotlib
 from suspect.io.lcmodel import write_all_files
-# from spec2nii.other_formats import lcm_raw
-# import nibabel
-# import ants
+import nibabel
+import ants
 # import pandas as pd
 
 from interface import utils
@@ -103,19 +102,15 @@ def loadInput(self):
         allfiles.append(os.path.basename(self.Waterfiles.filepaths[0]))
     prefix = os.path.commonprefix(allfiles).strip("."+dtype).replace(" ", "").replace("^", "")
     if prefix == "": prefix = "output"
-    base = os.path.join(self.rootPath, "output", prefix)
-    self.outputpath = base
+    if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
+    base = os.path.join(self.outputpath_base, prefix)
+    
     i = 1
+    self.outputpath = base
     while os.path.exists(self.outputpath):
         self.outputpath = base + f"({i})"
         i += 1
     os.mkdir(self.outputpath)
-    self.lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
-    if os.path.exists(self.lcmodelsavepath): shutil.rmtree(self.lcmodelsavepath)
-    os.mkdir(self.lcmodelsavepath)
-    self.workpath = os.path.join(self.rootPath, "temp")
-    if os.path.exists(self.workpath): shutil.rmtree(self.workpath)
-    os.mkdir(self.workpath)
 
     # save header.csv
     if vendor is not None:
@@ -215,15 +210,15 @@ def analyseResults(self):
         strte = str(results[0].te)
         if strte.endswith(".0"): strte = strte[:-2]
         basisfile_gen = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
-        basisfile_gen = os.path.join(self.rootPath, "lcmodel", basisfile_gen)
+        basisfile_gen = os.path.join(self.programpath, "lcmodel", basisfile_gen)
     else: utils.log_warning("Sequence not found, basis file not generated")
 
     def request_basisfile():
         basisfile = ""
         utils.log_info("Requesting basisfile from user...")
-        while basisfile == "" or not os.path.exists(os.path.join(self.rootPath, "lcmodel", basisfile)):
-            utils.log_warning("Basis set not found:\n\t", basisfile)
-            dlg = wx.FileDialog(self, "Select basis set", os.path.join(self.rootPath, "lcmodel"), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        while basisfile == "" or not os.path.exists(basisfile):
+            if not basisfile == "": utils.log_warning("Basis set not found:\n\t", basisfile)
+            dlg = wx.FileDialog(self, "Select basis set", os.getcwd(), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
             if dlg.ShowModal() == wx.ID_CANCEL:
                 dlg.Destroy()
                 return None
@@ -251,18 +246,13 @@ def analyseResults(self):
         utils.log_error("No basis file specified")
         return False
 
-    for seq in utils.supported_sequences:
-        if seq.lower() in self.basisfile.lower():
-            self.sequence = seq
-            break
-
-    # lcmodel
+    # control file
     params = None
     if self.controlfile is not None and os.path.exists(self.controlfile):
         try: params = readControl(self.controlfile)
         except: params = None
     else:
-        self.controlfile = os.path.join(self.rootPath, "lcmodel", "default.CONTROL")
+        self.controlfile = os.path.join(self.programpath, "lcmodel", "default.CONTROL")
         try:
             params = readControl(self.controlfile)
             params.update({"DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline}) # not good very bad code
@@ -273,25 +263,60 @@ def analyseResults(self):
     
     if "labels" in dataDict.keys(): labels = dataDict["labels"]
     else: labels = [str(i) for i in range(len(results))]
+    
+    # segmentation
+    if self.segmentationfile is not None and os.path.exists(self.segmentationfile):
+        fi = ants.from_nibabel(nibabel.loadsave.load(self.segmentationfile))
+        # seg = ants.kmeans_segmentation(fi,3)
+        mask = ants.get_mask(fi)
+        print(fi.shape)
+        # mask = ants.threshold_image(seg['segmentation'], 1, 1e15)
+        # priorseg = ants.prior_based_segmentation(fi, seg['probabilityimages'], mask, 0.25, 0.1, 3)
+        seg = ants.atropos(a=fi, m='[0.1,1x1x1]', c='[2,0]', i='kmeans[3]', x=mask)
+        CSF = seg['probabilityimages'][0]
+        GM = seg['probabilityimages'][1]
+        WM = seg['probabilityimages'][2]
+        segpath = os.path.join(self.outputpath, "seg")
+        nibabel.save(CSF, os.path.join(segpath, "CSF.nii.gz"))
+        nibabel.save(GM, os.path.join(segpath, "GM.nii.gz"))
+        nibabel.save(WM, os.path.join(segpath, "WM.nii.gz"))
+        try: centre = result.centre
+        except: centre = None
+        if centre is not None:
+            centre = tuple([int(c) for c in centre])
+            print(CSF[centre[0], centre[1], centre[2]])
+            print(GM[centre[0], centre[1], centre[2]])
+            print(WM[centre[0], centre[1], centre[2]])
+        # wconc = (43300*f_gm + 35880*f_wm + 55556*f_csf) / (1 - f_csf)
 
     # create work folder and copy lcmodel
-    lcmodelfile = os.path.join(self.rootPath, "lcmodel", "lcmodel") # linux exe
+    lcmodelfile = os.path.join(self.programpath, "lcmodel", "lcmodel") # linux exe
     if os.name == 'nt': lcmodelfile += ".exe" # windows exe
 
     utils.log_debug("Looking for executable here: ", lcmodelfile)
-    if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo because of size
-        zippath = os.path.join(self.rootPath, "lcmodel", "lcmodel.zip")
+    if not os.path.exists(lcmodelfile): # lcmodel executables are zipped in the repo
+        zippath = os.path.join(self.programpath, "lcmodel", "lcmodel.zip")
         if not os.path.exists(zippath):
             utils.log_error("lcmodel executable or zip not found")
             pass
         utils.log_info("lcmodel executable not found, extracting from zip")
         utils.log_debug("Looking for zip here: ", zippath)
         with zipfile.ZipFile(zippath, "r") as zip_ref:
-            zip_ref.extractall(os.path.join(self.rootPath, "lcmodel"))
+            zip_ref.extractall(os.path.join(self.programpath, "lcmodel"))
 
-    if os.name == 'nt': command = f"""mkdir "{self.workpath}" & copy "{lcmodelfile}" "{self.workpath}" """
-    else: command = f"""mkdir "{self.workpath}" && cp "{lcmodelfile}" "{self.workpath}" """
+    workpath = os.path.join(os.getcwd(), "temp")
+    if os.path.exists(workpath): shutil.rmtree(workpath)
+    os.mkdir(workpath)
+    utils.log_debug("LCModel work folder: ", workpath)
+
+    if os.name == 'nt': command = f"""copy "{lcmodelfile}" "{workpath}" """
+    else: command = f"""cp "{lcmodelfile}" "{workpath}" """
     subprocess.run(command, shell=True)
+
+    lcmodelsavepath = os.path.join(self.outputpath, "lcmodel")
+    if os.path.exists(lcmodelsavepath): shutil.rmtree(lcmodelsavepath)
+    os.mkdir(lcmodelsavepath)
+    utils.log_debug("LCModel output folder: ", lcmodelsavepath)
 
     for result, label in zip(results, labels):
         rparams = params.copy()
@@ -301,7 +326,8 @@ def analyseResults(self):
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
             "FILTAB": f"./{label}.table",
-            # "FILRAW": f"./{label}.RAW"
+            "FILRAW": f"./{label}.RAW",
+            "FILH2O": f"./{label}.H2O",
             "DOWS": wresult is not None,
             "NUNFIL": result.np,
             "DELTAT": result.dt,
@@ -309,19 +335,21 @@ def analyseResults(self):
             "HZPPPM": result.f0
         })
         
-        write_all_files(os.path.join(self.workpath, label), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
-        save_raw(os.path.join(self.workpath, f"{label}.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
-        if os.name == 'nt': command = f"""cd "{self.workpath}" & lcmodel.exe < {label}_sl0.CONTROL"""
-        else: command = f"""cd "{self.workpath}" && ./lcmodel < {label}_sl0.CONTROL"""
-        utils.log_debug(f"Running LCModel for {label}...\n\t", command)
+        write_all_files(os.path.join(workpath, f"{label}.CONTROL"), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
+        save_raw(os.path.join(workpath, f"{label}.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
+        save_raw(os.path.join(workpath, f"{label}.H2O"), wresult, seq=self.sequence)
+        if os.name == 'nt': command = f"""cd "{workpath}" & lcmodel.exe < {label}_sl0.CONTROL"""
+        else: command = f"""cd "{workpath}" && ./lcmodel < {label}_sl0.CONTROL"""
+        utils.log_info(f"Running LCModel for {label}...\n\t", command)
         subprocess.run(command, shell=True)
-
-        savepath = os.path.join(self.lcmodelsavepath, label)
+        
+        savepath = os.path.join(lcmodelsavepath, label)
         os.mkdir(savepath)
+
         command = ""
-        for f in os.listdir(self.workpath):
+        for f in os.listdir(workpath):
             if "lcmodel" in f: continue
-            if os.name == 'nt': command += f""" & move "{os.path.join(self.workpath, f)}" "{savepath}" """
+            if os.name == 'nt': command += f""" & move "{os.path.join(workpath, f)}" "{savepath}" """
             else: command += f""" && mv "{os.path.join(workpath, f)}" "{savepath}" """
         command = command[3:]
         utils.log_debug("Moving files...\n\t", command)
@@ -337,45 +365,9 @@ def analyseResults(self):
             figure.savefig(filepath, dpi=600)
         else: utils.log_warning("LCModel output not found")
 
-    shutil.rmtree(self.workpath) # delete work folder
+    shutil.rmtree(workpath) # delete work folder
     utils.log_info("LCModel processing complete")
     return True
-    
-    # save nifti
-    # rawpath = os.path.join(self.workpath, "result.RAW")
-    # niftipath = os.path.join(self.workpath, "result.nii.gz")
-    # save_raw(rawpath, result, seq=self.sequence)
-    # class Args:
-    #     pass
-    # args = Args()
-    # args.file = rawpath
-    # args.fileout = niftipath
-    # args.bandwidth = 1 / result.dt
-    # args.nucleus = nucleus
-    # args.imagingfreq = result.f0
-    # args.affine = None
-    # imageOut, _ = lcm_raw(args)
-    # imageOut[0].save(niftipath) # nifti
-    
-    # # segmentation
-    # nib_image = nibabel.loadsave.load(niftipath)
-    # fi = ants.from_nibabel(nib_image)
-    # # seg = ants.kmeans_segmentation(fi,3)
-    # mask = ants.get_mask(fi)
-    # print(fi.shape)
-    # # mask = ants.threshold_image(seg['segmentation'], 1, 1e15)
-    # # priorseg = ants.prior_based_segmentation(fi, seg['probabilityimages'], mask, 0.25, 0.1, 3)
-    # seg = ants.atropos(a=fi, m='[0.1,1x1x1]', c='[2,0]', i='kmeans[3]', x=mask)
-    # CSF = seg['probabilityimages'][0]
-    # GM = seg['probabilityimages'][1]
-    # WM = seg['probabilityimages'][2]
-    # try: centre = result.centre
-    # except: centre = None
-    # if centre is not None:
-    #     print(CSF[centre[0], centre[1], centre[2]])
-    #     print(GM[centre[0], centre[1], centre[2]])
-    #     print(WM[centre[0], centre[1], centre[2]])
-
 
 def processPipeline(self):
     if self.current_step == 0:

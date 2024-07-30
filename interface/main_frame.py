@@ -6,9 +6,9 @@ import importlib.util
 import threading
 import pickle
 
-from . import utils
-from .pipeline_frame import PipelineFrame
-from .main_layout import LayoutFrame
+from interface import utils
+from interface.pipeline_frame import PipelineFrame
+from interface.main_layout import LayoutFrame
 from processing import processing_pipeline
 from inout.readcoord import ReadlcmCoord
 from interface.plot_helpers import plot_coord, get_coord_info
@@ -19,7 +19,7 @@ class MainFrame(LayoutFrame):
     def __init__(self, *args, **kwds):
         LayoutFrame.__init__(self, *args, **kwds)
 
-        self.processing_steps, self.rootPath = self.retrieve_steps() # dictionary of processing steps definitions
+        self.retrieve_steps() # dictionary of processing steps definitions
         self.pipeline_frame = PipelineFrame(parent=self) # /!\ put this after retrieve_steps
         self.pipeline_frame.Hide()
         self.retrieve_pipeline()
@@ -36,15 +36,19 @@ class MainFrame(LayoutFrame):
         utils.init_logging(self.info_text)
         utils.set_debug(False)
         self.debug_button.SetValue(False)
+
+        self.outputpath_base = os.path.join(os.getcwd(), "output")
+        if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
+        self.outputpath = self.outputpath_base
         
-        self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
-        filepath = os.path.join(self.rootPath, "lastfiles.pickle") # load last files on open
+        filepath = os.path.join(os.getcwd(), "lastfiles.pickle") # load last files on open
         if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
                 filepaths, filepaths_wref = pickle.load(f)
             self.MRSfiles.on_drop_files(filepaths)
             self.Waterfiles.on_drop_files(filepaths_wref)
 
+        self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         self.Bind(wx.EVT_BUTTON, self.reset, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
         self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.folder_button)
@@ -79,14 +83,9 @@ class MainFrame(LayoutFrame):
         if event is not None: event.Skip()
     
     def retrieve_steps(self):
-        rootPath = os.path.dirname(__file__)
-        while not os.path.exists(os.path.join(rootPath, "lcmodel")):
-            if rootPath == "":
-                utils.log_error("Nodes folder not found")
-                return
-            rootPath = os.path.dirname(rootPath)
-        processing_files = glob.glob(os.path.join(rootPath, "nodes", "*.py"))
-        processing_steps = {}
+        self.programpath = os.path.dirname(os.path.dirname(__file__))
+        processing_files = glob.glob(os.path.join(self.programpath, "nodes", "*.py"))
+        self.processing_steps = {}
         for file in processing_files:
             module_name = os.path.basename(file)[:-3]
             if module_name.startswith("_"): continue
@@ -96,8 +95,7 @@ class MainFrame(LayoutFrame):
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and obj.__module__ == module_name:
                     obj = getattr(module, name)
-                    processing_steps[name] = obj
-        return processing_steps, rootPath
+                    self.processing_steps[name] = obj
 
     def update_statusbar(self):
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
@@ -145,12 +143,8 @@ class MainFrame(LayoutFrame):
         event.Skip()
 
     def on_open_output_folder(self, event):
-        if hasattr(self, "outputpath") and os.path.exists(self.outputpath):
+        if os.path.exists(self.outputpath):
             os.startfile(self.outputpath)
-        else:
-            output_folder = os.path.join(self.rootPath, "output")
-            if not os.path.exists(output_folder): os.mkdir(output_folder)
-            os.startfile(output_folder)
         event.Skip()
 
     def on_open_pipeline(self, event):
@@ -173,7 +167,7 @@ class MainFrame(LayoutFrame):
         if event is not None: event.Skip()
 
     def on_set_basis(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".basis file (*.basis)|*.basis", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".basis file (*.basis)|*.basis", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepath = fileDialog.GetPaths()[0]
         if filepath == "" or not os.path.exists(filepath):
@@ -184,7 +178,7 @@ class MainFrame(LayoutFrame):
         event.Skip()
 
     def on_set_control(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepath = fileDialog.GetPaths()[0]
         if filepath == "" or not os.path.exists(filepath):
@@ -195,7 +189,7 @@ class MainFrame(LayoutFrame):
         event.Skip()
 
     def on_set_segmentation(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".nii file (*.nii)|*.nii", defaultDir=self.rootPath, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".nii file (*.nii)|*.nii", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepath = fileDialog.GetPaths()[0]
         if filepath == "" or not os.path.exists(filepath):
@@ -222,7 +216,7 @@ class MainFrame(LayoutFrame):
         if event is not None: event.Skip()
     
     def on_reload(self, event):
-        self.processing_steps, self.rootPath = self.retrieve_steps()
+        self.retrieve_steps()
         self.retrieve_pipeline()
         self.update_statusbar()
         if event is not None: event.Skip()
@@ -282,7 +276,7 @@ class MainFrame(LayoutFrame):
         filepaths_wref = self.Waterfiles.filepaths
         if len(filepaths) > 0:
             tosave = [filepaths, filepaths_wref]
-            filepath = os.path.join(self.rootPath, "lastfiles.pickle")
+            filepath = os.path.join(os.getcwd(), "lastfiles.pickle")
             with open(filepath, 'wb') as f:
                 pickle.dump(tosave, f)
         self.Destroy()
@@ -297,3 +291,7 @@ class MainApp(wx.App):
         self.SetTopWindow(self.frame)
         self.frame.Show()
         return True
+
+if __name__ == "__main__":
+    app = MainApp(0)
+    app.MainLoop()

@@ -107,7 +107,7 @@ class PipelineFrame(wx.Frame):
             utils.log_warning("No pipeline to save")
             return
         if filepath is None:
-            fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.Parent.rootPath, style=wx.FD_SAVE)
+            fileDialog = wx.FileDialog(self, "Save pipeline as", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=os.getcwd(), style=wx.FD_SAVE)
             if fileDialog.ShowModal() == wx.ID_CANCEL: return
             filepath = fileDialog.GetPath()
         if filepath == "":
@@ -126,7 +126,7 @@ class PipelineFrame(wx.Frame):
         if event is not None: event.Skip()
 
     def on_load_pipeline(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=self.Parent.rootPath, style=wx.FD_OPEN)
+        fileDialog = wx.FileDialog(self, "Choose a file", wildcard="Pipeline files (*.pipe)|*.pipe", defaultDir=os.getcwd(), style=wx.FD_OPEN)
         if fileDialog.ShowModal() == wx.ID_CANCEL: return
         filepath = fileDialog.GetPath()
         if filepath == "" or not os.path.exists(filepath):

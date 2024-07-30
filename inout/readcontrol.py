@@ -14,7 +14,6 @@ def readControl(path):
         elif line[1] == "F":
             output[line[0]] = False
         elif line[1].isdigit():
-            print(line[0])
             output[line[0]] = int(line[1])
         elif line[1].replace(".", "", 1).isdigit():
             output[line[0]] = float(line[1])
