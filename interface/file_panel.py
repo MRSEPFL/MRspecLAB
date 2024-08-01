@@ -88,8 +88,13 @@ class FilePanel(wx.Panel):
         if not all([f.endswith(ext) for f in filepaths]):
             utils.log_error("Inconsistent file types")
             return False
-        if ext.lower().strip() not in utils.supported_files:
-            utils.log_error("Invalid file type")
+        ex = None
+        for e in utils.supported_files:
+            if filepath.lower().endswith(e):
+                ex = e
+                break
+        if ex is None:
+            utils.log_error(f"Invalid file type: {ex}.")
             return False
         self.on_drop_files(files)
         event.Skip()
@@ -105,7 +110,6 @@ class FilePanel(wx.Panel):
         event.Skip()
 
     def on_click(self, event):
-        # self.list.Deselect(self.list.GetSelection())
         event.Skip()
 
     def on_dclick(self, event):

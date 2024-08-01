@@ -3,11 +3,13 @@ import numpy
 import mapvbvd
 import suspect.io
 import pydicom.dicomio
+import nibabel, json
 from suspect import MRSData
 from suspect.io._common import complex_array_from_iter
 from suspect.io.twix import calculate_orientation
 from suspect._transforms import rotation_matrix
 from .readheader import DataReaders
+import interface.utils as utils
 
 def load_file(filepath):
     header = None
@@ -19,7 +21,7 @@ def load_file(filepath):
         data = load_dicom(filepath) # suspect's load_dicom doesn't work
         header, _ = DataReaders().siemens_ima(filepath, None)
     elif ext == "dat":
-        data = loadVBVD(filepath) # coils not combined
+        data = loadVBVD(filepath)
         header, _ = DataReaders().siemens_twix(filepath, None)
     elif ext == "sdat":
         data = suspect.io.load_sdat(filepath, None) # should find .spar
@@ -28,6 +30,9 @@ def load_file(filepath):
             header, _ = DataReaders().philips_spar(spar, None)
     elif ext == "rda":
         data, header = load_rda(filepath) # no rda in DataReaders; we only need Sequence and Nucleus for processing
+    elif ext == "nii" or filepath.endswith(".nii.gz"):
+        data, header = load_nifti(filepath) # no nii in DataReaders
+        ext = "nii"
     else:
         return None, None, None, None
     vendor = None
@@ -41,7 +46,10 @@ def loadVBVD(filepath):
     if isinstance(twixobj, list):
         if len(twixobj) == 1: twixobj = twixobj[0]
         if len(twixobj) == 2: twixobj = twixobj[1] # twixobj[0] is reference noise
-        else: raise ValueError("Multiple acquisitions found in VBVD file.")
+        else:
+            utils.log_error("Multiple acquisitions found in Twix file.")
+            return None
+
     twixobj.image.removeOS = False
     data = twixobj.image['']
     data = numpy.squeeze(data)
@@ -197,3 +205,67 @@ def load_rda(filepath):
     data = data[::2] + 1j * data[1::2]
     # assert data.size == vector_size
     return MRSData(data, dt, f0=f0, te=te, tr=tr), header
+
+def load_nifti(filepath):
+    img: nibabel.nifti2.Nifti2Image = nibabel.load(filepath)
+    hdr_ext_codes = img.header.extensions.get_codes()
+    mrs_hdr_ext = json.loads(img.header.extensions[hdr_ext_codes.index(44)].get_content())
+
+    if img.header.get_value_label("datatype") == "complex128":
+        data = img.get_fdata(dtype=numpy.complex128)
+    elif img.header.get_value_label("datatype") == "complex64":
+        data = img.get_fdata(dtype=numpy.complex64)
+    else:
+        utils.log_error(f"Unknown datatype in NIfTI file {filepath}.")
+        return None, None
+
+    if not all([d == 1 for d in data.shape[:3]]):
+        utils.log_error("Multi-voxel data not supported.")
+        return None, None
+    data = data[0, 0, 0] # single voxel data
+
+    coilcombined = True
+    ave_per_rep = 1
+    if len(data.shape) == 1:
+        data = numpy.expand_dims(data, axis=0)
+    else:
+        order = [0, 0, 0, 0]
+        mapping = {"DIM_MEAS": 0, "DIM_DYN": 1, "DIM_EDIT": 2, "DIM_COIL": 3}
+        for i in range(len(data.shape) - 1):
+            key = f"dim_{i+5}"
+            if key in mrs_hdr_ext:
+                if mrs_hdr_ext[key] in mapping:
+                    order[mapping[mrs_hdr_ext[key]]] = i + 1
+                    if mrs_hdr_ext[key] == "DIM_COIL": coilcombined = False
+                    if mrs_hdr_ext[key] == "DIM_EDIT": ave_per_rep = data.shape[i+1]
+                else:
+                    utils.log_warning(f"Unknown dimension {mrs_hdr_ext[key]} in NIfTI file {filepath}.")
+                    data = numpy.mean(data, axis=i+1)
+
+        order = [i for i in order if i != 0].append(0)
+        data = numpy.transpose(data, order)
+    if coilcombined: data = numpy.reshape(data, (numpy.prod(data.shape[:-1]), data.shape[-1]))
+    else: data = numpy.reshape(data, (numpy.prod(data.shape[:-2]), data.shape[-2], data.shape[-1]))
+    
+    dt = img.header["pixdim"][4]
+    if img.header["xyzt_units"] & 16: # dt in ms or us
+        if img.header["xyzt_units"] & 8:
+            dt = dt * 1e-6 # us to s
+        else: dt = dt * 1e-3 # ms to s
+    f0 = mrs_hdr_ext["SpectrometerFrequency"][0] # MHz
+    te = mrs_hdr_ext["EchoTime"] * 1e3 # s to ms
+    tr = mrs_hdr_ext["RepetitionTime"] * 1e3 # s to ms
+
+    header = {}
+    header["Nucleus"] = mrs_hdr_ext["ResonantNucleus"][0]
+    header["Sequence"] = None
+    if "SequenceName" in mrs_hdr_ext:
+        header["Sequence"] = mrs_hdr_ext["Sequence"]
+    elif "siemens_sequence_info" in mrs_hdr_ext and "sequence" in mrs_hdr_ext["siemens_sequence_info"]:
+        header["Sequence"] = mrs_hdr_ext["siemens_sequence_info"]["sequence"]
+
+    transform = numpy.array(img.header.get_best_affine())
+    metadata = {
+        "ave_per_rep": ave_per_rep
+    }
+    return [MRSData(data[i], dt, f0, te=te, tr=tr, transform=transform, metadata=metadata) for i in range(data.shape[0])], header

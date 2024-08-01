@@ -2,7 +2,7 @@ import wx
 from datetime import datetime
 from .colours import INFO_COLOR, WARNING_COLOR, ERROR_COLOR, DEBUG_COLOR
 
-supported_files = ["ima", "dcm", "dat", "sdat", "rda", "coord"]
+supported_files = ["ima", "dcm", "dat", "sdat", "rda", "coord", "nii", "nii.gz"]
 supported_sequences = {
     "PRESS": ["PRESS", "press"],
     "STEAM": ["STEAM", "steam"],
