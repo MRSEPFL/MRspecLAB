@@ -54,10 +54,12 @@ class PipelineFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super(PipelineFrame, self).__init__(*args, **kw)
         self.SetSize(wx.Size(1200, 500))
+        self.SetTitle("Pipeline Editor")
+        self.SetIcon(images.icon_img_32.GetIcon())
 
         self.splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
         self.panel = wx.Panel(self.splitter)
-        self.panel.SetBackgroundColour(wx.Colour(XISLAND1)) 
+        self.panel.SetBackgroundColour(wx.Colour(XISLAND1))
         self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.load_button = wx.Button(self.panel, wx.ID_ANY, "Load")
@@ -85,7 +87,6 @@ class PipelineFrame(wx.Frame):
         self.node_sizer.Add(self.button_sizer, 0, wx.EXPAND, 0)
         self.node_sizer.Add(self.node_panel, 1, wx.EXPAND, 0)
 
-
         self.splitter.SplitVertically(self.panel, self.prop_panel, -100)
         self.splitter.SetMinimumPaneSize(100)
         self.splitter.SetSashGravity(1)
@@ -94,7 +95,8 @@ class PipelineFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_save_pipeline, self.save_button)
         self.Bind(wx.EVT_BUTTON, self.on_clear, self.clear_button)
         self.Bind(wx.EVT_CLOSE, self.on_close)
-        self.SetIcon(images.icon_img_32.GetIcon())
+        
+        self.Layout()
 
     def on_close(self, event):
         self.Parent.retrieve_pipeline()

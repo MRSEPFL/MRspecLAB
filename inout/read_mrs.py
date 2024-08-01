@@ -8,7 +8,7 @@ from suspect import MRSData
 from suspect.io._common import complex_array_from_iter
 from suspect.io.twix import calculate_orientation
 from suspect._transforms import rotation_matrix
-from .readheader import DataReaders
+from .read_header import DataReaders
 import interface.utils as utils
 
 def load_file(filepath):
@@ -89,14 +89,9 @@ def get_transform(twixobj):
     pos_sag = twixobj.hdr["Config"]["VoI_Position_Sag"]
     pos_cor = twixobj.hdr["Config"]["VoI_Position_Cor"]
     pos_tra = twixobj.hdr["Config"]["VoI_Position_Tra"]
-    if pos_sag == '' or pos_cor == '' or pos_tra == '':
-        try: # keys may not exist
-            pos_sag = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sPosition', 'dCor')]
-            pos_cor = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sPosition', 'dSag')]
-            pos_tra = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sPosition', 'dTra')]
-        except: pass
-    if pos_sag == '' or pos_cor == '' or pos_tra == '':
-        return None
+    if pos_sag == '': pos_sag = 0
+    if pos_cor == '': pos_cor = 0
+    if pos_tra == '': pos_tra = 0
     pos_sag = float(pos_sag)
     pos_cor = float(pos_cor)
     pos_tra = float(pos_tra)
@@ -104,14 +99,9 @@ def get_transform(twixobj):
     normal_sag = twixobj.hdr["Config"]["VoI_Normal_Sag"]
     normal_cor = twixobj.hdr["Config"]["VoI_Normal_Cor"]
     normal_tra = twixobj.hdr["Config"]["VoI_Normal_Tra"]
-    if normal_sag == '' or normal_cor == '' or normal_tra == '':
-        try: # keys may not exist
-            normal_sag = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sNormal', 'dSag')]
-            normal_cor = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sNormal', 'dCor')]
-            normal_tra = twixobj.hdr["MeasYaps"][('sSpecPara', 'sVoI', 'sNormal', 'dTra')]
-        except: pass
-    if normal_sag == '' or normal_cor == '' or normal_tra == '':
-        return None
+    if normal_sag == '': normal_sag = 0
+    if normal_cor == '': normal_cor = 0
+    if normal_tra == '': normal_tra = 0
     normal_sag = float(normal_sag)
     normal_cor = float(normal_cor)
     normal_tra = float(normal_tra)
@@ -120,6 +110,8 @@ def get_transform(twixobj):
     pe_fov = float(twixobj.hdr["Config"]["VoI_PeFOV"])
     slice_thickness = float(twixobj.hdr["Config"]["VoI_SliceThickness"])
     in_plane_rot = twixobj.hdr["Config"]["VoI_InPlaneRotAngle"]
+    if in_plane_rot == '': in_plane_rot = 0
+    
     normal_vector = numpy.array([normal_sag, normal_cor, normal_tra])
     if calculate_orientation(normal_vector) == "SAG": x_vector = numpy.array([0, 0, 1])
     else: x_vector = numpy.array([-1, 0, 0])

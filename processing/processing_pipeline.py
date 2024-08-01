@@ -9,13 +9,13 @@ import ants
 
 from interface import utils
 from inout.read_mrs import load_file
-from inout.readcoord import ReadlcmCoord
-from inout.readheader import Table
-from inout.readcontrol import readControl
-from inout.saveraw import save_raw
+from inout.read_coord import ReadlcmCoord
+from inout.read_header import Table
+from inout.save_lcm import save_raw, read_control, save_control
 from interface.plot_helpers import plot_mrs, plot_coord, read_file
 
 def loadInput(self):
+    self.save_lastfiles()
     self.filepaths = []
     for f in self.MRSfiles.filepaths:
         if not f.lower().endswith(".coord"): self.filepaths.append(f)
@@ -194,100 +194,94 @@ def saveDataPlot(self):
 def analyseResults(self):
     results = self.dataSteps[-1]
     wresult = self.wrefSteps[-1][0].inherit(np.mean(np.array(self.wrefSteps[-1]), 0))
-    self.basisfile = None
+    self.basis_file = None
 
     # basis file
     larmor = 0
     for key in ["Nucleus", "nucleus"]:
         if key in self.header.keys():
-            if self.header[key] == "1H": larmor = 42.57747892
+            if self.header[key] == "1H": larmor = 42.577
             elif self.header[key] == "31P": larmor = 10.705
             elif self.header[key] == "23Na": larmor = 11.262
             break
     tesla = round(results[0].f0 / larmor, 0)
-    basisfile_gen = None
+    basis_file_gen = None
     if self.sequence is not None:
         strte = str(results[0].te)
         if strte.endswith(".0"): strte = strte[:-2]
-        basisfile_gen = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
-        basisfile_gen = os.path.join(self.programpath, "lcmodel", basisfile_gen)
+        basis_file_gen = str(int(tesla)) + "T_" + self.sequence + "_TE" + str(strte) + "ms.BASIS"
+        basis_file_gen = os.path.join(self.programpath, "lcmodel", "basis", basis_file_gen)
     else: utils.log_warning("Sequence not found, basis file not generated")
-
-    def request_basisfile():
-        basisfile = ""
-        utils.log_info("Requesting basisfile from user...")
-        while basisfile == "" or not os.path.exists(basisfile):
-            if not basisfile == "": utils.log_warning("Basis set not found:\n\t", basisfile)
-            dlg = wx.FileDialog(self, "Select basis set", os.getcwd(), "", "BASIS files (*.BASIS)|*.BASIS", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-            if dlg.ShowModal() == wx.ID_CANCEL:
-                dlg.Destroy()
-                return None
-            basisfile = dlg.GetPath()
-            dlg.Destroy()
-        return basisfile
     
-    if self.basisfile_user is not None: # user specified basis file
-        if not os.path.exists(self.basisfile_user):
-            utils.log_warning("Basis set not found:\n\t", self.basisfile)
-            self.basisfile = None
-        else: self.basisfile = self.basisfile_user
+    if self.basis_file_user is not None: # user specified basis file
+        if not os.path.exists(self.basis_file_user):
+            utils.log_warning("Basis set not found:\n\t", self.basis_file)
+            self.basis_file = None
+        else: self.basis_file = self.basis_file_user
 
-    if self.basisfile is None and basisfile_gen is not None and os.path.exists(basisfile_gen): # generated basis file
-        dlg = wx.MessageDialog(None, basisfile_gen, "Basis set found, is it the right one?\n" + basisfile_gen, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
+    if self.basis_file is None and basis_file_gen is not None and os.path.exists(basis_file_gen): # generated basis file
+        dlg = wx.MessageDialog(None, basis_file_gen, "Basis set found, is it the right one?\n" + basis_file_gen, wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION)
         button_clicked = dlg.ShowModal()
-        if button_clicked == wx.ID_YES: self.basisfile = basisfile_gen
+        if button_clicked == wx.ID_YES: self.basis_file = basis_file_gen
         elif button_clicked == wx.ID_CANCEL: return False
     
-    if self.basisfile is None:
-        utils.log_warning("Basis set not found:\n\t", self.basisfile)
-        self.basisfile = request_basisfile()
+    if self.basis_file is None:
+        utils.log_warning("Basis set not found:\n\t", self.basis_file)
+        self.fitting_frame.Show()
+        self.fitting_frame.SetFocus()
+        while self.fitting_frame.IsShown(): time.sleep(0.1)
+        self.basis_file = self.basis_file_user
 
-    if self.basisfile is None:
+    if self.basis_file is None:
         utils.log_error("No basis file specified")
         return False
 
     # control file
     params = None
-    if self.controlfile is not None and os.path.exists(self.controlfile):
-        try: params = readControl(self.controlfile)
+    if self.control_file_user is not None and os.path.exists(self.control_file_user):
+        try: params = read_control(self.control_file_user)
         except: params = None
     else:
-        self.controlfile = os.path.join(self.programpath, "lcmodel", "default.CONTROL")
+        self.control_file_user = os.path.join(self.programpath, "lcmodel", "default.CONTROL")
         try:
-            params = readControl(self.controlfile)
+            params = read_control(self.control_file_user)
             params.update({"DOECC": wresult is not None and "EddyCurrentCorrection" not in self.pipeline}) # not good very bad code
         except: params = None
     if params is None:
-        utils.log_error("Control file not found:\n\t", self.controlfile)
+        utils.log_error("Control file not found:\n\t", self.control_file_user)
         return False
     
     if "labels" in dataDict.keys(): labels = dataDict["labels"]
     else: labels = [str(i) for i in range(len(results))]
     
     # segmentation
-    if self.segmentationfile is not None and os.path.exists(self.segmentationfile):
-        fi = ants.from_nibabel(nibabel.loadsave.load(self.segmentationfile))
-        # seg = ants.kmeans_segmentation(fi,3)
-        mask = ants.get_mask(fi)
-        print(fi.shape)
-        # mask = ants.threshold_image(seg['segmentation'], 1, 1e15)
-        # priorseg = ants.prior_based_segmentation(fi, seg['probabilityimages'], mask, 0.25, 0.1, 3)
-        seg = ants.atropos(a=fi, m='[0.1,1x1x1]', c='[2,0]', i='kmeans[3]', x=mask)
-        CSF = seg['probabilityimages'][0]
-        GM = seg['probabilityimages'][1]
-        WM = seg['probabilityimages'][2]
-        segpath = os.path.join(self.outputpath, "seg")
-        nibabel.save(CSF, os.path.join(segpath, "CSF.nii.gz"))
-        nibabel.save(GM, os.path.join(segpath, "GM.nii.gz"))
-        nibabel.save(WM, os.path.join(segpath, "WM.nii.gz"))
-        try: centre = result.centre
-        except: centre = None
-        if centre is not None:
-            centre = tuple([int(c) for c in centre])
-            print(CSF[centre[0], centre[1], centre[2]])
-            print(GM[centre[0], centre[1], centre[2]])
-            print(WM[centre[0], centre[1], centre[2]])
-        # wconc = (43300*f_gm + 35880*f_wm + 55556*f_csf) / (1 - f_csf)
+    wconc = None
+    if self.wm_file_user is not None and self.gm_file_user is not None and self.csf_file_user is not None:
+        try: centre = results[0].centre
+        except:
+            utils.log_error("Could not retrieve voxel location from data")
+            return False
+        try:
+            wm_img = ants.image_read(self.wm_file_user)
+            gm_img = ants.image_read(self.gm_file_user)
+            csf_img = ants.image_read(self.csf_file_user)
+        except Exception as e:
+            utils.log_error("Could not load segmentation files\n\t", e)
+            return False
+        thickness = np.array([np.max(np.abs(np.array(results[0].transform)[:3, i])) for i in range(3)])
+        index1 = ants.transform_physical_point_to_index(wm_img, centre - thickness / 2).astype(int)
+        index2 = ants.transform_physical_point_to_index(wm_img, centre + thickness / 2).astype(int)
+        for i in range(3):
+            if index1[i] > index2[i]: index1[i], index2[i] = index2[i], index1[i]
+        wm_sum = np.sum(wm_img.numpy()[index1[0]:index2[0], index1[1]:index2[1], index1[2]:index2[2]])
+        gm_sum = np.sum(gm_img.numpy()[index1[0]:index2[0], index1[1]:index2[1], index1[2]:index2[2]])
+        csf_sum = np.sum(csf_img.numpy()[index1[0]:index2[0], index1[1]:index2[1], index1[2]:index2[2]])
+        _sum = wm_sum + gm_sum + csf_sum
+        f_wm = wm_sum / _sum
+        f_gm = gm_sum / _sum
+        f_csf = csf_sum / _sum
+        wconc = (43300*f_gm + 35880*f_wm + 55556*f_csf) / (1 - f_csf)
+        utils.log_info("Calculated the following values from the segmentation files:\n\tWM: ", f_wm, " GM: ", f_gm, " CSF: ", f_csf, " → Water concentration: ", wconc)
 
     # create work folder and copy lcmodel
     lcmodelfile = os.path.join(self.programpath, "lcmodel", "lcmodel") # linux exe
@@ -321,7 +315,7 @@ def analyseResults(self):
     for result, label in zip(results, labels):
         rparams = params.copy()
         rparams.update({
-            "FILBAS": self.basisfile,
+            "FILBAS": self.basis_file,
             "FILCSV": f"./{label}.csv",
             "FILCOO": f"./{label}.coord",
             "FILPS": f"./{label}.ps",
@@ -332,15 +326,18 @@ def analyseResults(self):
             "NUNFIL": result.np,
             "DELTAT": result.dt,
             "ECHOT": result.te,
-            "HZPPPM": result.f0
+            "HZPPPM": result.f0,
+            "WCONC": wconc if wconc is not None else 44444
         })
         
-        write_all_files(os.path.join(workpath, f"{label}.CONTROL"), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
+        # write_all_files(os.path.join(workpath, f"{label}.CONTROL"), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
+        save_control(os.path.join(workpath, f"{label}.CONTROL"), rparams)
         save_raw(os.path.join(workpath, f"{label}.RAW"), result, seq=self.sequence) # overwrite raw file with correct sequence type
         save_raw(os.path.join(workpath, f"{label}.H2O"), wresult, seq=self.sequence)
-        if os.name == 'nt': command = f"""cd "{workpath}" & lcmodel.exe < {label}_sl0.CONTROL"""
-        else: command = f"""cd "{workpath}" && ./lcmodel < {label}_sl0.CONTROL"""
-        utils.log_info(f"Running LCModel for {label}...\n\t", command)
+        if os.name == 'nt': command = f"""cd "{workpath}" & lcmodel.exe < {label}.CONTROL"""
+        else: command = f"""cd "{workpath}" && ./lcmodel < {label}.CONTROL"""
+        utils.log_info(f"Running LCModel for {label}...")
+        utils.log_debug("\n\t", command)
         subprocess.run(command, shell=True)
         
         savepath = os.path.join(lcmodelsavepath, label)
@@ -357,6 +354,7 @@ def analyseResults(self):
 
         filepath = os.path.join(savepath, f"{label}.coord")
         if os.path.exists(filepath):
+            self.last_coord = filepath
             f = ReadlcmCoord(filepath)
             figure = matplotlib.figure.Figure(figsize=(10, 10), dpi=600)
             plot_coord(f, figure, title=filepath)
@@ -385,23 +383,18 @@ def processPipeline(self):
         if not self.fast_processing:
             wx.CallAfter(self.button_step_processing.Enable)
             wx.CallAfter(self.button_auto_processing.Enable)
-        self.current_step += 1
 
     elif self.current_step == len(self.steps):
         self.pipeline_frame.on_save_pipeline(None, os.path.join(self.outputpath, "pipeline.pipe"))
         saveDataPlot(self)
-        if not analyseResults(self):
-            utils.log_error("Error analysing results")
-            wx.CallAfter(self.reset)
-            return
-        wx.CallAfter(self.plot_box.AppendItems, "lcmodel")
-        if self.fast_processing:
-            wx.CallAfter(self.button_auto_processing.SetBitmap, self.autorun_bmp)
-            wx.CallAfter(self.button_auto_processing.Disable)
-            wx.CallAfter(self.button_terminate_processing.Enable)
-        self.current_step += 1
-        
+        if analyseResults(self): wx.CallAfter(self.plot_box.AppendItems, "lcmodel")
+        else: self.reset()
+
+    self.current_step += 1
     wx.CallAfter(self.plot_box.SetSelection, self.current_step)
+    if self.current_step > len(self.steps):
+        self.reset()
+        return
     if not self.fast_processing:
         wx.CallAfter(self.button_terminate_processing.Enable)
 

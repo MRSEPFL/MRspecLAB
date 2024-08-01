@@ -2,7 +2,7 @@ import os
 import numpy as np
 from suspect import MRSData
 from inout.read_mrs import load_file
-from inout.readcoord import ReadlcmCoord
+from inout.read_coord import ReadlcmCoord
 from nodes._CoilCombinationAdaptive import coil_combination_adaptive
 
 def plot_mrs(data, figure, title=None, fit_gaussian=False):

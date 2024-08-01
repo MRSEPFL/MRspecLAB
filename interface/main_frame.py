@@ -8,55 +8,50 @@ import pickle
 
 from interface import utils
 from interface.pipeline_frame import PipelineFrame
+from interface.fitting_frame import FittingFrame
 from interface.main_layout import LayoutFrame
-from processing import processing_pipeline
-from inout.readcoord import ReadlcmCoord
 from interface.plot_helpers import plot_coord, get_coord_info
-from interface.colours import(XISLAND1,XISLAND2)
+from processing import processing_pipeline
+from inout.read_coord import ReadlcmCoord
     
 class MainFrame(LayoutFrame):
 
     def __init__(self, *args, **kwds):
         LayoutFrame.__init__(self, *args, **kwds)
 
-        self.retrieve_steps() # dictionary of processing steps definitions
-        self.pipeline_frame = PipelineFrame(parent=self) # /!\ put this after retrieve_steps
-        self.pipeline_frame.Hide()
-        self.retrieve_pipeline()
-
-        self.CreateStatusBar(1)
-        self.update_statusbar()
-
-        self.current_step = 0
-        self.basisfile = None
-        self.basisfile_user = None
-        self.controlfile = None
-        self.segmentationfile = None
-        
         utils.init_logging(self.info_text)
         utils.set_debug(False)
         self.debug_button.SetValue(False)
 
+        self.current_step = 0
+        self.basis_file = None
+        self.basis_file_user = None
+        self.control_file_user = None
+        self.wm_file_user = None
+        self.gm_file_user = None
+        self.csf_file_user = None
+        
         self.outputpath_base = os.path.join(os.getcwd(), "output")
         if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
         self.outputpath = self.outputpath_base
-        
-        filepath = os.path.join(os.getcwd(), "lastfiles.pickle") # load last files on open
-        if os.path.exists(filepath):
-            with open(filepath, 'rb') as f:
-                filepaths, filepaths_wref = pickle.load(f)
-            self.MRSfiles.on_drop_files(filepaths)
-            self.Waterfiles.on_drop_files(filepaths_wref)
+        self.load_lastfiles()
+
+        self.retrieve_steps() # dictionary of processing steps definitions
+        self.pipeline_frame = PipelineFrame(parent=self) # /!\ put this after retrieve_steps
+        self.pipeline_frame.Hide()
+        self.fitting_frame = FittingFrame(parent=self)
+        self.fitting_frame.Hide()
+        self.retrieve_pipeline()
+
+        self.CreateStatusBar(1)
+        self.update_statusbar()
 
         self.Bind(wx.EVT_CLOSE, self.on_close) # save last files on close
         self.Bind(wx.EVT_BUTTON, self.reset, self.button_terminate_processing)
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
         self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.folder_button)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.pipeline_button)
-        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_show_config, self.show_config_button)
-        self.Bind(wx.EVT_BUTTON, self.on_set_basis, self.basis_button)
-        self.Bind(wx.EVT_BUTTON, self.on_set_control, self.control_button)
-        self.Bind(wx.EVT_BUTTON, self.on_set_segmentation, self.segmentation_button)
+        self.Bind(wx.EVT_BUTTON, self.on_open_fitting, self.fitting_button)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_show_debug, self.show_debug_button)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_debug, self.debug_button)
         self.Bind(wx.EVT_BUTTON, self.on_reload, self.reload_button)
@@ -64,7 +59,6 @@ class MainFrame(LayoutFrame):
         self.Bind(wx.EVT_BUTTON, self.on_button_step_processing, self.button_step_processing)
         self.Bind(wx.EVT_COMBOBOX, self.on_plot_box_selection)
 
-        self.on_show_config(None)
         self.on_show_debug(None)
         self.reset()
 
@@ -74,7 +68,6 @@ class MainFrame(LayoutFrame):
         self.button_terminate_processing.Disable()
         self.button_step_processing.Enable()
         self.button_auto_processing.Enable()
-        self.pipeline_button.Enable()
         if self.current_step >= len(self.steps):
             self.button_step_processing.SetBitmap(self.run_bmp)
         self.button_auto_processing.SetBitmap(self.autorun_bmp)
@@ -100,42 +93,22 @@ class MainFrame(LayoutFrame):
     def update_statusbar(self):
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
 
-    def on_toggle_editor(self, event):
-        self.pipeline_frame.Show()
-        self.Layout()
-        if event is not None: event.Skip()
-
     def on_button_step_processing(self, event):
         self.button_step_processing.Disable()
         self.button_auto_processing.Disable()
-        if 0 < self.current_step:
+        if self.current_step > 0:
             self.button_terminate_processing.Disable()
-        for filepath in self.MRSfiles.filepaths:
-            if not os.path.exists(filepath):
-                utils.log_error(f"File not found:\n\t{filepath}")
-                self.reset()
-                return
-        for filepath in self.Waterfiles.filepaths:
-            if not os.path.exists(filepath):
-                utils.log_error(f"File not found:\n\t{filepath}")
-                self.reset()
-                return
-
         thread_processing = threading.Thread(target=processing_pipeline.processPipeline, args=[self])
         thread_processing.start()
         event.Skip()
         
     def on_autorun_processing(self, event):
-        self.plot_box.Clear()
-        self.plot_box.AppendItems("")
         self.fast_processing = not self.fast_processing
         if not self.fast_processing:
             self.button_auto_processing.SetBitmap(self.autorun_bmp)
-            utils.log_info("AUTORUN PAUSED")
         else:
             self.button_auto_processing.SetBitmap(self.pause_bmp)
             self.button_step_processing.Disable()
-            utils.log_info("AUTORUN ACTIVATED")
             if 0 < self.current_step:
                 self.button_terminate_processing.Disable()
             thread_processing = threading.Thread(target=processing_pipeline.autorun_pipeline_exe, args=[self])
@@ -149,54 +122,10 @@ class MainFrame(LayoutFrame):
 
     def on_open_pipeline(self, event):
         self.pipeline_frame.Show()
-        self.Layout()
-        if event is not None: event.Skip()
-        
-    def on_show_config(self, event):
-        if self.show_config_button.GetValue():
-            self.basis_button.Show()
-            self.control_button.Show()
-            self.segmentation_button.Show()
-            self.show_config_button.SetLabel("Hide fitting options")
-        else:
-            self.basis_button.Hide()
-            self.control_button.Hide()
-            self.segmentation_button.Hide()
-            self.show_config_button.SetLabel("Show fitting options")
-        self.Layout()
-        if event is not None: event.Skip()
-
-    def on_set_basis(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".basis file (*.basis)|*.basis", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPaths()[0]
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error(f"File not found:\n\t{filepath}")
-        else:
-            self.basisfile_user = filepath
-            utils.log_info(f"Basis file set to:\n\t{filepath}")
         event.Skip()
 
-    def on_set_control(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".control file (*.control)|*.control", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPaths()[0]
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error(f"File not found:\n\t{filepath}")
-            return
-        self.controlfile = filepath
-        utils.log_info(f"Control file set to:\n\t{filepath}")
-        event.Skip()
-
-    def on_set_segmentation(self, event):
-        fileDialog = wx.FileDialog(self, "Choose a file", wildcard=".nii file (*.nii)|*.nii", defaultDir=self.getcwd(), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if fileDialog.ShowModal() == wx.ID_CANCEL: return
-        filepath = fileDialog.GetPaths()[0]
-        if filepath == "" or not os.path.exists(filepath):
-            utils.log_error(f"File not found:\n\t{filepath}")
-            return
-        self.segmentationfile = filepath
-        utils.log_info(f"Segmentation file set to:\n\t{filepath}")
+    def on_open_fitting(self, event):
+        self.fitting_frame.Show()
         event.Skip()
     
     def on_show_debug(self, event):
@@ -226,13 +155,12 @@ class MainFrame(LayoutFrame):
         if selected_item == "":
             self.matplotlib_canvas.clear()
         elif selected_item == "lcmodel":
-            filepath = os.path.join(self.lcmodelsavepath, "result.coord")
-            if os.path.exists(filepath):
+            if os.path.exists(self.last_coord):
                 self.matplotlib_canvas.clear()
-                f = ReadlcmCoord(filepath)
-                plot_coord(f, self.matplotlib_canvas.figure, title=filepath)
+                f = ReadlcmCoord(self.last_coord)
+                plot_coord(f, self.matplotlib_canvas.figure, title=self.last_coord)
                 self.matplotlib_canvas.draw()
-                self.file_text.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
+                self.file_text.SetValue(f"File: {self.last_coord}\n{get_coord_info(f)}")
             else:
                 utils.log_warning("LCModel output not found")
         else:
@@ -270,15 +198,23 @@ class MainFrame(LayoutFrame):
                     current_node = socket.GetWires()[0].dstsocket.node
                     self.pipeline.append(current_node.GetLabel())
                     self.steps.append(current_node)
+    
+    def save_lastfiles(self):
+        tosave = [self.MRSfiles.filepaths, self.Waterfiles.filepaths, self.basis_file_user, self.control_file_user, self.wm_file_user, self.gm_file_user, self.csf_file_user]
+        filepath = os.path.join(os.getcwd(), "lastfiles.pickle")
+        with open(filepath, 'wb') as f:
+            pickle.dump(tosave, f)
+
+    def load_lastfiles(self):
+        filepath = os.path.join(os.getcwd(), "lastfiles.pickle")
+        if os.path.exists(filepath):
+            with open(filepath, 'rb') as f:
+                filepaths, filepaths_wref, self.basis_file_user, self.control_file_user, self.wm_file_user, self.gm_file_user, self.csf_file_user = pickle.load(f)
+            self.MRSfiles.on_drop_files(filepaths)
+            self.Waterfiles.on_drop_files(filepaths_wref)
 
     def on_close(self, event):
-        filepaths = self.MRSfiles.filepaths
-        filepaths_wref = self.Waterfiles.filepaths
-        if len(filepaths) > 0:
-            tosave = [filepaths, filepaths_wref]
-            filepath = os.path.join(os.getcwd(), "lastfiles.pickle")
-            with open(filepath, 'wb') as f:
-                pickle.dump(tosave, f)
+        self.save_lastfiles()
         self.Destroy()
         
     def on_resize(self, event):
