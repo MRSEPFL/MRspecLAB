@@ -9,11 +9,9 @@ class AverageBlock(api.ProcessingNode):
             "description": "Averages every N spectra into one and labels them according to block type and number"
         }
         self.parameters = [
-            api.IntegerProp(
+            api.StringProp(
                 idname="Block length",
-                default=16,
-                min_val=1,
-                max_val=100,
+                default="16",
                 fpb_label="Number of measurements in an experimental block"
             ),
             api.IntegerProp(
@@ -34,7 +32,7 @@ class AverageBlock(api.ProcessingNode):
         super().__init__(nodegraph, id)
 
     def process(self, data):
-        block_length = self.get_parameter("Block length")
+        block_length = int(self.get_parameter("Block length"))
         block_averages = self.get_parameter("Block averages")
         block_types = self.get_parameter("Block types")
         step = block_length // block_averages
@@ -50,6 +48,9 @@ class AverageBlock(api.ProcessingNode):
             current_average = i // step
             labels.append(f"type{current_block % block_types}block{int(current_block // block_types) + 1}average{current_average % block_averages + 1}")
             i += step
+        if len(output) == 0:
+            output = [data["input"][0].inherit(np.mean(data["input"], axis=0))]
+            return
         data["output"] = output
         data["labels"] = labels
 

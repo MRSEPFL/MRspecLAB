@@ -38,7 +38,9 @@ def get_mrs_info(data):
     info += "\n"
     if hasattr(f, "np"): info += f"\n\tNumber of points: {f.np}"
     info += f"\n\tNumber of coils: {data[0].shape[0] if len(data[0].shape) > 1 else 1}"
-    info += f"\n\tNumber of averages: {len(data)}"
+    if "ave_per_rep" in f.metadata:
+        info += f"\n\tNumber of shots per average: {f.metadata['ave_per_rep']}"
+    info += f"\n\tNumber of averages: {len(data)} → {len(data) / f.metadata['ave_per_rep']}"
     info += "\n"
     if hasattr(f, "f0"): info += f"\n\tScanner frequency (MHz): {f.f0}"
     if hasattr(f, "dt"): info += f"\n\tDwell time (s): {f.dt}"
@@ -129,6 +131,7 @@ def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
     canvas.clear()
     if filepath.lower().endswith(".coord"):
         f = ReadlcmCoord(filepath)
+        if f is None: return
         text.SetValue(f"File: {filepath}\n{get_coord_info(f)}")
         plot_coord(f, canvas.figure, title=filepath)
     else:

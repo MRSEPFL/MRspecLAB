@@ -20,7 +20,7 @@ class QualityMatrix(api.ProcessingNode):
         data["output"] = data["input"] # no change
         if data['wref'] is None: return
 
-        water = data["wref"]
+        water = data["wref"][0]
         # wphase = np.angle(water)
         # poly = np.polynomial.polynomial.Polynomial.fit(water.time_axis(), wphase, 1)
         # wphase = poly.convert().coef[1] * water.time_axis() + poly.convert().coef[0]
@@ -46,10 +46,10 @@ class QualityMatrix(api.ProcessingNode):
 
         if data['wref'] is not None:
             ax = figure.add_subplot(2, 1, 2)
-            gauss = gaussian(data["wref_output"].frequency_axis_ppm(), *self.gaussparams)
-            ax.plot(data["wref"].frequency_axis_ppm(), np.real(data["wref"].spectrum()), "-k", label="original")
-            ax.plot(data["wref"].frequency_axis_ppm(), self.wspec, "-b", label="corrected")
-            ax.plot(data["wref"].frequency_axis_ppm(), gauss, ":r", label="gaussian fit")
+            gauss = gaussian(data["wref_output"][0].frequency_axis_ppm(), *self.gaussparams)
+            ax.plot(data["wref"][0].frequency_axis_ppm(), np.real(data["wref"][0].spectrum()), "-k", label="original")
+            ax.plot(data["wref"][0].frequency_axis_ppm(), self.wspec, "-b", label="corrected")
+            ax.plot(data["wref"][0].frequency_axis_ppm(), gauss, ":r", label="gaussian fit")
             ax.text(self.gaussparams[1], self.gaussparams[0] / 2, f"FWHM = {self.fwhm:.2f} ppm\n= {self.fwhmhz:.2f} Hz", ha="center", va="center")
             ax.set_xlabel('Chemical shift (ppm)')
             ax.set_ylabel('Amplitude')

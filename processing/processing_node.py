@@ -18,7 +18,7 @@ class ProcessingNode(Node):
         if hasattr(self, "parameters"):
             for p in self.parameters:
                 p.exposed = False
-                p.show_p = False
+                p.show_p = True
                 self.defaultParameters[p.idname] = p.value
         else: self.parameters = []
         self.plotTime = True # set these if you don't override plot()
@@ -85,13 +85,13 @@ class ProcessingNode(Node):
         figure.tight_layout()
 
     def plotData(self, ax, data, plotfreq): # helper plotting function
-        '''Plot a list of MRSData on axes in time or frequency domain.'''
+        '''Plots a list of MRSData on given axes in time or frequency domain.'''
         if plotfreq:
             if self.plotPPM:
                 for d in data:
                     ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
                 ax.set_xlabel('Chemical shift (ppm)')
-                ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
+                ax.set_xlim((np.max(data[0].frequency_axis_ppm()), np.min(data[0].frequency_axis_ppm())))
             else:
                 for d in data:
                     ax.plot(d.frequency_axis(), np.real(d.spectrum()))

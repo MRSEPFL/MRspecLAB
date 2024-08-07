@@ -30,6 +30,9 @@ class AverageMoving(api.ProcessingNode):
             output.append(data["input"][i].inherit(np.mean(window, axis=0)))
             labels.append(f"averages{i+1}to{i+window_length}")
             i += 1
+        if len(output) == 0:
+            data["output"] = [data["input"][0].inherit(np.mean(data["input"], axis=0))]
+            return
         data["output"] = output
         data["labels"] = labels
 

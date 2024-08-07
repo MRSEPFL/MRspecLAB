@@ -50,12 +50,10 @@ class FreqPhaseAlignment(api.ProcessingNode):
                 choices=["True", "False"],
                 fpb_label="Set target to median of input data"
             ),
-            api.IntegerProp(
+            api.StringProp(
                 idname="target",
-                default=0,
-                min_val=0,
-                max_val=1000,
-                fpb_label="Set target to index of input data (if not median)"
+                default="0",
+                fpb_label="Set target to index of input data (if not median; starts at 0)"
             )
         ]
         super().__init__(nodegraph, id)
@@ -89,7 +87,7 @@ class FreqPhaseAlignment(api.ProcessingNode):
         freqRange.sort()
         freqRange = tuple(freqRange)
         if self.get_parameter("median"): target = _data[0].inherit(np.median(_data, axis=0))
-        elif self.get_parameter("target") in range(len(_data)): target = _data[self.get_parameter("target")]
+        elif int(self.get_parameter("target")) in range(len(_data)): target = _data[int(self.get_parameter("target"))]
         else: target = _data[0]
         self.freqShifts = []
         self.phaseShifts = []

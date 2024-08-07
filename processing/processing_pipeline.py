@@ -2,10 +2,8 @@ import wx
 import numpy as np
 import os, sys, shutil, zipfile, time, subprocess
 import matplotlib
-from suspect.io.lcmodel import write_all_files
-import nibabel
 import ants
-# import pandas as pd
+import PIL
 
 from interface import utils
 from inout.read_mrs import load_file
@@ -94,7 +92,7 @@ def loadInput(self):
                     self.sequence = k
                     break
         if self.sequence is None: utils.log_warning("Sequence not supported: " + seqstr)
-        else: utils.log_info("Sequence detected: ", self.sequence)
+        else: utils.log_info("Sequence detected: ", seqstr + " → " + self.sequence)
 
     # create output and work folders
     allfiles = [os.path.basename(f) for f in self.filepaths]
@@ -326,9 +324,9 @@ def analyseResults(self):
             "NUNFIL": result.np,
             "DELTAT": result.dt,
             "ECHOT": result.te,
-            "HZPPPM": result.f0,
-            "WCONC": wconc if wconc is not None else 44444
+            "HZPPPM": result.f0
         })
+        if wconc is not None: rparams.update({ "WCONC": wconc })
         
         # write_all_files(os.path.join(workpath, f"{label}.CONTROL"), result, wref_data=wresult, params=rparams) # write raw, h2o, control files to work folder
         save_control(os.path.join(workpath, f"{label}.CONTROL"), rparams)
@@ -343,7 +341,7 @@ def analyseResults(self):
         savepath = os.path.join(lcmodelsavepath, label)
         os.mkdir(savepath)
 
-        command = ""
+        command = "" # move all files from work to output folder
         for f in os.listdir(workpath):
             if "lcmodel" in f: continue
             if os.name == 'nt': command += f""" & move "{os.path.join(workpath, f)}" "{savepath}" """
