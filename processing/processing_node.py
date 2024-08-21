@@ -63,6 +63,8 @@ class ProcessingNode(Node):
     
     def plot(self, figure: matplotlib.figure, data: dict) -> None: # can be overridden
         if not self.plotTime and not self.plotSpectrum: return
+        data["input"] = [d for d in data["input"] if d is not None]
+        if len(data["input"]) == 0: return
         if self.plotTime and self.plotSpectrum: sx, sy = 2, 2
         else: sx, sy = 2, 1
         index = 1

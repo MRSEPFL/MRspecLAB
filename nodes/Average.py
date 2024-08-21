@@ -14,6 +14,7 @@ class Average(api.ProcessingNode):
         if len(data["input"]) == 1:
             data["output"] = data["input"]
             return
-        data["output"] = [data["input"][0].inherit(np.mean(data["input"], axis=0))] # retrieve metadata; we want a list of MRSData objects
+        temp = [i for i in data["input"] if i is not None]
+        data["output"] = [temp[0].inherit(np.mean(temp, axis=0))] # retrieve metadata; we want a list of MRSData objects
 
 api.RegisterNode(Average, "Average")

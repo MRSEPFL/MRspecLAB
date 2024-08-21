@@ -52,7 +52,9 @@ class RemoveBadAverages(api.ProcessingNode):
         mask = np.abs(self.zscores) < self.get_parameter("stdDevThreshold")
         for i, d in enumerate(data["input"]):
             if mask[i]: output.append(d)
-            else: self.removed.append(i)
+            else:
+                output.append(None)
+                self.removed.append(i)
         data["output"] = output
 
     def plot(self, figure, data):

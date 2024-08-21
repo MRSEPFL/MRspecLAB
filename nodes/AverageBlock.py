@@ -38,12 +38,12 @@ class AverageBlock(api.ProcessingNode):
         step = block_length // block_averages
         output = []
         labels = []
-        datain = np.array(data["input"])
         i = 0
         while i < len(data["input"]):
-            to_average = datain[i:i+step]
+            to_average = data["input"][i:i+step]
             if len(to_average) == 0: break
-            output.append(data["input"][i].inherit(np.mean(to_average, axis=0)))
+            to_average = [x for x in to_average if x is not None]
+            output.append(to_average[0].inherit(np.mean(to_average, axis=0)))
             current_block = int(i // block_length)
             current_average = i // step
             labels.append(f"type{current_block % block_types}block{int(current_block // block_types) + 1}average{current_average % block_averages + 1}")

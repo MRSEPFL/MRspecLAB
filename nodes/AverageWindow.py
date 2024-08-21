@@ -27,7 +27,8 @@ class AverageMoving(api.ProcessingNode):
         while i < len(data["input"]):
             window = data["input"][i:i+window_length]
             if len(window) < window_length: break
-            output.append(data["input"][i].inherit(np.mean(window, axis=0)))
+            window = [x for x in window if x is not None]
+            output.append(window[0].inherit(np.mean(window, axis=0)))
             labels.append(f"averages{i+1}to{i+window_length}")
             i += 1
         if len(output) == 0:

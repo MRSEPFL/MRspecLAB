@@ -30,15 +30,14 @@ class AverageSN2(api.ProcessingNode):
         step = self.get_parameter("Repetition length")
         noise_prop = int(self.get_parameter("Noise proportion") * len(data["input"][0]))
         output = []
-        labels = []
-        datain = np.array(data["input"])
         i = 0
         while i < len(data["input"]):
-            to_average = datain[i:i+step]
+            to_average = data["input"][i:i+step]
             if len(to_average) == 0: break
+            to_average = [x for x in to_average if x is not None]
             weights = [d[1] / np.std(d[-noise_prop:])**2 for d in to_average]
             weights /= np.sum(weights)
-            output.append(data["input"][i].inherit(np.average(to_average, axis=0, weights=weights)))
+            output.append(to_average[0].inherit(np.average(to_average, axis=0, weights=weights)))
             i += step
         data["output"] = output
 
