@@ -8,6 +8,7 @@ from nodes._CoilCombinationAdaptive import coil_combination_adaptive
 def plot_mrs(data, figure, title=None, fit_gaussian=False):
     if isinstance(data, MRSData): data = [data]
     if not isinstance(data, list): return
+    data = [d for d in data if d is not None]
     if len(data[0].shape) > 1: # separate coils
         data2 = []
         for d in data:
