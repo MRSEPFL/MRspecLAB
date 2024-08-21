@@ -10,7 +10,7 @@ class ManualAdjustment:
         self.xlim = (np.max(data[0].frequency_axis_ppm()), np.min(data[0].frequency_axis_ppm()))
         ylim = np.max(np.abs(np.real(data[0].spectrum())))
         self.ylim = (-ylim, ylim)
-        self.fig = canvas.figure
+        self.fig: plt.figure = canvas.figure
 
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.ax.clear()
@@ -69,7 +69,7 @@ class ManualAdjustment:
         self.lines = []
         for i in range(len(data)):
             self.lines.append(self.ax.plot(data[i].frequency_axis_ppm(), np.real(data[i].spectrum()))[0])
-        self.fig.canvas.draw_idle()
+        self.update(0)
         
     def update(self, val):
         self.data = []
