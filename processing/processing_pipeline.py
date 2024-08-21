@@ -116,7 +116,7 @@ def loadInput(self):
         self.header = table.table_clean(vendor, dtype, self.header)
         table.populate(vendor, dtype, self.header)
         csvcols = ['Header', 'SubHeader', 'MRSinMRS', 'Values']
-        table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "header.csv"))
+        table.MRSinMRS_Table[csvcols].to_csv(os.path.join(self.outputpath, "MRSinMRS_table.csv"))
     return True
 
 dataDict = {}
