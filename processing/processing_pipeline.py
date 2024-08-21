@@ -3,13 +3,13 @@ import numpy as np
 import os, sys, shutil, zipfile, time, subprocess
 import matplotlib
 import ants
-import PIL
+import datetime
 
 from interface import utils
 from inout.read_mrs import load_file
 from inout.read_coord import ReadlcmCoord
 from inout.read_header import Table
-from inout.save_lcm import save_raw, read_control, save_control
+from inout.io_lcmodel import save_raw, read_control, save_control
 from interface.plot_helpers import plot_mrs, plot_coord, read_file
 
 def loadInput(self):
@@ -48,6 +48,8 @@ def loadInput(self):
     if self.header is None:
         utils.log_error("No header found")
         return False
+    if len(self.filepaths) > 1 and dtype not in ("dcm", "ima", "raw"):
+        utils.log_warning("Multiple files given despite not in DICOM, IMA, or RAW format")
 
     self.originalWref = None
     wrefpath = None
@@ -98,8 +100,9 @@ def loadInput(self):
     allfiles = [os.path.basename(f) for f in self.filepaths]
     if self.originalWref is not None:
         allfiles.append(os.path.basename(self.Waterfiles.filepaths[0]))
-    prefix = os.path.commonprefix(allfiles).strip("."+dtype).replace(" ", "").replace("^", "")
-    if prefix == "": prefix = "output"
+    # prefix = os.path.commonprefix(allfiles).strip("."+dtype).replace(" ", "").replace("^", "")
+    # if prefix == "": prefix = "output"
+    prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + self.filepaths[0].split(os.path.sep)[-1][:-len(dtype)-1]
     if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
     base = os.path.join(self.outputpath_base, prefix)
     
@@ -162,6 +165,8 @@ def processStep(self, step, nstep):
         utils.log_debug("Saved result of " + step.__class__.__name__ + " to " + filepath)
     # raw
     if self.save_raw_button.GetValue():
+        steppath = os.path.join(self.outputpath, str(nstep) + step.__class__.__name__)
+        if not os.path.exists(steppath): os.mkdir(steppath)
         filepath = os.path.join(steppath, "data")
         if not os.path.exists(filepath): os.mkdir(filepath)
         for i, d in enumerate(dataDict["output"]): save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
@@ -313,13 +318,16 @@ def analyseResults(self):
     for result, label in zip(results, labels):
         rparams = params.copy()
         rparams.update({
+            "KEY": 123456789,
+            "FILRAW": f"./{label}.raw",
+            "FILH2O": f"./{label}.h2o",
             "FILBAS": self.basis_file,
-            "FILCSV": f"./{label}.csv",
-            "FILCOO": f"./{label}.coord",
-            "FILPS": f"./{label}.ps",
+            "FILPRI": f"./{label}.print",
             "FILTAB": f"./{label}.table",
-            "FILRAW": f"./{label}.RAW",
-            "FILH2O": f"./{label}.H2O",
+            "FILPS": f"./{label}.ps",
+            "FILCOO": f"./{label}.coord",
+            "FILCOR": f"./{label}.coraw",
+            "FILCSV": f"./{label}.csv",
             "DOWS": wresult is not None,
             "NUNFIL": result.np,
             "DELTAT": result.dt,
