@@ -134,34 +134,6 @@ class LayoutFrame(wx.Frame):
         plot_sizer.Add(plot_label, 0, wx.ALL | wx.ALIGN_CENTER, 0)
         plot_sizer.Add(self.plot_box, 0, wx.ALL | wx.ALIGN_CENTER, 0)
 
-        ### CONFIG BUTTONS ###
-        # self.show_config_button = ToggleButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
-        # self.show_config_button.SetBackgroundColour(wx.Colour(XISLAND1))
-        # self.show_config_button.SetValue(False)
-        # self.show_config_button.SetMinSize((-1, 25))
-        # self.show_config_button.SetToolTip("Show fitting options for LCModel")
-
-        # self.basis_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Set .basis file", style=wx.BORDER_NONE | wx.BU_LEFT)
-        # self.basis_button.SetBackgroundColour(wx.Colour(XISLAND2))
-        # self.basis_button.SetMinSize((-1, 25))
-        # self.basis_button.SetToolTip("Override basis set detection for LCModel")
-
-        # self.control_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Set .control file", style=wx.BORDER_NONE | wx.BU_LEFT)
-        # self.control_button.SetBackgroundColour(wx.Colour(XISLAND2))
-        # self.control_button.SetMinSize((-1, 25))
-        # self.control_button.SetToolTip("Override default control file from LCModel")
-
-        # self.segmentation_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Set segmentation file", style=wx.BORDER_NONE | wx.BU_LEFT)
-        # self.segmentation_button.SetBackgroundColour(wx.Colour(XISLAND2))
-        # self.segmentation_button.SetMinSize((-1, 25))
-        # self.segmentation_button.SetToolTip("Override segmentation file for LCModel")
-
-        # config_sizer = wx.BoxSizer(wx.VERTICAL)
-        # config_sizer.Add(self.show_config_button, 0, wx.ALL | wx.EXPAND, 0)
-        # config_sizer.Add(self.basis_button, 0, wx.ALL | wx.EXPAND, 0)
-        # config_sizer.Add(self.control_button, 0, wx.ALL | wx.EXPAND, 0)
-        # config_sizer.Add(self.segmentation_button, 0, wx.ALL | wx.EXPAND, 0)
-
         ### DEBUG BUTTONS ###
         self.fitting_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.fitting_button.SetBackgroundColour(wx.Colour(XISLAND1))
@@ -183,7 +155,7 @@ class LayoutFrame(wx.Frame):
         self.reload_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Rescan node folder", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.reload_button.SetBackgroundColour(wx.Colour(XISLAND2))
         self.reload_button.SetMinSize((-1, 25))
-        self.reload_button.SetToolTip("Reload all nodes from the node folder")
+        self.reload_button.SetToolTip("Reload all nodes from the node folder; only useful when running the Python source code")
 
         debug_sizer = wx.BoxSizer(wx.VERTICAL)
         debug_sizer.Add(self.fitting_button, 0, wx.ALL | wx.EXPAND, 0)

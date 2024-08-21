@@ -11,7 +11,7 @@ from interface.pipeline_frame import PipelineFrame
 from interface.fitting_frame import FittingFrame
 from interface.main_layout import LayoutFrame
 from interface.plot_helpers import plot_coord, get_coord_info
-from processing import processing_pipeline
+from processing.processing_pipeline import processPipeline, autorun_pipeline_exe
 from inout.read_coord import ReadlcmCoord
     
 class MainFrame(LayoutFrame):
@@ -98,7 +98,7 @@ class MainFrame(LayoutFrame):
         self.button_auto_processing.Disable()
         if self.current_step > 0:
             self.button_terminate_processing.Disable()
-        thread_processing = threading.Thread(target=processing_pipeline.processPipeline, args=[self])
+        thread_processing = threading.Thread(target=processPipeline, args=[self])
         thread_processing.start()
         event.Skip()
         
@@ -111,7 +111,7 @@ class MainFrame(LayoutFrame):
             self.button_step_processing.Disable()
             if 0 < self.current_step:
                 self.button_terminate_processing.Disable()
-            thread_processing = threading.Thread(target=processing_pipeline.autorun_pipeline_exe, args=[self])
+            thread_processing = threading.Thread(target=autorun_pipeline_exe, args=[self])
             thread_processing.start()
         event.Skip()
 
@@ -181,7 +181,7 @@ class MainFrame(LayoutFrame):
             utils.log_warning("Step not found")
 
     def retrieve_pipeline(self):
-        current_node = self.pipeline_frame.node_panel.nodegraph.GetInputNode()
+        current_node = self.pipeline_frame.nodegraph.GetInputNode()
         self.pipeline = []
         self.steps = []
         while current_node is not None:
