@@ -10,6 +10,8 @@ The GUI is started by running `MRSprocessing.py` with Python and is hoped to be 
 
 The application detects any processing steps placed in the `processing` folder. The creation of custom processing steps is detailed in the read-me file in that folder. A similar function might be planned for reading custom data types.
 
+A user manual can be found in [MANUAL.md](/MANUAL.md).
+
 ### Windows
 A Windows executable is included in the `dist/MRSprocessing` directory, and can be run directly after downloading the repository. Currently this executable only contains the default processing modules and does not retrieve any new ones from the `steps` folder. It can be rebuilt using the `pyinstaller.py` script, in which case it will include all steps present in that folder.
 
