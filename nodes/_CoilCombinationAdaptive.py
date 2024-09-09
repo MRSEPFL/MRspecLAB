@@ -33,7 +33,7 @@ def eig_power(R):
 
 def coil_combination_adaptive(data, p=0):
     if p == 0: p = data["input"][0].metadata["ave_per_rep"]
-    ref = "wref" if "wref" in data and len(data["wref"]) != 0 else "input"
+    ref = "wref" if "wref" in data and data["wref"] is not None and len(data["wref"]) != 0 else "input"
     if ref == "input": utils.log_warning("No water reference provided, using averaged FIDs as reference")
     ref = np.mean(np.array(data[ref]), 0)[:, 0]
     phase = np.exp(-1j*np.angle(ref))
@@ -47,7 +47,7 @@ def coil_combination_adaptive(data, p=0):
             output2.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
         output.append(d.inherit(np.array(output2)))
     data["output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0, len(output), p)]
-    if len(data["wref"]) != 0:
+    if "wref" in data and data["wref"] is not None and len(data["wref"]) != 0:
         output = []
         for d in data["wref"]:
             output2 = []

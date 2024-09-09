@@ -31,7 +31,7 @@ class CoilCombinationSN2(api.ProcessingNode):
         if len(data["input"][0].shape) == 1: # single coil data
             data["output"] = data["input"]
             return
-        if len(data["wref"]) == 0: # no water reference
+        if data["wref"] is None or len(data["wref"]) == 0: # no water reference
             data["output"] = data["input"]
             return
         ncoils = len(data["input"][0])

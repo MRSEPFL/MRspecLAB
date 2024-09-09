@@ -16,7 +16,7 @@ class CoilCombinationSVD(api.ProcessingNode):
             data["output"] = data["input"]
             return
         data["output"] = [combine_channels(d) for d in data["input"]]
-        if len(data["wref"]) != 0:
+        if "wref" in data and data["wref"] is not None and len(data["wref"]) != 0:
             data["wref_output"] = [combine_channels(d) for d in data["wref"]]
     
     # default plotter doesn't handle multi-coil data
