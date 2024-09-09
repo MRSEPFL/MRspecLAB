@@ -55,7 +55,7 @@ class LayoutFrame(wx.Frame):
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_FRAME_STYLE
         wx.Frame.__init__(self, *args, **kwds)
         self.SetSize((1200, 800))
-        self.SetTitle("MRSprocessing")
+        self.SetTitle("MRSpecLAB")
         self.SetIcon(images.icon_img_32.GetIcon())
         font1 = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.NORMAL,wx.FONTWEIGHT_NORMAL, False)
 

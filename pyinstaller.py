@@ -2,7 +2,7 @@ import PyInstaller.__main__
 import sys ; sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 PyInstaller.__main__.run([
-    'MRSprocessing.py',
+    'MRSpecLAB.py',
     '--noconfirm',
     '--onefile',
     # own files
