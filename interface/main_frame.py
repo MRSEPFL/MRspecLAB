@@ -32,7 +32,10 @@ class MainFrame(LayoutFrame):
         self.csf_file_user = None
         
         self.outputpath_base = os.path.join(os.getcwd(), "output")
-        if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
+        try:
+            if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
+        except:
+            self.on_change_output(wx.PyEvent())
         self.outputpath = self.outputpath_base
         self.load_lastfiles()
 
@@ -51,6 +54,7 @@ class MainFrame(LayoutFrame):
         self.Bind(wx.EVT_BUTTON, self.on_autorun_processing, self.button_auto_processing)
         self.Bind(wx.EVT_BUTTON, self.on_open_output_folder, self.folder_button)
         self.Bind(wx.EVT_BUTTON, self.on_open_pipeline, self.pipeline_button)
+        self.Bind(wx.EVT_BUTTON, self.on_change_output, self.change_output_button)
         self.Bind(wx.EVT_BUTTON, self.on_open_fitting, self.fitting_button)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_show_debug, self.show_debug_button)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_debug, self.debug_button)
@@ -123,6 +127,17 @@ class MainFrame(LayoutFrame):
     def on_open_pipeline(self, event):
         self.pipeline_frame.Show()
         event.Skip()
+
+    def on_change_output(self, event):
+        dirDialog = wx.DirDialog(self.Parent, "Choose a new output folder", style=wx.DD_DIR_MUST_EXIST)
+        if dirDialog.ShowModal() == wx.ID_CANCEL: return
+        temp = os.path.join(dirDialog.GetPath(), "output")
+        if not os.path.exists(temp):
+            try: os.mkdir(temp)
+            except:
+                utils.log_error(f"Could not create folder {temp}")
+                return
+        self.outputpath_base = temp
 
     def on_open_fitting(self, event):
         self.fitting_frame.Show()
@@ -214,7 +229,8 @@ class MainFrame(LayoutFrame):
             self.Waterfiles.on_drop_files(filepaths_wref)
 
     def on_close(self, event):
-        self.save_lastfiles()
+        try: self.save_lastfiles()
+        except: pass
         self.Destroy()
         
     def on_resize(self, event):

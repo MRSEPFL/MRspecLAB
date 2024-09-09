@@ -135,9 +135,13 @@ class LayoutFrame(wx.Frame):
         plot_sizer.Add(self.plot_box, 0, wx.ALL | wx.ALIGN_CENTER, 0)
 
         ### DEBUG BUTTONS ###
+        self.change_output_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Change output folder", style=wx.BORDER_NONE | wx.BU_LEFT)
+        self.change_output_button.SetBackgroundColour(wx.Colour(XISLAND1))
+        self.change_output_button.SetMinSize((-1, 25))
+        self.change_output_button.SetToolTip("Select a folder for the output files")
+
         self.fitting_button = ButtonNoBorder(self.right_panel, wx.ID_ANY, "Show fitting options", style=wx.BORDER_NONE | wx.BU_LEFT)
         self.fitting_button.SetBackgroundColour(wx.Colour(XISLAND1))
-        # self.fitting_button.SetValue(False)
         self.fitting_button.SetMinSize((-1, 25))
         self.fitting_button.SetToolTip("Show fitting options for LCModel")
 
@@ -158,6 +162,7 @@ class LayoutFrame(wx.Frame):
         self.reload_button.SetToolTip("Reload all nodes from the node folder; only useful when running the Python source code")
 
         debug_sizer = wx.BoxSizer(wx.VERTICAL)
+        debug_sizer.Add(self.change_output_button, 0, wx.ALL | wx.EXPAND, 0)
         debug_sizer.Add(self.fitting_button, 0, wx.ALL | wx.EXPAND, 0)
         debug_sizer.Add(self.show_debug_button, 0, wx.ALL | wx.EXPAND, 0)
         debug_sizer.Add(self.debug_button, 0, wx.ALL | wx.EXPAND, 0)

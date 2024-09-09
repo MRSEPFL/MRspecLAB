@@ -301,7 +301,7 @@ def analyseResults(self):
         with zipfile.ZipFile(zippath, "r") as zip_ref:
             zip_ref.extractall(os.path.join(self.programpath, "lcmodel"))
 
-    workpath = os.path.join(os.getcwd(), "temp")
+    workpath = os.path.join(os.path.dirname(self.outputpath_base), "temp")
     if os.path.exists(workpath): shutil.rmtree(workpath)
     os.mkdir(workpath)
     utils.log_debug("LCModel work folder: ", workpath)
