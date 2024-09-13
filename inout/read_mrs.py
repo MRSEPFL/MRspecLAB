@@ -54,13 +54,14 @@ def loadVBVD(filepath):
     data = twixobj.image['']
     data = numpy.squeeze(data)
     axes = twixobj.image.sqzDims
+    # print(axes, data.shape)
     
     ave_per_rep = 1
     for i in range(len(axes)-1, -1, -1):
         if axes[i] not in ["Col", "Cha", "Ave", "Rep"]:
             data = numpy.mean(data, axis=i) # violence
+    if 'Ave' in axes: ave_per_rep = data.shape[axes.index('Ave')]
     if 'Ave' in axes and 'Rep' in axes: # transform [Col, Cha, Ave, Rep] into [Rep*Ave, Cha, Col]
-        ave_per_rep = data.shape[axes.index('Ave')]
         data = numpy.transpose(data, (axes.index('Rep'), axes.index('Ave'), axes.index('Cha'), axes.index('Col')))
         data = numpy.reshape(data, (data.shape[0] * data.shape[1], data.shape[2], data.shape[3]))
     elif 'Rep' in axes:

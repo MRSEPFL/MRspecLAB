@@ -1,22 +1,20 @@
 # this file exists to allow coil combination in MRSviewer without also including the nodegraph libraries
 import numpy as np
+import scipy.linalg as lin
 from interface import utils
 
 # translated from FID-A code
 def estimate_csm(data):
-    ncoils = data.shape[0]
     s_raw = np.array(data) / np.sqrt(np.sum(data * np.conj(data), 0))
-    Rs = np.zeros((ncoils, ncoils), dtype=complex)
-    for i in range(0, ncoils):
-        for j in range(0, i):
-            Rs[i, j] = s_raw[i] * np.conj(s_raw[j])
-            Rs[j, i] = np.conj(Rs[i, j])
-        Rs[i, i] = s_raw[i] * np.conj(s_raw[i])
+    s_raw = s_raw.reshape((-1, 1))
+    Rs = s_raw @ s_raw.conj().T
     csm, _ = eig_power(Rs)
+    # s, v = lin.eig(Rs)
+    # csm = [[s]]
     return csm
 
 def eig_power(R):
-    R = np.array([[R]])
+    R = np.array([[R]]) # yay matlab copy-paste
     rows, cols, ncoils = R.shape[0], R.shape[1], R.shape[2]
     N_iterations = 2
     v = np.ones((rows, cols, ncoils), dtype=complex)

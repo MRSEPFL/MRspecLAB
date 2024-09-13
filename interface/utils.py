@@ -2,6 +2,8 @@ import wx
 from datetime import datetime
 from .colours import INFO_COLOR, WARNING_COLOR, ERROR_COLOR, DEBUG_COLOR
 
+text_dst = None
+last_directory = None
 supported_files = ["ima", "dcm", "dat", "sdat", "rda", "coord", "nii", "nii.gz"]
 supported_sequences = {
     "PRESS": ["PRESS", "press"],
@@ -9,7 +11,6 @@ supported_sequences = {
     "sSPECIAL": ["sSPECIAL", "sspecial", "sS"],
     "MEGA": ["MEGA", "mega"]
 }
-last_directory = None
 
 myEVT_LOG = wx.NewEventType()
 EVT_LOG = wx.PyEventBinder(myEVT_LOG, 1)
@@ -33,14 +34,13 @@ def set_debug(_debug):
     debug = _debug
 
 def log_text( colour, *args):
+        if not text_dst: return
         text = ""
         for arg in args: text += str(arg)
         evt = LogEvent(myEVT_LOG, -1, text=text, colour=colour)
         wx.PostEvent(text_dst, evt)
 
 def on_log(event):
-    global text_dst
-    if not text_dst: return
     text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")+": " + event.GetText()
     text_dst.BeginTextColour(event.GetColour())
     text_dst.WriteText(text)

@@ -120,7 +120,7 @@ class FilePanel(wx.Panel):
         if not any([filepath.lower().endswith(ext) for ext in utils.supported_files]):
             utils.log_error("Invalid file type")
             return
-        child = PlotFrame(filepath)
+        child = PlotFrame(filepath, is_viewer=self.is_viewer)
         canvas = child.canvas
         text = child.text
         read_file(filepath, canvas, text, self.is_viewer)

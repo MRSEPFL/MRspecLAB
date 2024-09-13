@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from suspect import MRSData
+from scipy.optimize import curve_fit
 from inout.read_mrs import load_file
 from inout.read_coord import ReadlcmCoord
 from nodes._CoilCombinationAdaptive import coil_combination_adaptive
@@ -24,6 +25,12 @@ def plot_mrs(data, figure, title=None, fit_gaussian=False):
     ax = figure.add_subplot(2, 1, 2)
     for d in data:
         ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()))
+    if fit_gaussian:
+        avg = data[0].inherit(np.mean(data, axis=0))
+        gaussparams, fwhm, fwhmhz = gaussian_fit(avg)
+        gauss = gaussian(data[0].frequency_axis_ppm(), *gaussparams)
+        ax.plot(data[0].frequency_axis_ppm(), gauss, ":r", label="gaussian fit")
+        ax.text(gaussparams[1], gaussparams[0] / 2, f"FWHM = {fwhm:.2f} ppm\n= {fwhmhz:.2f} Hz", ha="center", va="center")
     ax.set_xlabel('Chemical shift (ppm)')
     ax.set_ylabel('Amplitude')
     ax.set_xlim((np.max(d.frequency_axis_ppm()), np.min(d.frequency_axis_ppm())))
@@ -52,7 +59,7 @@ def get_mrs_info(data):
     info += f"\n\tPPM range: {[f.hertz_to_ppm(-f.sw / 2.0), f.hertz_to_ppm(f.sw / 2.0)]}"
     info += "\n"
     if f.transform is not None:
-        info += f"\n\tTransform: {f.transform}"
+        info += f"\n\tTransform:\n{f.transform}"
         info += f"\n\tCentre: {f.centre}"
     if hasattr(f, "metadata") and hasattr(f.metadata, "items"): info += "\n\tMetadata: " + "\n\t\t".join([f"{k}: {v}" for k, v in f.metadata.items()])
     return info
@@ -77,6 +84,16 @@ def estimate_noise_std(data: MRSData):
     poly = np.polynomial.polynomial.Polynomial.fit(range(len(noise)), noise, 5)
     noise -= poly(range(len(noise)))
     return np.std(noise)
+
+def gaussian(x, a, x0, sigma):
+    return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
+
+def gaussian_fit(data: MRSData):
+    spec = np.real(data.spectrum())
+    gaussparams, _ = curve_fit(gaussian, data.frequency_axis_ppm(), spec, p0=[np.max(spec), 4.7, 0.01])
+    fwhm = np.abs(2 * np.sqrt(2 * np.log(2)) * gaussparams[2])
+    fwhmhz = fwhm * data.f0
+    return gaussparams, fwhm, fwhmhz
 
 def plot_coord(lcmdata, figure, title=None):
     if isinstance(lcmdata, str):
@@ -128,7 +145,7 @@ def get_coord_info(lcmdata):
     )
     return info
 
-def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
+def read_file(filepath, canvas, text, coil_combine=False, fit_gaussian=False):
     canvas.clear()
     if filepath.lower().endswith(".coord"):
         f = ReadlcmCoord(filepath)
@@ -138,11 +155,11 @@ def read_file(filepath, canvas, text, is_viewer=False, fit_gaussian=False):
     else:
         f, _, _, _= load_file(filepath)
         text.SetValue(f"File: {filepath}\n{get_mrs_info(f)}")
-        if is_viewer: 
+        if coil_combine: 
             if len(f[0].shape) > 1:
-                coil_combination_adaptive({"input": f, "output": []})
-            if estimate_water_snr(f[0]) > 200: # probably water
-                f = [f[0].inherit(np.mean(f, axis=0))]
+                d = {"input": f, "output": []}
+                coil_combination_adaptive(d)
+                f = d["output"]
         title = filepath.rsplit(os.path.sep, 1)[1]
         plot_mrs(f, canvas.figure, title=title, fit_gaussian=fit_gaussian)
     canvas.draw()
