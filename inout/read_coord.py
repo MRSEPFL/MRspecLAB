@@ -1,4 +1,4 @@
-import interface.utils as utils
+# import interface.utils as utils
 
 def ReadlcmCoord(filename):
 
@@ -16,7 +16,8 @@ def ReadlcmCoord(filename):
         'ph1': 0,
         'metab': [],
         'nfit': 0,
-        'subspec': []
+        'subspec': [],
+        'crnaa': ''
     }
     
     conc = {
@@ -40,7 +41,14 @@ def ReadlcmCoord(filename):
             word = next(words)
         return word
 
-    skipto("Metabolite")
+    skipto("%SD")
+    crnaa = next(words)
+    if 'Cr' in crnaa:
+        lcmdata['crnaa'] = 'Cr'
+    elif 'NAA+NA' in crnaa:
+        lcmdata['crnaa'] = 'NAA+NA'
+    
+    skipto('Metabolite')
     index = 0
     while True:
         conc['c'] = float(next(words))
@@ -94,14 +102,20 @@ def ReadlcmCoord(filename):
     skipto("follow")
     lcmdata['fit'] = [float(next(words)) for i in range(nbpoints)]
     
-    skipto("follow")
-    lcmdata['baseline'] = [float(next(words)) for i in range(nbpoints)]
+    with open(filename) as myfile:
+        if 'NY background values follow' in myfile.read():
+            skipto("follow")
+            lcmdata['baseline'] = [float(next(words)) for i in range(nbpoints)]
+        else:
+            lcmdata['baseline'] = [0 for i in range(nbpoints)]
     
     lcmdata['residue'] = [lcmdata['spec'][i] - lcmdata['fit'][i] for i in range(nbpoints)]
     
     k = 0
     for i in range(len(lcmdata['conc'])):
         key = next(words)
+        while not key.isalpha():
+            key = next(words)
         if key == "lines": # start of fitting warnings
             break
         index = -1

@@ -141,7 +141,7 @@ def get_coord_info(lcmdata):
     info = (
         f"\n\tNumber of points: {len(lcmdata['ppm'])}\n\tNumber of metabolites: {len(lcmdata['conc'])} ({lcmdata['nfit']} fitted)\n\t0th-order phase: {lcmdata['ph0']}"
         f"\n\t1st-order phase: {lcmdata['ph1']}\n\tFWHM: {lcmdata['linewidth']}\n\tSNR: {lcmdata['SNR']}\n\tData shift: {lcmdata['datashift']}\n"
-        f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {str(c['c'])} (±{str(c['SD'])}%, Cr: {str(c['c_cr'])})" for c in lcmdata['conc']])}\n"""
+        f"""\tMetabolites:\n\t\t{dtab.join([f"{c['name']}: {str(c['c'])} (±{str(c['SD'])}%, {lcmdata['crnaa']}: {str(c['c_cr'])})" for c in lcmdata['conc']])}\n"""
     )
     return info
 
