@@ -1,3 +1,5 @@
+10.5281/zenodo.14866163
+
 # MRSpecLAB
 MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files.
 
