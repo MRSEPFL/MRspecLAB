@@ -1,4 +1,4 @@
-10.5281/zenodo.14866163
+[![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
 # MRSpecLAB
 MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files.
@@ -28,3 +28,21 @@ On a Linux system, the pip command given above will probably try to build the wx
 (name here) is released under the (license here) license.
 
 Code was taken and modified from the 'suspect' library for file-reading and processing functions and the `gsnodegraph` library for the editor panel. Windows and Linux binaries for LCModel were compiled from the source code on [Georg Oeltzschner's repository](https://github.com/schorschinho/LCModel), and compressed and shipped alongside our application for a straight-forward installation. Standardised MRS header reading was taken and slightly modified from the [MRSinMRS project](https://github.com/agudmundson/mrs_in_mrs).
+
+## Acknowledgements
+<table>
+  <tr>
+    <td>
+      <p align="center">
+      <a href="https://erc.europa.eu/"> <img width="100" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/Logo-ERC.png"/> </a>
+      <a href="https://epfl.ch"> <img width="200" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/EPFL_Logo_Digital_RGB_PROD.png"/> </a>
+      <a href="https://cibm.ch"> <img width="400" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/Logo-CIBM_variation-colour-72dpi.png"/> </a>
+        </p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      We acknowledges the support of the <a href="https://erc.europa.eu/">European Research Council </a>, the  <a href="https://epfl.ch">École Polytechnique Fédérale de Lausanne</a>, in Lausanne, Switzerland, and the <a href="https://cibm.ch">CIBM Center for Biomedical Imaging</a>, in Switzerland.
+    </td>
+  </tr>
+</table>
