@@ -47,7 +47,8 @@ class PipelineFrame(wx.Frame):
         super(PipelineFrame, self).__init__(*args, **kw)
         self.SetSize(wx.Size(1200, 500))
         self.SetTitle("Pipeline Editor")
-        self.SetIcon(images.icon_img_32.GetIcon())
+        #self.SetIcon(images.icon_img_32.GetIcon())
+        self.SetIcon()
 
         self.splitter = wx.SplitterWindow(self, style=wx.SP_LIVE_UPDATE)
         self.panel = wx.Panel(self.splitter)
