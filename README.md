@@ -1,21 +1,21 @@
 [![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
 # MRSpecLAB
-MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files.
+MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, and NIFTI.
 
 ## Installation and usage
-To run this application from source, download and extract this repository. Required packages can be installed by running the following command in the repository folder:
+To run this application from source (you will need a working python prepared environment), download and extract this repository. Required packages can be installed by running the following command in the repository folder:
 
 ```pip install -r requirements.txt```
 
-The GUI is started by running `MRSpecLAB.py` with Python and is hoped to be self-explanatory. The program currently runs on Python versions 3.9, 3.10 and 3.11.
+The GUI can be opened by running `MRSpecLAB.py` with Python and is hoped to be self-explanatory. The program currently runs on Python versions 3.9, 3.10 and 3.11.
 
-The application detects any processing steps placed in the `processing` folder. The creation of custom processing steps is detailed in the read-me file in that folder. A similar function might be planned for reading custom data types.
+The application detects any nodes placed in the `customer_nodes` folder. The creation of custom nodes is detailed in the publication and user manual. A similar function might be planned for reading custom data types. You can also find a template script on the main github repository.
 
 A user manual can be found in [MANUAL.md](/MANUAL.md).
 
 ### Windows
-A Windows executable is available and can be run directly after downloading. Currently this executable only contains the default processing modules and does not retrieve any new ones from the `steps` folder. It can be rebuilt using the `pyinstaller.py` script, in which case it will include all steps present in that folder.
+A Windows executable file (.exe) is available and can be run directly after downloading (double-click). Currently this executable only contains the default processing modules and does not retrieve any new ones from the `steps` folder on github. It can be rebuilt using the `pyinstaller.py` script, in which case it will include all steps present in that folder.
 
 ### Linux
 On a Linux system, the pip command given above will probably try to build the wxPython package for your specific Linux distribution, which can take a very long time. A much quicker alternative is to abort the running command (Ctrl+C in the terminal window) and download the latest pre-built package (`.whl` file) from the [wxPython database](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/) according to your OS (folder) and Python (cpXXX) versions. You can then install it using the following command ([source](https://wxpython.org/pages/downloads/index.html)):
@@ -25,9 +25,9 @@ On a Linux system, the pip command given above will probably try to build the wx
 (Re-)running `pip install -r requirements.txt` should verify that installation and ensure no other packages are missing.
 
 ## License and used libraries
-(name here) is released under the (license here) license.
+MRspecLAB is released under the Apache 2.0 license.
 
-Code was taken and modified from the 'suspect' library for file-reading and processing functions and the `gsnodegraph` library for the editor panel. Windows and Linux binaries for LCModel were compiled from the source code on [Georg Oeltzschner's repository](https://github.com/schorschinho/LCModel), and compressed and shipped alongside our application for a straight-forward installation. Standardised MRS header reading was taken and slightly modified from the [MRSinMRS project](https://github.com/agudmundson/mrs_in_mrs).
+Code was taken and modified from the 'suspect' library for file-reading and processing functions and the `gsnodegraph` library for the editor panel. Windows and Linux binaries for LCModel were compiled from the source code on [Georg Oeltzschner's repository](https://github.com/schorschinho/LCModel), and compressed and shipped alongside our application for a straight-forward installation. Standardised MRS header reading was taken and slightly modified from the [MRSinMRS project](https://github.com/agudmundson/mrs_in_mrs), reading in data, data conversion and header information read-in were taken from [spec2nii](https://github.com/wtclarke/spec2nii).
 
 ## Acknowledgements
 <table>
