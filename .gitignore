@@ -1,0 +1,11 @@
+__pycache__/
+output/
+temp/
+lcmodel/lcmodel
+lcmodel/lcmodel.exe
+*.pipe
+*.pickle
+*.spec
+build/
+dist/
+env_*
