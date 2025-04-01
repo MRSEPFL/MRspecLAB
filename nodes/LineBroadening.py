@@ -6,7 +6,6 @@ class LineBroadening(api.ProcessingNode):
         self.meta_info = {
             "label": "Line Broadening",
             "author": "CIBM",
-<<<<<<< HEAD
             "description": "Applies either exponential (Lorentzian) or Gaussian apodization."
         }
         self.parameters = [
@@ -73,8 +72,7 @@ api.RegisterNode(LineBroadening, "LineBroadening")
         self.meta_info = {
             "label": "Line Broadening",
             "author": "CIBM",
-=======
->>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
+
             "description": "Shifts spectra in the frequency domain by factor * pi",
         }
         self.parameters = [
@@ -115,8 +113,5 @@ api.RegisterNode(LineBroadening, "LineBroadening")
         ax.set_title("Output")
         figure.tight_layout()
 
-<<<<<<< HEAD
+
 api.RegisterNode(LineBroadening, "LineBroadening")"""
-=======
-api.RegisterNode(LineBroadening, "LineBroadening")
->>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
