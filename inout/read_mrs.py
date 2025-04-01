@@ -162,7 +162,6 @@ def load_dicom(filename):
     data = complex_array_from_iter(data_iter, shape=data_shape, chirality=-1)
     return MRSData(data, dt, f0=f0, te=te, tr=tr, ppm0=ppm0)
 
-
 def load_rda(filepath):
     header = {}
     dt = None

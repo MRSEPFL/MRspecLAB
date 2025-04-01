@@ -79,17 +79,14 @@ class FittingFrame(wx.Frame):
         self.Parent.basis_file_user = self.basis_file_ctrl.GetPath()
         self.last_directory = os.path.dirname(self.basis_file_ctrl.GetPath())
         event.Skip()
-
     def on_control_file_changed(self, event):
         self.Parent.control_file_user = self.control_file_ctrl.GetPath()
         self.last_directory = os.path.dirname(self.control_file_ctrl.GetPath())
         event.Skip()
-
     def on_wm_file_changed(self, event):
         self.Parent.wm_file_user = self.wm_file_ctrl.GetPath()
         self.last_directory = os.path.dirname(self.wm_file_ctrl.GetPath())
         event.Skip()
-
     def on_gm_file_changed(self, event):
         self.Parent.gm_file_user = self.gm_file_ctrl.GetPath()
         self.last_directory = os.path.dirname(self.gm_file_ctrl.GetPath())
@@ -99,7 +96,6 @@ class FittingFrame(wx.Frame):
         self.Parent.csf_file_user = self.csf_file_ctrl.GetPath()
         self.last_directory = os.path.dirname(self.csf_file_ctrl.GetPath())
         event.Skip()
-
     def on_clear(self, event):
         self.basis_file_ctrl.SetPath("")
         self.control_file_ctrl.SetPath("")

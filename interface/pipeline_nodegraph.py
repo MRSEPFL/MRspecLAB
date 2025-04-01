@@ -25,7 +25,6 @@ class InputNode(NodeBase):
             "Output": Output(idname="transients", datatype="TRANSIENTS", label="Output")
         }
 
-
 class NodeGraph(NodeGraphBase):
     def __init__(self, parent, prop_panel, *args, **kwargs):
         config = {

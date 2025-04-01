@@ -18,6 +18,7 @@ from interface.plot_helpers import plot_mrs, plot_coord, read_file
 
 #SVS
 
+
 def loadInput(self):
     self.save_lastfiles()
     self.filepaths = []
@@ -106,6 +107,7 @@ def loadInput(self):
             break
     self.sequence = None
 
+
     if seqstr is None: utils.log_warning("Sequence not found in header")
     else:
         for k, v in utils.supported_sequences.items():
@@ -129,7 +131,6 @@ def loadInput(self):
         prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + self.filepaths[0].split(os.path.sep)[-1][:-len(dtype)-1]
         if not os.path.exists(self.outputpath_base): os.mkdir(self.outputpath_base)
         base = os.path.join(self.outputpath_base, prefix)
-        
     i = 1
     self.outputpath = base
     while os.path.exists(self.outputpath):

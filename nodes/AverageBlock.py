@@ -46,11 +46,15 @@ class AverageBlock(api.ProcessingNode):
             output.append(to_average[0].inherit(np.mean(to_average, axis=0)))
             current_block = int(i // block_length)
             current_average = i // step
+<<<<<<< HEAD
 
             block_num = (i // block_length) + 1
             start_in_block = i + 1
             end_in_block = i + step
             labels.append(f"Block{block_num}_av{start_in_block}-{end_in_block}")
+=======
+            labels.append(f"type{current_block % block_types}block{int(current_block // block_types) + 1}average{current_average % block_averages + 1}")
+>>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
             i += step
         if len(output) == 0:
             output = [data["input"][0].inherit(np.mean(data["input"], axis=0))]

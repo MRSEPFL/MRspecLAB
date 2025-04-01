@@ -1,8 +1,11 @@
 import numpy as np
+<<<<<<< HEAD
 import nibabel as nib
 import json
 import numpy as np
 import os
+=======
+>>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
 # from spec2nii.other_formats import lcm_raw
 
 # adapted from suspect.io.lcmodel.save_raw because it gets SEQ errors
@@ -22,6 +25,7 @@ def save_raw(filepath, data, seq="PRESS"):
             fout.write("  {0: 4.6e}  {1: 4.6e}\n".format(float(point.real), float(point.imag)))
 
 def read_control(filepath):
+<<<<<<< HEAD
     output = {}
     try:
         with open(filepath, "r") as file:
@@ -69,13 +73,43 @@ def read_control(filepath):
                     # Leave as string if all conversions fail
                     output[key] = value
 
+=======
+    file = open(filepath, "r")
+    lines = file.readlines()
+    file.close()
+    output = {}
+    for line in lines:
+        line = line.strip(" \n")
+        if line == "" or line.startswith("$"): continue
+        line = line.split("=")
+        line[0] = line[0].strip(" ")
+        line[1] = line[1].strip(" ")
+        if line[1] == "T":
+            output[line[0]] = True
+        elif line[1] == "F":
+            output[line[0]] = False
+        elif line[1].startswith("'") and line[1].endswith("'"):
+            output[line[0]] = line[1].strip("'")
+        elif line[1].strip("-").isdigit():
+            output[line[0]] = int(line[1])
+        elif line[1].strip("-").replace(".", "", 1).isdigit():
+            output[line[0]] = float(line[1])
+        elif line[1].replace("-", "").replace(".", "").replace(",", "").isdigit():
+            output[line[0]] = tuple(map(float, line[1].split(",")))
+        else:
+            output[line[0]] = line[1]
+>>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
     return output
 
 # adapted from suspect.io.lcmodel.write_all_files because it unnecessarily overwrites entries
 def save_control(filepath, params):
     with open(filepath, 'wt') as fout:
         fout.write(" $LCMODL\n")
+<<<<<<< HEAD
         #fout.write(" KEY = 123456789\n")
+=======
+        fout.write(" KEY = 123456789\n")
+>>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
         for key, value in params.items():
             if isinstance(value, str):
                 value = "'{0}'".format(value)
@@ -86,6 +120,7 @@ def save_control(filepath, params):
             fout.write(f" {key} = {value}\n")
         fout.write(" $END\n")
 
+<<<<<<< HEAD
 def save_nifti(filepath, data, seq="PRESS"):
     # Convert to complex array if not already
     complex_array = np.asarray(data, dtype=np.complex64)
@@ -130,6 +165,8 @@ def save_nifti(filepath, data, seq="PRESS"):
     # Save the image to disk
     nib.save(nifti_img, filepath)
 
+=======
+>>>>>>> dfaee40a8dbd9a7675ff712b6626c00424e81f60
 # def raw_to_nifti
 #     rawpath = os.path.join(self.workpath, "result.RAW")
 #     niftipath = os.path.join(self.workpath, "result.nii.gz")

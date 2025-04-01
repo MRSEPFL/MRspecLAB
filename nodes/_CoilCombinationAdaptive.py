@@ -30,11 +30,7 @@ def eig_power(R):
     return v, d
 
 def coil_combination_adaptive(data, p=0):
-    if p == 0: 
-        if (data["input"][0].metadata is not None and 
-        "ave_per_rep" in data["input"][0].metadata):
-            p = data["input"][0].metadata["ave_per_rep"]
-        else: p = 1
+    if p == 0: p = data["input"][0].metadata["ave_per_rep"]
     ref = "wref" if "wref" in data and data["wref"] is not None and len(data["wref"]) != 0 else "input"
     if ref == "input": utils.log_warning("No water reference provided, using averaged FIDs as reference")
     ref = np.mean(np.array(data[ref]), 0)[:, 0]
