@@ -10,7 +10,8 @@ If you have another data format, we for now, recommend converting it to NIFTI us
 ## Installation and usage
 
 ### Windows Executable
-A Windows executable file (.exe) is available and can be run directly after downloading the .rar package. Place the zipped folder in your desired directory, unpack it, find the .exe file and double-click it. Depending on your setup the first time opening the program might take 1-2 min. Currently this executable only contains the default processing nodes and does not retrieve any new ones from the github repository. If you desire to use your self-written processing nodes, you can simply place the python script in the customer_nodes folder of your toolbox folder and rerun the .exe file.
+A Windows executable file (.exe) is available and can be run directly after downloading the .rar package. Place the zipped folder in your desired directory, unpack it, find the .exe file and double-click it. Depending on your setup the first time opening the program might take 1-2 min. 
+Currently this executable only contains the default processing nodes and does not retrieve any new ones from the github repository. If you desire to use your self-written processing nodes, or nodes written by other users, you can simply place the python script in the 'customer_nodes' folder of your toolbox folder and rerun the .exe file.
 
 ### Run the source code
 To run this application from source (you will need a working python prepared environment), download and extract this repository. Required packages can be installed by running the following command in the repository folder:
