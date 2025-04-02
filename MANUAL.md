@@ -1,10 +1,10 @@
 # User manual
 ## General usage
 General usage of the program is as follows:
-- Add the MRS files to be processed in the list-boxes on the left, with the metabolite files in the top box and the water reference files in the bottom one. Adding can be done via the buttons above each box, or by drag-and-dropping them from a file explorer window;
-- (Optional) View the MRS files in a separate window by double-clicking them;
-- (Optional) Edit the pipeline in the pipeline editor window by opening it witht the button on the bottom left of the button bar. Node are added by dragging from the node list at the top left, connected by dragigng from the node sockets, and edited in the right panel after clicking on them;
-- (Optional) Apply processing settings via the button bar at the top, such as the checkboxes toggling certain output files or the fitting options for customising the inputs to the LCModel fitting tool;
+- Add the MRS files to be processed in the list-boxes on the left, with the metabolite files in the top box and the water reference files in the bottom one. Adding can be done via the buttons above each box, or by drag-and-dropping them from a file explorer window; Please only load data of one participant at a time (if you want to process several datasets, please refer to 'batch-mode processing'
+- (Optional) View the MRS files in a separate window by double-clicking them; you can view the individual coil data, or coil-combined (tick box right corner).
+- (Optional) Edit the pipeline in the pipeline editor window by opening it with the button on the left of the upper button bar (colorful chain). Nodes can be added by dragging from the nodes list (click the '+') at the top left, connected by dragigng from the node sockets, and parameters can be edited in the right panel after clicking on them;
+- (Optional) Apply fitting settings for LCModel via the button 'show fitting options' bar at the top: You can input a .basis set, a .control file, and anatomical segmentation files. 
 - Run the processing pipeline step-by-step by pressing play on the top right, or let the steps run continuously with the fast-forward button next to it. 
 
 The program will try to assist you as follows to simplify setting up the processing:
