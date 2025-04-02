@@ -20,10 +20,10 @@ A Windows executable file (.exe) is available and can be run directly after down
 - Currently this executable only contains the default processing nodes and does not retrieve any new ones from the github repository. If you desire to use your self-written processing nodes, or nodes written by other users, you can simply place the python script in the 'customer_nodes' folder of your toolbox folder and rerun the .exe file.
 
 - Process your data in four simple steps:
-  1) Load your data in the left data boxes (metabolite on top and water on the bottom (optional))
-  2) look at the provided processing pipeline and alternate if desired by clicking on the colorful chain icon on top
-  3) Input your .basis set and LCModel .control file by clicking the 'fitting options' button on top
-  4) Click the run button (either step-by-step [left] or in one go [right])
+  1) Load your data in the left data boxes (metabolite on top and water on the bottom (optional)).
+  2) look at the provided processing pipeline and alternate if desired by clicking on the colorful chain icon on top.
+  3) Input your .basis set and LCModel .control file by clicking the 'fitting options' button on top, otherwise a default will be loaded.
+  4) Click the run button (either step-by-step [left] or in one go [right]).
 
  --> more options available, please refer to the detailed user [MANUAL.md](/MANUAL.md).
   
