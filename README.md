@@ -1,6 +1,6 @@
 [![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
-SIMPLE DOWNLOAD AND DOUBLE-CLICK APPLICATION FOR WINDOWS USERS TO PROCESS MRS(I) DATA.
+# SIMPLE DOWNLOAD AND DOUBLE-CLICK APPLICATION FOR WINDOWS USERS TO PROCESS MRS(I) DATA.
 
 --> source code available for other OS.
 
