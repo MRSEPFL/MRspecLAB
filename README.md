@@ -1,7 +1,8 @@
 [![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
 # MRSpecLAB
-MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, and NIFTI.
+MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, .SDAT .SPAR for Philips, and NIFTI.
+If you have another data format, we for now, recommend converting it to NIFTI using the [spec2nii](https://github.com/wtclarke/spec2nii) package.
 
 ## Installation and usage
 To run this application from source (you will need a working python prepared environment), download and extract this repository. Required packages can be installed by running the following command in the repository folder:
