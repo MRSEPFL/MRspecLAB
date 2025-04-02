@@ -61,7 +61,7 @@ Code was taken and modified from the 'suspect' library for file-reading and proc
   </tr>
   <tr>
     <td>
-      We acknowledges the support of the <a href="https://www.snf.ch/en">Swiss National Science Foundation </a>, the  <a href="https://epfl.ch">École Polytechnique Fédérale de Lausanne</a>, in Lausanne, Switzerland, and the <a href="https://cibm.ch">CIBM Center for Biomedical Imaging</a>, in Switzerland.
+      We acknowledge the support of the <a href="https://www.snf.ch/en">Swiss National Science Foundation </a>, the  <a href="https://epfl.ch">École Polytechnique Fédérale de Lausanne</a>, in Lausanne, Switzerland, and the <a href="https://cibm.ch">CIBM Center for Biomedical Imaging</a>, in Switzerland.
     </td>
   </tr>
 </table>
