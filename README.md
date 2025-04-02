@@ -1,10 +1,12 @@
 [![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
 SIMPLE DOWNLOAD AND DOUBLE-CLICK APPLICATION FOR WINDOWS USERS TO PROCESS MRS(I) DATA.
+
 --> source code available for other OS.
 
-This is the MRspecLAB toolbox, closely described in this publication: [PUBLICATION](insert link).
-A user manual can be found in [MANUAL.md](/MANUAL.md).
+The MRspecLAB platform is closely described in this publication: [PUBLICATION](insert link).
+
+A detailed user manual can be found in [MANUAL.md](/MANUAL.md).
 
 # MRSpecLAB
 MRSpecLAB is a graphical platform for the processing and analysis of magnetic resonance spectroscopy data, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, .SDAT .SPAR for Philips, and NIFTI.
@@ -14,8 +16,17 @@ If you have data in another data format, we, for now, recommend converting it to
 
 ### Windows Executable
 A Windows executable file (.exe) is available and can be run directly after downloading the .rar package. Place the zipped folder in your desired directory, unpack it, find the .exe file and double-click it. Depending on your setup the first time opening the program might take 1-2 min. 
-Currently this executable only contains the default processing nodes and does not retrieve any new ones from the github repository. If you desire to use your self-written processing nodes, or nodes written by other users, you can simply place the python script in the 'customer_nodes' folder of your toolbox folder and rerun the .exe file.
 
+- Currently this executable only contains the default processing nodes and does not retrieve any new ones from the github repository. If you desire to use your self-written processing nodes, or nodes written by other users, you can simply place the python script in the 'customer_nodes' folder of your toolbox folder and rerun the .exe file.
+
+- Process your data in four simple steps:
+  1) Load your data in the left data boxes (metabolite on top and water on the bottom (optional))
+  2) look at the provided processing pipeline and alternate if desired by clicking on the colorful chain icon on top
+  3) Input your .basis set and LCModel .control file by clicking the 'fitting options' button on top
+  4) Click the run button (either step-by-step [left] or in one go [right])
+
+ --> more options available, please refer to the detailed user [MANUAL.md](/MANUAL.md).
+  
 ### Run the source code
 To run this application from source (you will need a working python prepared environment), download and extract this repository. Required packages can be installed by running the following command in the repository folder:
 
