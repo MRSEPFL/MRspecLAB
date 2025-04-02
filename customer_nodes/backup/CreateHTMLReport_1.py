@@ -116,5 +116,5 @@ class CreateHTMLReport(api.ProcessingNode):
 
                 # Display LCModel PDF inline
                 if file.endswith(".ps"):
-                    html_content += f"<iframe src='{file_path}'></iframe"
+                    html_content += f"<iframe src='{file_path}'></iframe
 api.RegisterNode(CreateHTMLReport, "CreateHTMLReport") 

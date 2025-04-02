@@ -292,17 +292,21 @@ def load_nifti(filepath):
     try:
         te = mrs_hdr_ext["EchoTime"] * 1e3 # s to ms
     except:
-        utils.log_warning("Echo time not found in header extension; defaulting to 0.")
+        utils.log_warning("Echo time not found in header extension")
         te = 0
-    tr = mrs_hdr_ext["RepetitionTime"] * 1e3 # s to ms
+    try:
+        tr = mrs_hdr_ext["RepetitionTime"] * 1e3 # s to ms
+    except:
+        utils.log_warning("Repetition time time not found in header extension")
 
     header = {}
     header["Nucleus"] = mrs_hdr_ext["ResonantNucleus"][0]
     header["Sequence"] = None
     if "SequenceName" in mrs_hdr_ext:
-        header["Sequence"] = mrs_hdr_ext["Sequence"]
+        header["Sequence"] = mrs_hdr_ext["SequenceName"]
     elif "siemens_sequence_info" in mrs_hdr_ext and "sequence" in mrs_hdr_ext["siemens_sequence_info"]:
         header["Sequence"] = mrs_hdr_ext["siemens_sequence_info"]["sequence"]
+    
     transform = numpy.array(img.header.get_best_affine())
     metadata = {
         "ave_per_rep": ave_per_rep

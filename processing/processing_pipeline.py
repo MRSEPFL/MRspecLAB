@@ -615,7 +615,7 @@ def analyseResults(self):
             command_move = command_move[3:]  # Remove initial ' & ' or ' && '
             utils.log_debug("Moving files...\n\t" + command_move)
             try:
-                subprocess.run(command_move, shell=True)
+                subprocess.run(command_move, shell=True, check = True)
             except Exception as e:
                 utils.log_warning(f"Failed to move files for {label}: {e}")
 
