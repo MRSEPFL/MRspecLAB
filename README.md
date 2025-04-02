@@ -1,11 +1,14 @@
 [![image](https://github.com/user-attachments/assets/18f9149c-1511-449d-87f5-c326037c501c)](https://zenodo.org/records/14866163?preview=1)
 
+SIMPLE DOWNLOAD AND DOUBLE-CLICK APPLICATION FOR WINDOWS USERS TO PROCESS MRS(I) DATA.
+--> source code available for other OS.
+
 This is the MRspecLAB toolbox, closely described in this publication: [PUBLICATION](insert link).
 A user manual can be found in [MANUAL.md](/MANUAL.md).
 
 # MRSpecLAB
-MRSpecLAB is a graphical application for the processing and analysis of magnetic resonance spectroscopy scans, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, .SDAT .SPAR for Philips, and NIFTI.
-If you have another data format, we for now, recommend converting it to NIFTI using the [spec2nii](https://github.com/wtclarke/spec2nii) package.
+MRSpecLAB is a graphical platform for the processing and analysis of magnetic resonance spectroscopy data, focusing on user-friendliness, automated use and modularity. Currently supported and tested formats are DICOM and Twix files for Siemens, .SDAT .SPAR for Philips, and NIFTI.
+If you have data in another data format, we, for now, recommend converting it to NIFTI using the [spec2nii](https://github.com/wtclarke/spec2nii) package.
 
 ## Installation and usage
 
