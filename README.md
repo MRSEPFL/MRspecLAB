@@ -39,7 +39,7 @@ Code was taken and modified from the 'suspect' library for file-reading and proc
   <tr>
     <td>
       <p align="center">
-      <a href="https://www.snf.ch/en"> <img width="100" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/Logo-ERC.png"/> </a>
+      <a href="https://www.snf.ch/en"> <img width="200" src="https://github.com/user-attachments/assets/db4bf8cf-0d36-4759-ac6c-0303a8e53207"/> </a>
       <a href="https://epfl.ch"> <img width="200" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/EPFL_Logo_Digital_RGB_PROD.png"/> </a>
       <a href="https://cibm.ch"> <img width="400" src="https://github.com/poldap/GlobalBioIm/blob/master/Doc/source/Logo-CIBM_variation-colour-72dpi.png"/> </a>
         </p>
@@ -47,7 +47,7 @@ Code was taken and modified from the 'suspect' library for file-reading and proc
   </tr>
   <tr>
     <td>
-      We acknowledges the support of the <a href="https://erc.europa.eu/">European Research Council </a>, the  <a href="https://epfl.ch">École Polytechnique Fédérale de Lausanne</a>, in Lausanne, Switzerland, and the <a href="https://cibm.ch">CIBM Center for Biomedical Imaging</a>, in Switzerland.
+      We acknowledges the support of the <a href="https://www.snf.ch/en">Swiss National Science Foundation </a>, the  <a href="https://epfl.ch">École Polytechnique Fédérale de Lausanne</a>, in Lausanne, Switzerland, and the <a href="https://cibm.ch">CIBM Center for Biomedical Imaging</a>, in Switzerland.
     </td>
   </tr>
 </table>
