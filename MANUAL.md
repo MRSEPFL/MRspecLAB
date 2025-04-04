@@ -1,13 +1,22 @@
 # User manual
 ## General usage
 General usage of the program is as follows:
-- Add the MRS files to be processed in the list-boxes on the left, with the metabolite files in the top box and the water reference files in the bottom one. Adding can be done via the buttons above each box, or by drag-and-dropping them from a file explorer window; Please only load data of one participant at a time (if you want to process several datasets, please refer to 'batch-mode processing'
-- (Optional) View the MRS files in a separate window by double-clicking them; you can view the individual coil data, or coil-combined (tick box right corner).
-- (Optional) Edit the pipeline in the pipeline editor window by opening it with the button on the left of the upper button bar (colorful chain). Nodes can be added by dragging from the nodes list (click the '+') at the top left, connected by dragigng from the node sockets, and parameters can be edited in the right panel after clicking on them;
-- (Optional) Apply fitting settings for LCModel via the button 'show fitting options' bar at the top: You can input a .basis set, a .control file, and anatomical segmentation files. 
-- Run the processing pipeline step-by-step by pressing play on the top right, or let the steps run continuously with the fast-forward button next to it. 
+1) Add the MRS files to be processed in the list-boxes on the left, with the metabolite files in the top box and the water reference files in the bottom one. Adding can be done via the buttons above each box, or by drag-and-dropping them from a file explorer window; Please only load data of one participant at a time (if you want to process several datasets, please refer to 'batch-mode processing'
+a) (Optional) View the MRS files in a separate window by double-clicking them; you can view the individual coil data, or coil-combined (tick box right corner).
+2) (Optional) Edit the pipeline in the pipeline editor window by opening it with the button on the left of the upper button bar (colorful chain). Nodes can be added by dragging from the nodes list (click the '+') at the top left, connected by dragigng from the node sockets, and parameters can be edited in the right panel after clicking on them;
+3) (Optional) Change fitting settings for LCModel via the button 'show fitting options' bar at the top: You can input a .basis set, a .control file (LCModel settings file), and anatomical segmentation files (grey matter, white matter, CSF; probability maps [0-1]; .nii.gz).
+4) Run the processing pipeline step-by-step by pressing play on the top right (will stop after every processing step and show quality control plots), or let the steps run continuously with the fast-forward button next to it (will not show the in between results of the processing steps). 
 
-The program will try to assist you as follows to simplify setting up the processing:
+## Datasets supported with automated pipeline and control file selection:
+Prebuilt pipelines:
+
+(1) Single-voxel 1H MRS (designed for single voxel spectra acquisitions). The provided pipeline includes: adaptive coil combination, frequency and phase correction, eddy current correction, bad average removal, averaging;
+(2) Functional MRS (fMRS, supporting dynamic data processing and repeated metabolite quantification for functional studies). The provided pipeline includes: adaptive coil combination, frequency and phase correction, eddy current correction, blocked/moving averaging, and quantification per averaged date set; 
+(3) 31P MRS (supports 31P MR spectra processing). The provided pipeline includes: frequency and phase correction (additional manual frequency and phase correction if necessary), averaging;
+(4) 31P MRSI. The provided pipeline includes: Hanning weighted averaging39 and line broadening;
+(5) GABA-edited MRS (MEGA-editing based single voxel acquisition). The provided pipeline includes: adaptive coil combination, frequency and phase correction, eddy current correction, bad average removal, averaging, manual frequency and additional manual frequency and phase correction (optional).
+
+## The program will try to assist you as follows to simplify setting up the processing:
 - The program automatically recognises the type of the input files and can read each filetype without extra information from the user;
 - If not given manually, the .basis file used by the LCModel fitting tool defaults to automatic detection using the MRS data properties, as long as a corresponding .basis file is present in the `/lcmodel/basis` folder of the source code;
 - If not given manually, the .control file used by LCModel will default to a pre-made one, and corrected automatically in certain fields depending on the MRS data properties;
@@ -31,7 +40,7 @@ The files to be viewed/processed are added on the left pane of the main window. 
 
 Files can also be dragged and dropped from an explorer window into each list box. The program currently only expects a single water reference file, and will only use the first one if multiple are provided.
 
-Supported MRS formats are:
+# Supported MRS formats are:
 - .dcm (DICOM)
 - .ima (Siemens DICOM)
 - .dat (Siemens Twix)
