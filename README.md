@@ -4,7 +4,7 @@
 
 --> source code available for other OS.
 
-The MRspecLAB platform is closely described in this publication: [PUBLICATION](insert link). For help please contact us under: antonia.kaiser@epfl.ch, ying.xiaoepfl.ch or lijing.xin@epfl.ch
+The MRspecLAB platform is closely described in this publication: [PUBLICATION](insert link). For help please contact us under: antonia.kaiser@epfl.ch, ying.xiao@epfl.ch or lijing.xin@epfl.ch
 
 A detailed user manual can be found in [MANUAL.md](/MANUAL.md).
 
