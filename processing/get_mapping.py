@@ -19,7 +19,7 @@ def get_coord_map(dir):
         max_m, max_n, max_k = 0, 0, 0  # Track max dimensions
 
         # Step 1: Find all .coord files and extract indices
-        for filename in os.listdir(dir):
+        for filename in os.walk(dir):
             match = pattern.match(filename)
             if match:
                 m, n, k = map(int, match.groups())

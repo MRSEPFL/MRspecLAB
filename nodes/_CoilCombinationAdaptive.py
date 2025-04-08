@@ -48,8 +48,7 @@ def coil_combination_adaptive(data, p=0):
         data["output"] = output
     else:
         data["output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0,len(output), p)]
-
-    data["output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0, len(output), p)]
+ 
     if "wref" in data and data["wref"] is not None and len(data["wref"]) != 0:
         output = []
         for d in data["wref"]:

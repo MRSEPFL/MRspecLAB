@@ -565,7 +565,8 @@ def analyseResults(self):
                     params_upper = {k.upper(): v for k, v in params.items()}
                     excluded_keys = [
                         "FILRAW", "FILBAS", "FILPRI", "FILTAB",
-                        "FILPS", "FILCOO", "FILCOR", "FILCSV"
+                        "FILPS", "FILCOO", "FILCOR", "FILCSV", "FILH2O",
+                        "NUNFIL", "DELTAT", "ECHOT", "HZPPM"
                     ]
                     params_filtered = {
                         k: v for k, v in params_upper.items()
