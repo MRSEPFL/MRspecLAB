@@ -66,8 +66,31 @@ def loadInput(self):
     if self.header is None:
         utils.log_error("No header found")
         return False
-    if len(self.filepaths) > 1 and dtype not in ("dcm", "ima", "raw"):
-        utils.log_warning("Multiple files given despite not in DICOM, IMA, or RAW format")
+    
+    nucleus = None
+    for key in ["Nucleus", "nucleus"]:
+        if key in self.header:
+            nucleus = self.header[key]
+            break
+
+    if nucleus == "31P" and self.issvs:
+        has_phase_alignment = any("PhaseAlignment31P" in step.__class__.__name__ for step in self.steps)
+        if not has_phase_alignment:
+            dlg = wx.MessageDialog(
+                self,
+                "31P data detected, but the current pipeline does not include the 'PhaseAlignment31P' step.\n"
+                "Would you like to load the standard 31P pipeline?",
+                "Pipeline Mismatch",
+                wx.YES_NO | wx.ICON_QUESTION
+            )
+            response = dlg.ShowModal()
+            dlg.Destroy()
+            if response == wx.ID_YES:
+                standard_pipeline_path = os.path.join(os.getcwd(), "31P_standard_pipeline.pipe")
+                self.pipeline_frame.on_load_pipeline(event=None, filepath=standard_pipeline_path)
+
+        if len(self.filepaths) > 1 and dtype not in ("dcm", "ima", "raw"):
+            utils.log_warning("Multiple files given despite not in DICOM, IMA, or RAW format")
 
     self.originalWref = None
     wrefpath = None
@@ -224,21 +247,22 @@ def saveDataPlot(self):
         return
 
     # 2. Show the same two-button dialog in all modes
-    dlg = wx.MessageDialog(None,
-                           "Do you want to manually adjust frequency and phase shifts of the result?",
-                           "",
-                           wx.YES_NO | wx.ICON_INFORMATION)
-    button_clicked = dlg.ShowModal()
-    dlg.Destroy()
+    if self.issvs:
+        dlg = wx.MessageDialog(None,
+                            "Do you want to manually adjust frequency and phase shifts of the result?",
+                            "",
+                            wx.YES_NO | wx.ICON_INFORMATION)
+        button_clicked = dlg.ShowModal()
+        dlg.Destroy()
 
-    if button_clicked == wx.ID_YES:
-        self.matplotlib_canvas.clear()
-        from processing.manual_adjustment import ManualAdjustment
-        manual_adjustment = ManualAdjustment(self.dataSteps[-1], self.matplotlib_canvas)
-        self.dataSteps.append(manual_adjustment.run())
-    else:
-        if getattr(self, 'batch_mode', False):
-            self.skip_manual_adjustment = True
+        if button_clicked == wx.ID_YES:
+            self.matplotlib_canvas.clear()
+            from processing.manual_adjustment import ManualAdjustment
+            manual_adjustment = ManualAdjustment(self.dataSteps[-1], self.matplotlib_canvas)
+            self.dataSteps.append(manual_adjustment.run())
+        else:
+            if getattr(self, 'batch_mode', False):
+                self.skip_manual_adjustment = True
 
     if self.issvs:
         filepath = os.path.join(self.outputpath, "Result.pdf")
@@ -494,6 +518,8 @@ def analyseResults(self):
         This is essentially the body of your old 'for' loop.
         """
 
+        label = "lcm" if label == "0" else label
+
         result_label_np = np.array(result)
         utils.log_info(f"shape of result {label}: {result_label_np.shape}")
 
@@ -574,7 +600,7 @@ def analyseResults(self):
             utils.log_debug(f"LCModel Errors for {label}:\n{result_lcmodel.stderr}")
 
             expected_files = [
-                f"{label}.print", f"{label}.table", f"{label}.ps",
+                f"{label}.table", f"{label}.ps",
                 f"{label}.coord", f"{label}.csv"
             ]
             missing_files = [
@@ -618,6 +644,7 @@ def analyseResults(self):
                 subprocess.run(command_move, shell=True, check = True)
             except Exception as e:
                 utils.log_warning(f"Failed to move files for {label}: {e}")
+                utils.log_warning(f"Files remain in the temporary work folder: {workpath}")
 
         # Handle coord files
         filepath = os.path.join(savepath, f"{label}.coord")

@@ -69,7 +69,7 @@ class PhaseAlignment31P(api.ProcessingNode):
         """
         _data = data["input"]
 
-
+        utils.log_info("Running auto phase frequency correction (may take about 10 minutes)")
 
         def peak_max_phase_correction(data_obj,lower_bound, upper_bound):
             candidate_phases = np.arange(-180, 181, 2) #-180 181
@@ -81,9 +81,15 @@ class PhaseAlignment31P(api.ProcessingNode):
             region_indices = np.where((freq_ppm >= lower_bound) & (freq_ppm <= upper_bound))[0]
             if len(region_indices) == 0:
                 region_indices = np.arange(len(freq_ppm))
-
+            i = 0
+            p = 0
             for phase_deg in candidate_phases:
-                print(phase_deg)
+                if i >= 36:
+                    p += 10
+                    utils.log_info(f"{p}% done")
+                    i = 0
+                i += 2
+                #print(phase_deg)
                 for phase_1p in candidate_1p:
                     candidate = data_obj.adjust_phase(-np.deg2rad(phase_deg), first_phase = -phase_1p)
                     spec = np.real(candidate.spectrum())
@@ -92,8 +98,8 @@ class PhaseAlignment31P(api.ProcessingNode):
                         best_peak_amp = current_peak
                         best_phase = phase_deg
                         best_1p = phase_1p                            
-                        print("0: ", best_phase, "1: ", best_1p)
-            print(current_peak)
+                        #print("0: ", best_phase, "1: ", best_1p)
+            #print(current_peak)
             return best_phase, best_1p
         
         
@@ -467,9 +473,16 @@ class PhaseAlignment31P(api.ProcessingNode):
             entropy_c = 0#self.get_parameter("entrop_c")
             entropy_m = 0#self.get_parameter("entropy_m")
 
-            best_phase_deg, best_1p = peak_max_phase_correction(self.target,lower_bound_ppm, upper_bound_ppm)#phase_correction_automics(self.target) #-80, 0.0029579999999999997 #peak_max_phase_correction(self.target,lower_bound_ppm, upper_bound_ppm)#peak_max_phase_correction_two_peaks(self.target,(lower_bound_ppm, upper_bound_ppm), (6,9),1,1)
+            best_phase_deg, best_1p = peak_max_phase_correction(self.target,lower_bound_ppm, upper_bound_ppm) #phase_correction_automics(self.target) #-80, 0.0029579999999999997 #peak_max_phase_correction(self.target,lower_bound_ppm, upper_bound_ppm)#peak_max_phase_correction_two_peaks(self.target,(lower_bound_ppm, upper_bound_ppm), (6,9),1,1)
+            
             self.target = self.target.adjust_phase(-np.deg2rad(best_phase_deg), first_phase = -best_1p)
 
+            spec = np.real(self.target.spectrum())
+            freq_axis = self.target.frequency_axis_ppm()
+            max_index = np.argmax(spec)
+            peak_ppm = freq_axis[max_index]
+            freq_shift_Hz = -peak_ppm * self.target.f0
+            self.target = self.target.adjust_frequency(-freq_shift_Hz)
 
             def residual(params, this_data, spectral_weights):
                 """
@@ -527,7 +540,7 @@ class PhaseAlignment31P(api.ProcessingNode):
 
                 aligned_data = d.adjust_phase(0,first_phase = -best_1p)
 
-                guess = (0.0, 0)
+                guess = (freq_shift_Hz, 0)
                 # Fit
                 out = leastsq(
                     residual,

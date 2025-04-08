@@ -65,10 +65,15 @@ class PipelineFrame(wx.Frame):
         self.clear_button = wx.Button(self.panel, wx.ID_ANY, "Clear")
         self.clear_button.SetMinSize((-1, 25))
         self.clear_button.SetToolTip("Clear the pipeline")
+
+        self.apply_button = wx.Button(self.panel, wx.ID_ANY, "Apply")
+        self.apply_button.SetMinSize((-1,25))
+        self.apply_button.SetToolTip("Apply the pipeline")
         
         self.button_sizer.Add(self.load_button, 0, wx.ALL | wx.EXPAND, 5)
         self.button_sizer.Add(self.save_button, 0, wx.ALL | wx.EXPAND, 5)
         self.button_sizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
+        self.button_sizer.Add(self.apply_button, 0, wx.ALL | wx.EXPAND, 5)
 
         self.node_sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel.SetSizer(self.node_sizer)
@@ -86,6 +91,7 @@ class PipelineFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_load_pipeline, self.load_button)
         self.Bind(wx.EVT_BUTTON, self.on_save_pipeline, self.save_button)
         self.Bind(wx.EVT_BUTTON, self.on_clear, self.clear_button)
+        self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_button)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         
         self.Layout()
@@ -148,6 +154,11 @@ class PipelineFrame(wx.Frame):
         self.Parent.update_statusbar()
         if event is not None:
             event.Skip()
+
+    def on_apply(self, event):
+        self.Parent.retrieve_pipeline()
+        self.Parent.update_statusbar()
+        self.Hide()
 
     def on_clear(self, event):
         self.nodegraph.clear()

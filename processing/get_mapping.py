@@ -13,7 +13,7 @@ def get_coord_map(dir):
 
     if dir is not None:
         
-        pattern = re.compile(r"(\d+)_(\d+)_(\d+)\.coord$")  # Regex pattern
+        pattern = re.compile(r"(?:.*/)?(\d+)_(\d+)_(\d+)[\\/]\1_\2_\3\.coord$")  # Regex pattern
 
         coord_files = []
         max_m, max_n, max_k = 0, 0, 0  # Track max dimensions

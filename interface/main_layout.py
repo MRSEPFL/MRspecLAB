@@ -208,13 +208,14 @@ class LayoutFrame(wx.Frame):
         self.button_step_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.run_bmp)
         self.button_step_processing.SetBackgroundColour(wx.Colour(XISLAND2))
         self.button_step_processing.SetMinSize((-1, 100))
-        self.button_step_processing.SetToolTip("Run and plot next node in the pipeline") 
+        self.button_step_processing.SetToolTip("Run stepwise") 
         
         self.autorun_bmp = images.autorun_img.GetBitmap()
         self.pause_bmp = images.pause_img.GetBitmap()
         self.button_auto_processing = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.autorun_bmp)
         self.button_auto_processing.SetBackgroundColour(wx.Colour(XISLAND2))
         self.button_auto_processing.SetMinSize((-1, 100))
+        self.button_auto_processing.SetToolTip("Run") 
 
         self.nplot_bmp = images.nplot_img.GetBitmap()
         self.button_nplot = BtmButtonNoBorder(self.player_panel, wx.ID_ANY, self.nplot_bmp)

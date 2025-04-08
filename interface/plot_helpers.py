@@ -115,11 +115,14 @@ def plot_coord(lcmdata, figure, title=None):
     def getOffset(data, prevdata):
         return max(data) - min(prevdata) if prevdata else 0
     
+    x_left = np.max(lcmdata['ppm'])
+    margin = 0.05 * (np.max(lcmdata['ppm']) - np.min(lcmdata['ppm']))
+
     # Plot Residue
     if 'ppm' in lcmdata and 'residue' in lcmdata and lcmdata['ppm'] and lcmdata['residue']:
         ax.plot(lcmdata['ppm'], lcmdata['residue'], 'b-', label='Residue')
         residue_mean = np.mean(lcmdata["residue"]) if lcmdata["residue"] else 0
-        ax.text(4.25, residue_mean, "Residue", rotation=0, va='center', ha='right', color='b')
+        ax.text(x_left, residue_mean, "Residue", rotation=0, va='center', ha='left', color='b') #4.25
     
     # Plot Spectrum and Fit
     if 'spec' in lcmdata and 'fit' in lcmdata and lcmdata['spec'] and lcmdata['fit']:
@@ -128,7 +131,7 @@ def plot_coord(lcmdata, figure, title=None):
         ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['spec']], 'k-', label="Spectrum")
         ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['fit']], 'r-', label="Fit")
         fit_mean = np.mean(lcmdata["fit"]) - offset if lcmdata["fit"] else 0
-        ax.text(4.25, fit_mean, "Fit", rotation=0, va='center', ha='right', color='r')
+        ax.text(x_left, fit_mean, "Fit", rotation=0, va='center', ha='left', color='r')
     
     # Plot Baseline
     if 'baseline' in lcmdata and lcmdata['baseline']:
@@ -136,7 +139,7 @@ def plot_coord(lcmdata, figure, title=None):
         offset += getOffset(lcmdata['baseline'], lcmdata['fit']) + padding
         ax.plot(lcmdata['ppm'], [x - offset for x in lcmdata['baseline']], 'g-', label="Baseline")
         baseline_mean = np.mean(lcmdata["baseline"]) - offset if lcmdata["baseline"] else 0
-        ax.text(4.25, baseline_mean, "Baseline", rotation=0, va='center', ha='right', color='g')
+        ax.text(x_left, baseline_mean, "Baseline", rotation=0, va='center', ha='left', color='g')
     
     # Plot Subspectra
     if 'subspec' in lcmdata and 'metab' in lcmdata and lcmdata['subspec'] and lcmdata['metab']:
@@ -147,7 +150,7 @@ def plot_coord(lcmdata, figure, title=None):
             padding = (max(subspec) - min(subspec)) * 0.1 if subspec else 0
             offset += getOffset(subspec, lcmdata['baseline']) + padding
             ax.plot(lcmdata['ppm'], [x - offset for x in subspec], label=metab)
-            ax.text(4.25, -offset, metab, rotation=0, va='center', ha='right', color='k')
+            ax.text(x_left, -offset, metab, rotation=0, va='center', ha='left', color='k')
     
     ax.set_xlabel('ppm')
     ax.set_xlim(ax.get_xlim()[::-1])

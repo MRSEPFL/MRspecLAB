@@ -24,7 +24,9 @@ class FittingFrame(wx.Frame):
         self.csf_file_ctrl = wx.FilePickerCtrl(self, message="Select a file", wildcard="*.nii;*.nii.gz")
 
         self.clear_button = wx.Button(self, label="Clear")
+        self.apply_button = wx.Button(self, label="Apply")
         self.clear_button.SetToolTip("Clear all fields")
+        self.apply_button.SetToolTip("Apply changes")
 
         # If parent has existing file paths, set them
         if self.Parent.basis_file_user:
@@ -55,7 +57,13 @@ class FittingFrame(wx.Frame):
         self.sizer.Add(self.csf_file_ctrl, 1, wx.ALL | wx.EXPAND, 5)
 
         self.main_sizer.Add(self.sizer, 1, wx.EXPAND | wx.ALL, 5)
-        self.main_sizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(self.clear_button, 0, wx.ALL, 5)
+        button_sizer.Add(self.apply_button, 0, wx.ALL, 5)
+        self.main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        #self.main_sizer.Add(self.clear_button, 0, wx.ALL | wx.EXPAND, 5)
 
         # Bind events
         self.Bind(wx.EVT_FILEPICKER_CHANGED, self.on_basis_file_changed, self.basis_file_ctrl)
@@ -64,6 +72,7 @@ class FittingFrame(wx.Frame):
         self.Bind(wx.EVT_FILEPICKER_CHANGED, self.on_gm_file_changed, self.gm_file_ctrl)
         self.Bind(wx.EVT_FILEPICKER_CHANGED, self.on_csf_file_changed, self.csf_file_ctrl)
         self.Bind(wx.EVT_BUTTON, self.on_clear, self.clear_button)
+        self.Bind(wx.EVT_BUTTON, self.on_apply, self.apply_button)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         # Remove self.SetMaxSize((-1, 250)).  Instead, let's do:
@@ -108,6 +117,9 @@ class FittingFrame(wx.Frame):
         self.Parent.gm_file_user = None
         self.Parent.csf_file_user = None
         event.Skip()
+
+    def on_apply(self, event):
+        self.Hide()
 
     def on_close(self, event):
         self.Hide()

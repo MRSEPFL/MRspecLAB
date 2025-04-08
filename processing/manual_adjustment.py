@@ -1,4 +1,4 @@
-import numpy as np
+"""import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 
@@ -37,15 +37,7 @@ class ManualAdjustmentOld:
             valstep=1
         )
         self.phase_slider.on_changed(self.update)
-        """
-        phase1_ax = self.fig.add_axes([0.55, 0.1, 0.3, 0.03])
-        self.phase1_slider = Slider(
-            ax=phase1_ax,
-            label="1st-order phase [rad]",
-            valmin=-0.02,
-            valmax=0.02,
-            valinit=0,
-        )"""
+       
         phase1_ax = self.fig.add_axes([0.55, 0.1, 0.3, 0.03])
         self.phase1_slider = Slider(
             ax=phase1_ax,
@@ -82,6 +74,7 @@ class ManualAdjustmentOld:
     def update(self, val):
         self.data = []
         freq = self.initial_data[0].ppm_to_hertz(self.freq_slider.val)
+
         for i in range(len(self.initial_data)):
             #self.data.append(self.initial_data[i].adjust_frequency(freq).adjust_phase(self.phase_slider.val*np.pi/180, first_phase=self.phase1_slider.val))
             self.data.append(self.initial_data[i].adjust_frequency(freq).adjust_phase(self.phase_slider.val*np.pi/180, first_phase=self.phase1_slider.val*(np.pi/180)*(1/self.initial_data[i].f0)))
@@ -99,7 +92,7 @@ class ManualAdjustmentOld:
     def run(self):
         while not self.done:
             plt.pause(0.1)
-        return self.data
+        return self.data"""
     
 import numpy as np
 import matplotlib.pyplot as plt
@@ -250,11 +243,13 @@ class ManualAdjustment:
         self.phase1_text.set_val(f"{self.phase1_slider.val:.2f}")  # two decimal places
         
         self.data = []
-        freq = self.initial_data[0].ppm_to_hertz(self.freq_slider.val)
+        #freq = self.initial_data[0].ppm_to_hertz(self.freq_slider.val)
+        freq = -self.freq_slider.val * self.initial_data[0].f0
+
         for i in range(len(self.initial_data)):
             self.data.append(
                 self.initial_data[i]
-                .adjust_frequency(freq)
+                .adjust_frequency(freq)                
                 .adjust_phase(self.phase_slider.val * np.pi / 180,
                               first_phase=self.phase1_slider.val * (np.pi / 180) * (1/self.initial_data[i].f0))
             )
