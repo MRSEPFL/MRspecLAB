@@ -79,3 +79,60 @@ The pipeline editor opens a new window with a nodegraph. The nodes represent pro
 - Multiple nodes can be selected for moving or deleting by left-dragging over an area of the nodegraph.
 
 Additionally, the pipeline can be exported to and imported from .pipe files using the "save" and "load" buttons above. The "clear" button removes all nodes from the nodegraph, except for the input node. Node creation is detailed in the [node API description](nodes/README.md).
+
+# MRS Processing Overview
+
+---
+
+## (1) Input Data Format
+
+| Format | Extensions |
+|--------|------------|
+| NIfTI  | `.nii` |
+| Siemens | `.IMA`, `.rda`, `.dat` |
+| Philips | `.data`, `.list`, `.spar`, `.sdat` |
+
+---
+
+## (2) Default Processing Functions
+
+### Nodes & Tunable Parameter Descriptions
+
+| Node | Tunable Parameter Descriptions |
+|------|-------------------------------|
+| Adaptive coil combination | Number of shots per measurement (int) |
+| S/N² coil combination | Number of shots per measurement (int), proportion from the end of the FID to use as noise (float) |
+| SVD coil combination | N/A |
+| Frequency & Phase Alignment | Zero-padding factor (int), line-broadening factor (int), whether to perform frequency alignment (choice), whether to perform phase alignment (choice), reference peak range in ppm (vector), whether to set target to median (bool), or specify index of input data (string) |
+| Eddy Current Correction | Gaussian width of the phase smoothing window (int) |
+| Line Broadening | Line broadening factor (int) |
+| Remove Bad Averages | Number of standard deviations for outlier removal (int), domain for z-test (choice: time/frequency), time value up to which to perform z-test (float) |
+| Quality Matrix | N/A |
+| Averaging | N/A |
+| Block Averaging | Number of measurements in a block (int), number of averages per block (int), number of block types (int) |
+| Moving Average | Window length (int) |
+| S/N² Averaging | Number of measurements in a repetition (int), proportion of FID used as noise (float) |
+
+---
+
+## (3) Fitting
+
+| Item | Description |
+|------|-------------|
+| Algorithm | LCModel |
+| Input (optional) | `.basis`, `.control`, tissue segmentation files (`.nii`) |
+
+---
+
+## (4) Output
+
+| Type | Format |
+|------|--------|
+| MRSinMRS | `.csv` |
+| Pipeline | `.pipe` |
+| MRS Time Domain Data | `.raw` |
+| Time Data & Spectra Figures | `.pdf` |
+| LCModel Output | `.coord`, `.ps`, `.table`, `.csv` |
+| Analysis Report | `.html` |
+
+
