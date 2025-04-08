@@ -77,7 +77,6 @@ Code was taken and modified from the 'suspect' library for file-reading and proc
 |--------|------------|
 | NIfTI  | `.nii` |
 | Siemens | `.IMA`, `.rda`, `.dat` |
-| Philips | `.spar`, `.sdat` |
 
 ---
 
