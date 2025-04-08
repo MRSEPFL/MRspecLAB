@@ -45,7 +45,6 @@ Files can also be dragged and dropped from an explorer window into each list box
 - .ima (Siemens DICOM)
 - .dat (Siemens Twix)
 - .rda (Siemens pre-processed)
-- .sdat (Philips)
 - .nii/.nii.gz (NIfTI MRS)
 
 LCModel .coord files can be viewed, but are ignored for processing.
@@ -90,7 +89,6 @@ Additionally, the pipeline can be exported to and imported from .pipe files usin
 |--------|------------|
 | NIfTI  | `.nii` |
 | Siemens | `.IMA`, `.rda`, `.dat` |
-| Philips | `.data`, `.list`, `.spar`, `.sdat` |
 
 ---
 
