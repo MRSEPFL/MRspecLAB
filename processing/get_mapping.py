@@ -19,16 +19,18 @@ def get_coord_map(dir):
         max_m, max_n, max_k = 0, 0, 0  # Track max dimensions
 
         # Step 1: Find all .coord files and extract indices
-        for filename in os.walk(dir):
-            match = pattern.match(filename)
-            if match:
-                m, n, k = map(int, match.groups())
-                coord_files.append((m, n, k, os.path.join(dir, filename)))
+        for root, dirs, files in os.walk(dir):
+            for filename in files:
+                full_path = os.path.join(root, filename)
+                match = pattern.search(full_path)   
+                if match:
+                    m, n, k = map(int, match.groups())
+                    coord_files.append((m, n, k, os.path.join(dir, filename)))
 
-                # Update max size
-                max_m = max(max_m, m)
-                max_n = max(max_n, n)
-                max_k = max(max_k, k)
+                    # Update max size
+                    max_m = max(max_m, m)
+                    max_n = max(max_n, n)
+                    max_k = max(max_k, k)
 
         # # Step 2: Initialize LCM dict matrix
         lcm = {}  # Initialize as an empty dictionary
