@@ -8,49 +8,89 @@ from skimage import measure
 
 from inout.read_coord import ReadlcmCoord, extract_reference
 
-
-def get_coord_map(dir):
-
+def get_coord_map(dir): 
     if dir is not None:
         
-        pattern = re.compile(r"(?:.*/)?(\d+)_(\d+)_(\d+)[\\/]\1_\2_\3\.coord$")  # Regex pattern
+        pattern = re.compile(r"(\d+)_(\d+)_(\d+)\.coord$")  # Regex pattern
 
         coord_files = []
         max_m, max_n, max_k = 0, 0, 0  # Track max dimensions
 
-        # Step 1: Find all .coord files and extract indices
-        for root, dirs, files in os.walk(dir):
+        # Step 1: Recursively find all .coord files and extract indices
+        for root, _, files in os.walk(dir):
             for filename in files:
-                full_path = os.path.join(root, filename)
-                match = pattern.search(full_path)   
+                match = pattern.match(filename)
                 if match:
                     m, n, k = map(int, match.groups())
-                    coord_files.append((m, n, k, os.path.join(dir, filename)))
+                    filepath = os.path.join(root, filename)
+                    coord_files.append((m, n, k, filepath))
 
                     # Update max size
                     max_m = max(max_m, m)
                     max_n = max(max_n, n)
                     max_k = max(max_k, k)
 
-        # # Step 2: Initialize LCM dict matrix
+        # Step 2: Initialize LCM dict matrix
         lcm = {}  # Initialize as an empty dictionary
 
         # Step 3: Read each file and store data
         for m, n, k, filepath in coord_files:
             if m not in lcm:
-                lcm[m] = {}  # Initialize m-th level dictionary
+                lcm[m] = {}
             if n not in lcm[m]:
-                lcm[m][n] = {}  # Initialize n-th level dictionary
+                lcm[m][n] = {}
 
-            if filepath:
-                lcm[m][n][k] = ReadlcmCoord(filepath)  # Store in matrix
+            if filepath and os.path.exists(filepath):
+                lcm[m][n][k] = ReadlcmCoord(filepath)
             else:
-                lcm[m][n][k] = {}  # Store an empty dictionary if the file does not exist
+                lcm[m][n][k] = {}
                 print(f"{filepath} does not exist!")
 
         return max_m, max_n, max_k, lcm
-    
+
     return None
+
+
+# def get_coord_map(dir):
+
+#     if dir is not None:
+        
+#         pattern = re.compile(r"(?:.*/)?(\d+)_(\d+)_(\d+)[\\/]\1_\2_\3\.coord$")  # Regex pattern
+
+#         coord_files = []
+#         max_m, max_n, max_k = 0, 0, 0  # Track max dimensions
+
+#         # Step 1: Find all .coord files and extract indices
+#         for filename in os.listdir(dir):
+#             match = pattern.match(filename)
+#             if match:
+#                 m, n, k = map(int, match.groups())
+#                 coord_files.append((m, n, k, os.path.join(dir, filename)))
+
+#                 # Update max size
+#                 max_m = max(max_m, m)
+#                 max_n = max(max_n, n)
+#                 max_k = max(max_k, k)
+
+#         # # Step 2: Initialize LCM dict matrix
+#         lcm = {}  # Initialize as an empty dictionary
+
+#         # Step 3: Read each file and store data
+#         for m, n, k, filepath in coord_files:
+#             if m not in lcm:
+#                 lcm[m] = {}  # Initialize m-th level dictionary
+#             if n not in lcm[m]:
+#                 lcm[m][n] = {}  # Initialize n-th level dictionary
+
+#             if filepath:
+#                 lcm[m][n][k] = ReadlcmCoord(filepath)  # Store in matrix
+#             else:
+#                 lcm[m][n][k] = {}  # Store an empty dictionary if the file does not exist
+#                 print(f"{filepath} does not exist!")
+
+#         return max_m, max_n, max_k, lcm
+    
+#     return None
 
 
 def get_conc_map(info):
@@ -172,44 +212,6 @@ def retrieve_conc_value(lcm, metname):
             return temp_c
     return None  # Return None if not found
 
-
-def get_concentration_data(metabname):
-
-    base_directory = 'D:/MRSsoftware/fitted_coord'  # Replace this with the actual directory path
-
-    # metabname = 'NAD+'
-    
-    # Construct full paths for each file using the fixed base directory
-    crlbfileName = os.path.join(base_directory, f'crlb_{metabname}.xlsx')
-    c_gATPfilename = os.path.join(base_directory, f'c_gATP_{metabname}.xlsx')
-    crlbfileName_ref = os.path.join(base_directory, 'crlb_a-ATP.xlsx')
-    c_gATPfilename_ref = os.path.join(base_directory, 'c_gATP_a-ATP.xlsx')
-
-    # Load concentration and CRLB data from Excel files
-    try:
-        rel_conc_NADp = load_excel(c_gATPfilename)      # NAD+ concentration data
-        crlb = load_excel(crlbfileName)                 # CRLB data for NAD+
-        rel_conc_aATP = load_excel(c_gATPfilename_ref)  # Reference a-ATP concentration data
-        crlb_ref = load_excel(crlbfileName_ref)         # Reference CRLB data for a-ATP
-    except FileNotFoundError as e:
-        print(f"Error loading data: {e}")
-        return None
-
-    # Calculate concentration using the given formula
-    conc = (rel_conc_NADp / rel_conc_aATP) * 3 * 1.2015
-
-    # Create masks where CRLB values exceed the threshold
-    mask_metabo = np.ones((12, 12, 8))
-    mask_metabo[crlb > 20] = 0
-
-    mask_aATP = np.ones((12, 12, 8))
-    mask_aATP[crlb_ref > 20] = 0
-
-    # Apply masks to concentration data
-    conc = conc * mask_metabo * mask_aATP
-
-    return conc
-
 def load_excel(filename):
     """
     Helper function to load data from an Excel file with multiple sheets.
@@ -267,7 +269,6 @@ def create_brain_mask(slice_data):
 
 def get_metabolite_list(filename):
     """Retrieve the metabolite list from the given file."""
-    # filename = "D:/MRSsoftware/fitted_coord/coord_plain_gATP_phased_print_apodi5/row_1_col_1_slice_1.coord"
 
     if not os.path.exists(filename):
         print(f"Error: File '{filename}' not found.")

@@ -292,12 +292,11 @@ def load_nifti(filepath):
     try:
         te = mrs_hdr_ext["EchoTime"] * 1e3 # s to ms
     except:
-        utils.log_warning("Echo time not found in header extension")
-        te = 0
+        utils.log_error("Echo time not found in header extension")
     try:
         tr = mrs_hdr_ext["RepetitionTime"] * 1e3 # s to ms
     except:
-        utils.log_warning("Repetition time time not found in header extension")
+        utils.log_error("Repetition time time not found in header extension")
 
     header = {}
     header["Nucleus"] = mrs_hdr_ext["ResonantNucleus"][0]

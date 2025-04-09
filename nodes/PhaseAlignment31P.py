@@ -11,7 +11,6 @@ class PhaseAlignment31P(api.ProcessingNode):
             "author": "CIBM",
             "description": (
                 "Performs frequency and phase alignment for 31P spectra "
-                "with optional first-order phase correction using adjust_phase(...)."
             )
         }
 

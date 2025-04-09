@@ -74,7 +74,7 @@ def loadInput(self):
             break
 
     if nucleus == "31P" and self.issvs:
-        has_phase_alignment = any("PhaseAlignment31P" in step.__class__.__name__ for step in self.steps)
+        has_phase_alignment = any("PhaseAlignment31P" in step.__class__.__name__ for step in self.steps) or any("TEBasedPhaseCorrecton31P" in step.__class__.__name__ for step in self.steps)
         if not has_phase_alignment:
             dlg = wx.MessageDialog(
                 self,

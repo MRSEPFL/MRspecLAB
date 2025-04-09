@@ -47,7 +47,7 @@ class LineBroadening(api.ProcessingNode):
 
         data["output"] = output
 
-    def plot(self, figure, data):
+    """def plot(self, figure, data):
         figure.suptitle(self.__class__.__name__)
         ax = figure.add_subplot(2, 1, 1)
         for d in data["input"]:
@@ -63,6 +63,39 @@ class LineBroadening(api.ProcessingNode):
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Intensity")
         ax.set_title("Apodized Output")
+        figure.tight_layout()"""
+    
+    def plot(self, figure, data):
+        figure.suptitle(self.__class__.__name__)
+        
+        # --- Change 1: Determine frequency axis limits using the ppm axis ---
+        xlim = (
+            np.max(data["input"][0].frequency_axis_ppm()),
+            np.min(data["input"][0].frequency_axis_ppm())
+        )
+        
+        # --- Change 2: Plot the input spectrum in the frequency domain ---
+        ax = figure.add_subplot(2, 1, 1)
+        for d in data["input"]:
+            # Originally used d.time_axis() and np.real(d)
+            # Now using d.frequency_axis_ppm() and np.real(d.spectrum())
+            ax.plot(d.frequency_axis_ppm(), np.real(d.spectrum()), label="Input")
+        ax.set_xlim(xlim)
+        # --- Change 3: Adjust axis labels to reflect frequency domain (ppm) ---
+        ax.set_xlabel("Chemical shift (ppm)")
+        ax.set_ylabel("Intensity")
+        ax.set_title("Input Spectrum")
+        
+        # --- Change 4: Plot the output (apodized) spectrum in the frequency domain ---
+        ax2 = figure.add_subplot(2, 1, 2)
+        for d in data["output"]:
+            # Again use frequency-domain values
+            ax2.plot(d.frequency_axis_ppm(), np.real(d.spectrum()), label="Output")
+        ax2.set_xlim(xlim)
+        ax2.set_xlabel("Chemical shift (ppm)")
+        ax2.set_ylabel("Intensity")
+        ax2.set_title("Line Broadened Spectrum")
+        
         figure.tight_layout()
 
 api.RegisterNode(LineBroadening, "LineBroadening")

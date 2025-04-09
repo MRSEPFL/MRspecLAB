@@ -91,6 +91,8 @@ class MetaboliteMapParameterDialog(wx.Frame):
         self.map_view_ctrl = wx.Choice(panel, choices=["Orientation 1", "Orientation 2", "Orientation 3"])
         self.map_view_ctrl.SetSelection(1)
         sizer.Add(self.map_view_ctrl, pos=(12, 1), flag=wx.EXPAND | wx.ALL, border=5)
+        self.map_view_ctrl.Bind(wx.EVT_CHOICE, self.on_map_orientation_change)
+
 
         sizer.Add(wx.StaticText(panel, label="Select slice (CSI):"), pos=(12, 2), flag=wx.ALL, border=5)
         self.map_slice_ctrl = wx.SpinCtrl(panel, value="1", min=1, max=self.max_d)
@@ -131,121 +133,6 @@ class MetaboliteMapParameterDialog(wx.Frame):
         self.SetMinSize((400, 400))  # Prevent it from getting too small
         self.Show()  # Display the popup
 
-
-# class MetaboliteMapParameterDialog(wx.Frame):
-#     """Popup window for adjusting parameters (Resizable)."""
-#     def __init__(self, parent):
-#         super().__init__(parent, title="Plotting Parameters", size=(300, 1000), style=wx.DEFAULT_FRAME_STYLE)
-
-#         # self.Parent = parent  # Store parent reference
-#         self.max_slices = 1  # Default to 1 before loading the image
-#         self.max_d = 1
-#         self.metab_list = None
-
-#         panel = wx.Panel(self)
-#         sizer = wx.BoxSizer(wx.VERTICAL)
-
-#         # --- File Picker ---
-#         self.img_picker = wx.FilePickerCtrl(panel, message="Select an image file", wildcard="*.nii; *nii.gz")
-#         self.img_picker.Bind(wx.EVT_FILEPICKER_CHANGED, self.on_img_selected)  # Bind event to update slices
-
-#         self.img_view = ["Orientation 1", "Orientation 2", "Orientation 3"]
-#         self.img_view_ctrl = wx.Choice(panel, choices=self.img_view)
-#         self.img_view_ctrl.SetSelection(1)  # Default selection
-
-#         self.img_rot_ctrl = wx.SpinCtrl(panel, value="90", min=0, max=360)
-
-#         clear_button = wx.Button(panel, label="Clear images")
-#         clear_button.Bind(wx.EVT_BUTTON, self.on_clear)
-
-#         # --- Slice Index (Dynamically Updated) ---
-#         self.slice_ctrl = wx.SpinCtrl(panel, value="1", min=1, max=self.max_slices)
-
-#         # --- Folder Picker Control ---
-#         self.folder_picker = wx.DirPickerCtrl(panel, message="Select a folder")
-#         self.folder_picker.Bind(wx.EVT_DIRPICKER_CHANGED, self.on_folder_selected)  # Bind event to update slices
-
-#         # --- Selection List ---
-#         self.choices = []#["Metabolite 1", "Metabolite 2", "Metabolite 3"]
-#         self.choice_ctrl = wx.Choice(panel, choices=self.choices)
-#         # self.choice_ctrl.SetSelection(0)  # Default selection
-
-#         self.ref = []
-#         self.ref_ctrl = wx.Choice(panel, choices=self.ref)
-#         self.ref_ctrl.Bind(wx.EVT_CHOICE, self.on_ref_select)
-
-#         self.use_ref = wx.CheckBox(panel, label="conc./reference metabolite")
-#         self.use_ref.Enable(False) # Start as disable
-#         # self.use_ref.Bind(wx.EVT_CHECKBOX, self.on_use_ref_toggle)  # Bind event
-
-#         self.map_view = ["Orientation 1", "Orientation 2", "Orientation 3"]
-#         self.map_view_ctrl = wx.Choice(panel, choices=self.map_view)
-#         self.map_view_ctrl.SetSelection(1)  # Default selection
-
-#         self.map_slice_ctrl = wx.SpinCtrl(panel, value="1", min=1, max=self.max_d)
-
-#         self.crlb_ctrl = wx.SpinCtrl(panel, value="20", min=0, max=999)
-
-#         self.scaling_ctrl = wx.TextCtrl(panel, value="1.0")
-
-#         # --- Parameter Inputs ---
-#         self.vmin_ctrl = wx.TextCtrl(panel, value="0.1")
-#         self.vmax_ctrl = wx.TextCtrl(panel, value="0.35")
-
-#         apply_button = wx.Button(panel, label="Apply")
-#         apply_button.Bind(wx.EVT_BUTTON, self.on_apply)
-
-#         # --- Add Widgets to Layout ---
-#         sizer.Add(wx.StaticText(panel, label="Choose image file (optional):"), 0, wx.ALL, 5)
-#         sizer.Add(self.img_picker, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Choose image orientation:"), 0, wx.ALL, 5)
-#         sizer.Add(self.img_view_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Select slice:"), 0, wx.ALL, 5)
-#         sizer.Add(self.slice_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Rotation angle:"), 0, wx.ALL, 5)
-#         sizer.Add(self.img_rot_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(clear_button, 0, wx.EXPAND | wx.ALL, 5)
-                
-#         sizer.Add(wx.StaticText(panel, label="Choose a folder:"), 0, wx.ALL, 5)
-#         sizer.Add(self.folder_picker, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Choose the dimension:"), 0, wx.ALL, 5)
-#         sizer.Add(self.map_view_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Select slice (CSI):"), 0, wx.ALL, 5)
-#         sizer.Add(self.map_slice_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Select metabolite to plot:"), 0, wx.ALL, 5)
-#         sizer.Add(self.choice_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Select reference metabolite:"), 0, wx.ALL, 5)
-#         sizer.Add(self.ref_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(self.use_ref, 0, wx.ALL, 10)
-
-#         sizer.Add(wx.StaticText(panel, label="CRLB threshold:"), 0, wx.ALL, 5)
-#         sizer.Add(self.crlb_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="scaling factor:"), 0, wx.ALL, 5)
-#         sizer.Add(self.scaling_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Colorbar min:"), 0, wx.ALL, 5)
-#         sizer.Add(self.vmin_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(wx.StaticText(panel, label="Colorbar max:"), 0, wx.ALL, 5)
-#         sizer.Add(self.vmax_ctrl, 0, wx.EXPAND | wx.ALL, 5)
-
-#         sizer.Add(apply_button, 0, wx.EXPAND | wx.ALL, 5)
-
-#         self.Bind(wx.EVT_CLOSE, self.on_close)
-
-#         panel.SetSizer(sizer)
-#         self.SetMinSize((300, 1000))  # Prevent panel from becoming too small
-#         self.Show()  # Display the popup
 
     def get_selected_image_size(self):
         """Returns the shape of the selected brain image if available."""
@@ -289,46 +176,52 @@ class MetaboliteMapParameterDialog(wx.Frame):
         else:
             self.use_ref.Enable(False)
 
+    def on_map_orientation_change(self, event):
+        selection = self.map_view_ctrl.GetSelection()
+        print(f"Map orientation changed to index: {selection}")
+        # for updating the maximal silce number
+        self.max_d = self.get_max_d()
+        print("max_d = ", self.max_d)
+        self.map_slice_ctrl.SetRange(1, max(1, self.max_d))  # Prevent min > max issue
+
+
     def get_max_d(self):
-
         """Get the number of available slices from CSI coords in selected folder."""
-        print(f"Start reading .coord")
+        print("Start reading .coord")
 
-        if not hasattr(self, "folder_picker"):  # Ensure img_picker exists before accessing it
+        if not hasattr(self, "folder_picker"):
             return 1  # Default slice count
 
         dir = self.folder_picker.GetPath()
 
-        if dir:  # Only process if a file is selected
-
+        if dir:
             pattern = re.compile(r"(\d+)_(\d+)_(\d+)\.coord$")  # Regex pattern for m_n_k.coord
-        
             indices = []  # List to store (m, n, k) tuples
-            
-            for filename in os.listdir(dir):
-                match = pattern.match(filename)  # Match the pattern
-                if match:
-                    m, n, k = map(int, match.groups())  # Extract and convert to integers
-                    indices.append((m, n, k))
+
+            # Recursively walk through all subdirectories
+            for root, _, files in os.walk(dir):
+                for filename in files:
+                    match = pattern.match(filename)
+                    if match:
+                        m, n, k = map(int, match.groups())
+                        indices.append((m, n, k))
 
             if not indices:
-                utils.log_error("No valid files found in the folder.")
+                utils.log_error("No valid .coord files found in the folder or subfolders.")
                 return None
 
             indices = np.array(indices)
-            x, y, z = indices.max(axis=0) # Get matrix dimensions
+            x, y, z = indices.max(axis=0)  # Get matrix dimensions
 
-            # print(f"coord file dimensions: {x,y,z}")
-
+            print("x,y,z=",x,y,z)
+            print("self.map_view_ctrl.GetSelection() = ", self.map_view_ctrl.GetSelection())
             map_view = self.map_view_ctrl.GetSelection()
-
             if map_view == 0:
                 return x
             elif map_view == 1:
                 return y
             elif map_view == 2:
                 return z
-            return 1
 
         return 1  # Default if no folder is loaded
     
@@ -337,15 +230,23 @@ class MetaboliteMapParameterDialog(wx.Frame):
 
         folder_path = self.folder_picker.GetPath()
         pattern = re.compile(r"(\d+)_(\d+)_(\d+)\.coord$")  # Regex pattern for m_n_k.coord
-        
-        for filename in os.listdir(folder_path):
-            match = pattern.match(filename)
-            if match:
-                break
-        
-        metab_list = get_metabolite_list(os.path.join(folder_path,filename))
 
-        return metab_list
+        matched_file_path = None
+
+        # Walk through all directories and subdirectories
+        for root, dirs, files in os.walk(folder_path):
+            for filename in files:
+                if pattern.match(filename):
+                    matched_file_path = os.path.join(root, filename)
+                    break
+            if matched_file_path:
+                break
+
+        if matched_file_path:
+            metab_list = get_metabolite_list(matched_file_path)
+            return metab_list
+        else:
+            raise FileNotFoundError("No .coord file matching the pattern was found.")
 
     def on_folder_selected(self, event):
 
@@ -353,6 +254,7 @@ class MetaboliteMapParameterDialog(wx.Frame):
 
         # for updating the maximal silce number
         self.max_d = self.get_max_d()
+        print("max_d = ", self.max_d)
         self.map_slice_ctrl.SetRange(1, max(1, self.max_d))  # Prevent min > max issue
 
         # for updating the matabolite list
@@ -408,6 +310,8 @@ class MetaboliteMapParameterDialog(wx.Frame):
             "crlb_threshold": int(self.crlb_ctrl.GetValue()),
             "scaling": float(self.scaling_ctrl.GetValue())
         }
+        print("dim = ", self.Parent.data_to_plot["dim"])
+
         self.Parent.data_to_plot["conc_map_to_plot"] = get_conc_map(self.Parent.data_to_plot)
 
         # utils.log_debug("Updated parameters for metabolite maps:", self.Parent.param)  # Debugging

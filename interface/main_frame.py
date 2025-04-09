@@ -315,9 +315,7 @@ class MainFrame(LayoutFrame):
         self.SetStatusText("Current pipeline: " + " → ".join(step.__class__.__name__ for step in self.steps))
 
     def on_button_step_processing(self, event):
-        print(self.current_step)
         if self.current_step > len(self.steps):
-            print("in here")
             self.on_reset()
         self.button_step_processing.Disable()
         self.button_auto_processing.Disable()
@@ -598,7 +596,6 @@ class MainFrame(LayoutFrame):
             count = len(self.batch_participants)
             wx.MessageBox(f"Loaded {count} participant folder{'s' if count != 1 else ''}.",
                         "Batch Loaded", wx.OK | wx.ICON_INFORMATION)
-            print("Participant folders:", self.batch_participants)
 
         except Exception as e:
             wx.MessageBox(f"Error loading batch folder:\n{e}", "Error", wx.OK | wx.ICON_ERROR)
@@ -668,68 +665,68 @@ class MainFrame(LayoutFrame):
                 utils.log_info(f"Using custom CONTROL file for all participants: {first_control}")
 
         for part_folder in self.batch_participants:
-            self.participant_name = os.path.basename(part_folder)
+            try:
+                self.participant_name = os.path.basename(part_folder)
 
-            print("before reset")
-            wx.CallAfter(self.reset)
-            print("after reset")
-            import time
+                wx.CallAfter(self.reset)
 
-            # For example, assume that metabolite files are in the "metabolite_files" subfolder
-            met_folder = os.path.join(part_folder, "metabolite_files")
-            water_folder = os.path.join(part_folder, "water_reference")
-            # Update file lists:
-            print("got this far")
-            if os.path.exists(met_folder):
-                print("met_folder exists")
-                met_files = [os.path.join(met_folder, f) for f in os.listdir(met_folder)
-                            if f.lower().endswith(tuple(utils.supported_files))]
-                wx.CallAfter(self.MRSfiles.on_drop_files, met_files)
-                time.sleep(0.5)
-            else:
-                self.MRSfiles.on_drop_files([])
-            if os.path.exists(water_folder):
-                print("water folder exists")
-                water_files = [os.path.join(water_folder, f) for f in os.listdir(water_folder)
-                            if f.lower().endswith(tuple(utils.supported_files))]
-                wx.CallAfter(self.Waterfiles.on_drop_files, water_files)
-                time.sleep(0.5)
-            else:
-                self.Waterfiles.on_drop_files([])
+                import time
 
-            seg_folder = os.path.join(part_folder, "tissue_segmentation_files")
-            self.wm_file_user = None
-            self.gm_file_user = None
-            self.csf_file_user = None
-            if os.path.exists(seg_folder):
-                seg_files = [
-                    os.path.join(seg_folder, f)
-                    for f in os.listdir(seg_folder)
-                    # You can refine this if you want only .nii or .nii.gz
-                ]
-                # For example, pick a file with 'wm' in its name
-                for f in seg_files:
-                    fname_lower = os.path.basename(f).lower()
-                    if "wm" in fname_lower:
-                        self.wm_file_user = f
-                    elif "gm" in fname_lower:
-                        self.gm_file_user = f
-                    elif "csf" in fname_lower:
-                        self.csf_file_user = f
+                # For example, assume that metabolite files are in the "metabolite_files" subfolder
+                met_folder = os.path.join(part_folder, "metabolite_files")
+                water_folder = os.path.join(part_folder, "water_reference")
+                # Update file lists:
+                if os.path.exists(met_folder):
+                    met_files = [os.path.join(met_folder, f) for f in os.listdir(met_folder)
+                                if f.lower().endswith(tuple(utils.supported_files))]
+                    wx.CallAfter(self.MRSfiles.on_drop_files, met_files)
+                    time.sleep(0.5)
+                else:
+                    self.MRSfiles.on_drop_files([])
+                if os.path.exists(water_folder):
+                    water_files = [os.path.join(water_folder, f) for f in os.listdir(water_folder)
+                                if f.lower().endswith(tuple(utils.supported_files))]
+                    wx.CallAfter(self.Waterfiles.on_drop_files, water_files)
+                    time.sleep(0.5)
+                else:
+                    self.Waterfiles.on_drop_files([])
 
-            if len(self.MRSfiles.filepaths) == 0 and len(self.Waterfiles.filepaths) == 0:
-                utils.log_warning("No input files found for participant " + self.participant_name + "; skipping.")
-                continue
+                seg_folder = os.path.join(part_folder, "tissue_segmentation_files")
+                self.wm_file_user = None
+                self.gm_file_user = None
+                self.csf_file_user = None
+                if os.path.exists(seg_folder):
+                    seg_files = [
+                        os.path.join(seg_folder, f)
+                        for f in os.listdir(seg_folder)
+                        # You can refine this if you want only .nii or .nii.gz
+                    ]
+                    # For example, pick a file with 'wm' in its name
+                    for f in seg_files:
+                        fname_lower = os.path.basename(f).lower()
+                        if "wm" in fname_lower:
+                            self.wm_file_user = f
+                        elif "gm" in fname_lower:
+                            self.gm_file_user = f
+                        elif "csf" in fname_lower:
+                            self.csf_file_user = f
 
-            # Reset processing state for the new participant
-            
-            # You can choose auto-run mode for each participant
-            self.fast_processing = True
-            autorun_pipeline_exe(self)
-            self.MRSfiles.clear()
-            self.Waterfiles.clear()
-            # Optionally wait for the current run to complete (or add a delay)
-            # You might want to update a progress indicator, etc.
+                if len(self.MRSfiles.filepaths) == 0 and len(self.Waterfiles.filepaths) == 0:
+                    utils.log_warning("No input files found for participant " + self.participant_name + "; skipping.")
+                    continue
+
+                # Reset processing state for the new participant
+                
+                # You can choose auto-run mode for each participant
+                self.fast_processing = True
+                autorun_pipeline_exe(self)
+                
+                self.MRSfiles.clear()
+                self.Waterfiles.clear()
+                # Optionally wait for the current run to complete (or add a delay)
+                # You might want to update a progress indicator, etc.
+            except Exception as e:
+                utils.log_error(f"Processing failed for {part_folder}: {e}")
         wx.MessageBox("Batch processing complete.", "Batch Mode", wx.OK | wx.ICON_INFORMATION)
     
     def save_lastfiles(self):
