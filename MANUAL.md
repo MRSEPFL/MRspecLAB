@@ -40,7 +40,7 @@ The files to be viewed/processed are added on the left pane of the main window. 
 
 Files can also be dragged and dropped from an explorer window into each list box. The program currently only expects a single water reference file, and will only use the first one if multiple are provided.
 
-# Supported MRS formats are:
+### Supported MRS formats are:
 - .dcm (DICOM)
 - .ima (Siemens DICOM)
 - .dat (Siemens Twix)
@@ -133,4 +133,41 @@ Additionally, the pipeline can be exported to and imported from .pipe files usin
 | LCModel Output | `.coord`, `.ps`, `.table`, `.csv` |
 | Analysis Report | `.html` |
 
+## Output folder structure:
+```
+OUTPUT_FOLDER/
+├── pipeline.pipe # Saves the pipeline settings used for processing
+├── MRSinMRS_table.csv # Standardized table for MRS acquisition and processing parameters
 
+├── 1CoilCombination/ # First processing step (Coil Combination)
+│ ├── data/
+│ │ ├── <FILENAME>.RAW # Raw metabolite spectral data (ASCII format, if selected)
+│ │ ├── <FILENAME>.nii # Intermediate results in NIfTI-MRS format (if selected)
+│ ├── results.pdf # Results of Coil Combination processing
+│ ├── CoilCombination.pdf # Quality control output for Coil Combination
+
+├── 2Preprocessing/ # Second processing step (Preprocessing)
+│ ├── data/
+│ │ ├── <FILENAME>.RAW # Processed spectral data (if selected)
+│ │ ├── <FILENAME>.nii # Processed spectral data in NIfTI format (if selected)
+│ ├── results.pdf # Results of Preprocessing
+│ ├── Preprocessing.pdf # Quality control output for Preprocessing
+
+├── 3Averaging/ # Third processing step (Averaging)
+│ ├── data/
+│ │ ├── <FILENAME>.RAW # Averaged spectral data (if selected)
+│ │ ├── <FILENAME>.nii # Averaged spectral data in NIfTI format (if selected)
+│ ├── results.pdf # Results of Averaging
+│ ├── Averaging.pdf # Quality control output for Averaging
+
+├── LCModel/ # LCModel output folder (at the same level as processing steps)
+│ ├── <FILENAME>.control # LCModel control file with all fit settings
+│ ├── <FILENAME>.basis # Basis set used for spectral fitting
+│ ├── <FILENAME>.coord # Fitted spectral curves and quality control parameters
+│ ├── <FILENAME>.csv # Quantification results per metabolite
+│ ├── <FILENAME>.ps # Visual representation of all fitted spectra
+│ ├── <FILENAME>.print # Detailed analysis output including metabolite concentrations
+│ ├── <FILENAME>.nii # Fitted metabolite maps in NIfTI format
+│ ├── <FILENAME>.table # Quantification results in tabulated format
+│ ├── <FILENAME>.H2O # Raw water spectral data for quantification (optional)
+│ ├── <FILENAME>.RAW # Raw metabolite spectral data in the time domain
