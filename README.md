@@ -1,8 +1,8 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14866163.svg)](https://doi.org/10.5281/zenodo.14866163)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14866163.svg)](https://zenodo.org/records/14866163)
 
 # Simple download and double-click application for windows users to process MRS(I) data.
 
---> download the .zip from [zenodo](https://doi.org/10.5281/zenodo.14866163) for Windows.
+--> download the .zip from [zenodo](https://zenodo.org/records/14866163) for Windows.
 --> source code available for other OS in this repository.
 
 The MRspecLAB platform is closely described in this publication: [PUBLICATION](insert link). For help please contact us under: antonia.kaiser@epfl.ch, ying.xiao@epfl.ch or lijing.xin@epfl.ch
