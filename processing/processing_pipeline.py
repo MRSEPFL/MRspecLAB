@@ -13,7 +13,7 @@ from interface import utils
 from inout.read_mrs import load_file
 from inout.read_coord import ReadlcmCoord
 from inout.read_header import Table
-from inout.io_lcmodel import save_raw, read_control, save_control, save_nifti
+from inout.io_lcmodel import save_raw, read_control, save_control, save_nifti, save_nifti_spec2nii
 from interface.plot_helpers import plot_mrs, plot_coord, read_file
 
 #SVS
@@ -220,14 +220,37 @@ def processStep(self, step, nstep):
         if not os.path.exists(steppath): os.mkdir(steppath)
         filepath = os.path.join(steppath, "data")
         if not os.path.exists(filepath): os.mkdir(filepath)
-        for i, d in enumerate(dataDict["output"]): 
+        #for i, d in enumerate(dataDict["output"]): 
+        #    if d is not None:
+        #        save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
+        #for i, d in enumerate(dataDict["wref_output"]): save_raw(os.path.join(filepath, "wref_" + str(i) + ".RAW"), d, seq=self.sequence)
+        #for i, d in enumerate(dataDict["output"]): 
+        #    if d is not None:
+        #        save_nifti(os.path.join(filepath, str(i) + ".nii"), d, seq=self.sequence)
+        #for i, d in enumerate(dataDict["wref_output"]): save_nifti(os.path.join(filepath, "wref_" + str(i) + ".nii"), d, seq=self.sequence)
+        for i, d in enumerate(dataDict["output"]):
             if d is not None:
-                save_raw(os.path.join(filepath, str(i) + ".RAW"), d, seq=self.sequence)
-        for i, d in enumerate(dataDict["wref_output"]): save_raw(os.path.join(filepath, "wref_" + str(i) + ".RAW"), d, seq=self.sequence)
-        for i, d in enumerate(dataDict["output"]): 
-            if d is not None:
-                save_nifti(os.path.join(filepath, str(i) + ".nii"), d, seq=self.sequence)
-        for i, d in enumerate(dataDict["wref_output"]): save_nifti(os.path.join(filepath, "wref_" + str(i) + ".nii"), d, seq=self.sequence)
+                # Save the .RAW file as before.
+                raw_filepath = os.path.join(filepath, f"{i}.RAW")
+                save_raw(raw_filepath, d, seq=self.sequence)
+                
+                # Now use spec2nii to convert the .RAW file to NIfTI.
+                nifti_filepath = save_nifti_spec2nii(raw_filepath, d, seq=self.sequence)
+                if nifti_filepath is not None:
+                    utils.log_debug(f"NIfTI file generated: {nifti_filepath}")
+                else:
+                    utils.log_error(f"Failed to generate NIfTI file for {raw_filepath}")
+                
+        for i, d in enumerate(dataDict["wref_output"]):
+            raw_filepath = os.path.join(filepath, f"wref_{i}.RAW")
+            save_raw(raw_filepath, d, seq=self.sequence)
+            nifti_filepath = save_nifti_spec2nii(raw_filepath, d, seq=self.sequence)
+            if nifti_filepath is not None:
+                utils.log_debug(f"WATER NIfTI file generated: {nifti_filepath}")
+            else:
+                utils.log_error(f"Failed to generate WATER NIfTI file for {raw_filepath}")
+
+
     # canvas plot
     if not self.fast_processing:
         self.matplotlib_canvas.clear()
@@ -577,11 +600,21 @@ def analyseResults(self):
         # Write CONTROL and RAW files
         try:
             save_control(os.path.join(workpath, f"{label}.CONTROL"), rparams)
-            save_raw(os.path.join(workpath, f"{label}.RAW"), result, seq=self.sequence)
-            save_nifti(os.path.join(workpath, f"{label}.nii"), result, seq=self.sequence)
+            raw_filepath = os.path.join(workpath, f"{label}.RAW")
+            save_raw(raw_filepath, result, seq=self.sequence)
+            nifti_filepath = save_nifti_spec2nii(raw_filepath, result, nucleus=nucleus, seq=self.sequence)
+            if nifti_filepath is not None:
+                utils.log_debug(f"NIfTI file generated for {label}: {nifti_filepath}")
+            else:
+                utils.log_error(f"Failed to generate NIfTI file for {raw_filepath}")
             if nucleus == "1H" and wresult is not None:
-                save_raw(os.path.join(workpath, f"{label}.H2O"), wresult, seq=self.sequence)
-                save_nifti(os.path.join(workpath, f"{label}.nii"), wresult, seq=self.sequence)
+                water_raw_filepath = os.path.join(workpath, f"{label}.H2O")
+                save_raw(water_raw_filepath, wresult, seq=self.sequence)
+                water_nifti_filepath = save_nifti_spec2nii(water_raw_filepath, wresult, nucleus=nucleus, seq=self.sequence)
+                if water_nifti_filepath is not None:
+                    utils.log_debug(f"Water NIfTI file generated for {label}: {water_nifti_filepath}")
+                else:
+                    utils.log_error(f"Failed to generate Water NIfTI file for {water_raw_filepath}")
         except Exception as e:
             utils.log_error(f"Error writing CONTROL or RAW files for {label}: {e}")
             return  # skip this voxel

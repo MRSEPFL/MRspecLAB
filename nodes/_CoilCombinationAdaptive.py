@@ -44,7 +44,10 @@ def coil_combination_adaptive(data, p=0):
         for i in range(0, d.shape[-1]):
             output2.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
         output.append(d.inherit(np.array(output2)))
-    if p == len(output):
+
+    sz_output = len(output)
+
+    if p == sz_output:
         data["output"] = output
     else:
         data["output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0,len(output), p)]
@@ -56,7 +59,8 @@ def coil_combination_adaptive(data, p=0):
             for i in range(0, d.shape[-1]):
                 output2.append(np.sum(np.conj(csm) * d[:, i] * phase, 0) / csmsq)
             output.append(d.inherit(np.array(output2)))
-        if p == len(output):
+
+        if p == sz_output:
             data["wref_output"] = output
         else:
             data["wref_output"] = [output[i].inherit(np.mean(output[i:i+p], 0)) for i in range(0, len(output), p)]
