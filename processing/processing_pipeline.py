@@ -228,6 +228,11 @@ def processStep(self, step, nstep):
         #    if d is not None:
         #        save_nifti(os.path.join(filepath, str(i) + ".nii"), d, seq=self.sequence)
         #for i, d in enumerate(dataDict["wref_output"]): save_nifti(os.path.join(filepath, "wref_" + str(i) + ".nii"), d, seq=self.sequence)
+        nucleus = None
+        for key in ["Nucleus", "nucleus"]:
+            if key in self.header:
+                nucleus = self.header[key]
+                break
         for i, d in enumerate(dataDict["output"]):
             if d is not None:
                 # Save the .RAW file as before.
@@ -235,7 +240,7 @@ def processStep(self, step, nstep):
                 save_raw(raw_filepath, d, seq=self.sequence)
                 
                 # Now use spec2nii to convert the .RAW file to NIfTI.
-                nifti_filepath = save_nifti_spec2nii(raw_filepath, d, seq=self.sequence)
+                nifti_filepath = save_nifti_spec2nii(raw_filepath, d, nucleus=nucleus, seq=self.sequence)
                 if nifti_filepath is not None:
                     utils.log_debug(f"NIfTI file generated: {nifti_filepath}")
                 else:
@@ -244,7 +249,7 @@ def processStep(self, step, nstep):
         for i, d in enumerate(dataDict["wref_output"]):
             raw_filepath = os.path.join(filepath, f"wref_{i}.RAW")
             save_raw(raw_filepath, d, seq=self.sequence)
-            nifti_filepath = save_nifti_spec2nii(raw_filepath, d, seq=self.sequence)
+            nifti_filepath = save_nifti_spec2nii(raw_filepath, d, nucleus=nucleus, seq=self.sequence)
             if nifti_filepath is not None:
                 utils.log_debug(f"WATER NIfTI file generated: {nifti_filepath}")
             else:

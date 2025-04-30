@@ -124,7 +124,6 @@ def save_nifti(filepath, data, seq="PRESS"):
         "EchoTime": data.te,
         "RepetitionTime": getattr(data, 'tr', None),
         "ResonantNucleus": [getattr(data, 'nucleus', "unknown")],
-        "ResonantNucleus": nucleus,
         "Sequence": seq,
     }
     
@@ -138,24 +137,12 @@ def save_nifti(filepath, data, seq="PRESS"):
     # Save the image to disk
     nib.save(nifti_img, filepath)
 
-def save_nifti_spec2nii(filepath, data, nucleus = 'Unknown', seq="PRESS"):
-    """
-    Save a NIfTI file using spec2nii's raw conversion from an LCModel .RAW file.
-    
-    Parameters:
-      filepath (str): Path to the .RAW file.
-      data: A data object with header info (e.g. f0, te, nucleus, dt, bandwidth, etc.).
-      seq (str): The acquisition sequence identifier.
-    
-    Returns:
-      The path to the generated NIfTI file, or None on error.
-    """
+def save_nifti_spec2nii(filepath, data, nucleus="Unknown", seq="PRESS"):
+    return filepath
     out_dir = os.path.dirname(filepath)
     base_name = os.path.splitext(os.path.basename(filepath))[0]
     
     # Retrieve header information from the data object.
-
-    #nucleus = getattr(data, "nucleus", "unknown")  # e.g., "1H" or "31P"
     f0 = getattr(data, "f0", None)  # central frequency in Hz
     imagingfreq = str(f0 / 1e6) if f0 is not None else None  # convert to MHz
     
@@ -169,10 +156,9 @@ def save_nifti_spec2nii(filepath, data, nucleus = 'Unknown', seq="PRESS"):
         else:
             utils.log_error("Neither bandwidth nor a valid dt (dwell time) found in data.")
             return None
-
+    """
     # First try to find spec2nii in PATH.
     spec2nii_exe = shutil.which("spec2nii")
-    
     # If not found, manually search in sys.prefix\Scripts.
     if spec2nii_exe is None:
         scripts_dir = os.path.join(sys.prefix, "Scripts")
@@ -182,16 +168,40 @@ def save_nifti_spec2nii(filepath, data, nucleus = 'Unknown', seq="PRESS"):
         else:
             utils.log_error("spec2nii executable not found in PATH or in " + scripts_dir)
             return None
+    """
+    if getattr(sys, "frozen", False):
+        # in a PyInstaller bundle: expect spec2nii.exe next to MRSpecLAB.exe
+        base = os.path.dirname(sys.executable)
+        spec2nii_exe = os.path.join(base, "spec2nii.exe")
+        if not os.path.isfile(spec2nii_exe):
+            utils.log_error(f"Bundled spec2nii.exe not found at {spec2nii_exe}")
+            return None
+    else:
+        # in dev mode: find it on PATH
+        spec2nii_exe = shutil.which("spec2nii")
+        if spec2nii_exe is None:
+            utils.log_error("spec2nii not found on PATH in non-frozen mode")
+            return None
+
 
     # Build the spec2nii command using the "raw" subcommand.
     cmd = [
         spec2nii_exe, "raw",
         "-n", nucleus,
-        "-j",
+        "-j",  # produce a JSON file with the metadata
         "-f", base_name,
         "-o", out_dir,
         filepath
     ]
+    """
+    cmd = [
+        sys.executable, "-m", "spec2nii.spec2nii", "raw",
+        "-n", nucleus,
+        "-j",               # emit side‐car JSON
+        "-f", base_name,
+        "-o", out_dir,
+        filepath
+        ]"""
     if imagingfreq:
         cmd.extend(["-i", imagingfreq])
     if bandwidth:
@@ -203,14 +213,62 @@ def save_nifti_spec2nii(filepath, data, nucleus = 'Unknown', seq="PRESS"):
     except subprocess.CalledProcessError as e:
         utils.log_error(f"spec2nii conversion failed for {filepath}: {e}")
         return None
-        
-    # Search for the resulting NIfTI file (either .nii or .nii.gz) in out_dir.
+
+    # Locate the generated NIfTI and JSON files in out_dir.
+    nifti_file = None
+    json_file = None
     for f in os.listdir(out_dir):
-        if f.startswith(base_name) and (f.endswith(".nii") or f.endswith(".nii.gz")):
-            return os.path.join(out_dir, f)
+        if f.startswith(base_name):
+            if f.endswith(".nii") or f.endswith(".nii.gz"):
+                nifti_file = os.path.join(out_dir, f)
+            elif f.endswith(".json"):
+                json_file = os.path.join(out_dir, f)
     
-    utils.log_error(f"No NIfTI file found after spec2nii conversion for {filepath}")
-    return None
+    if nifti_file is None:
+        utils.log_error(f"No NIfTI file found after spec2nii conversion for {filepath}")
+        return None
+    if json_file is None:
+        utils.log_error(f"No JSON file found after spec2nii conversion for {filepath}")
+        return None
+
+    # Update the JSON file with EchoTime and RepetitionTime.
+    try:
+        with open(json_file, "r") as fp:
+            metadata = json.load(fp)
+    except Exception as e:
+        utils.log_error(f"Error reading JSON file {json_file}: {e}")
+        return None
+
+    # Add/overwrite fields using data.te and data.tr.
+    # Note: Adjust these attribute names if your data object uses different names.
+    metadata["EchoTime"] = getattr(data, "te", None)/1e3
+    metadata["RepetitionTime"] = getattr(data, "tr", None)/1e3
+
+    try:
+        with open(json_file, "w") as fp:
+            json.dump(metadata, fp, indent=4)
+    except Exception as e:
+        utils.log_error(f"Error writing JSON file {json_file}: {e}")
+        return None
+
+    # Use spec2nii's insert command to update the NIfTI file with the modified JSON.
+    # The insert command takes the NIfTI file and the JSON file as arguments.
+    cmd_insert = [
+        spec2nii_exe, "insert",
+        nifti_file,
+        json_file
+    ]
+
+    # If needed, you can also extend cmd_insert with additional arguments (e.g. dwelltime, outdir)
+    utils.log_debug("Running spec2nii insert command:", " ".join(cmd_insert))
+    try:
+        subprocess.run(cmd_insert, check=True, cwd=out_dir)
+    except subprocess.CalledProcessError as e:
+        utils.log_error(f"spec2nii insertion failed for {nifti_file}: {e}")
+        return None
+
+    # Return the final NIfTI file path (which now includes the additional fields).
+    return nifti_file
 
 # def raw_to_nifti
 #     rawpath = os.path.join(self.workpath, "result.RAW")
